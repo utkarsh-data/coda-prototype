@@ -165,6 +165,34 @@
         .command-table tbody tr:last-child td {
             border-bottom: none;
         }
+
+        /* Styles for shrunk header */
+        .header-shrunk {
+            padding-top: 1rem !important; /* Smaller top padding */
+            padding-bottom: 0.5rem !important; /* Smaller bottom padding */
+        }
+        .header-shrunk #mainTitle {
+            font-size: 1.5rem !important; /* Smaller title */
+            margin-bottom: 0.25rem !important;
+        }
+        .header-shrunk #subTitle {
+            font-size: 0.875rem !important; /* Smaller subtitle (sm) */
+            margin-bottom: 0.25rem !important;
+        }
+        .header-shrunk #createdBy {
+            font-size: 0.75rem !important; /* Even smaller "Created by" (xs) */
+            margin-bottom: 0.5rem !important;
+        }
+        .header-shrunk #toggleButtons {
+            margin-bottom: 0rem !important; /* No bottom margin */
+            /* justify-content: flex-start !important; This is already handled by the permanent change */
+            flex-wrap: wrap; /* Allow wrapping if buttons get too long */
+        }
+        .header-shrunk #toggleButtons button {
+            padding-top: 0.4rem !important;
+            padding-bottom: 0.4rem !important;
+            font-size: 0.8rem !important;
+        }
     </style>
 </head>
 <body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center h-screen w-screen">
@@ -212,13 +240,13 @@
 
         <!-- Right Pane: Conversational Interface & Results - Now takes full width on larger screens by default -->
         <div id="chat-panel" class="w-full flex flex-col bg-gray-900 rounded-3xl">
-            <div class="px-8 pt-6 pb-2"> <!-- Condensed padding for header content -->
-                <h2 class="text-4xl font-extrabold text-blue-400 mb-1 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
-                <p class="text-md text-gray-400 mb-1 text-center italic">Your Private, Conversational Data Analyst</p>
-                <p class="text-sm text-gray-500 mb-4 text-center">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
+            <div id="headerContainer" class="px-8 pt-6 pb-2 transition-all duration-500 ease-in-out"> <!-- Condensed padding for header content -->
+                <h2 class="text-4xl font-extrabold text-blue-400 mb-1 text-center tracking-tight" id="mainTitle">CoDA <span class="text-blue-600">AI</span></h2>
+                <p class="text-md text-gray-400 mb-1 text-center italic" id="subTitle">Your Private, Conversational Data Analyst</p>
+                <p class="text-sm text-gray-500 mb-4 text-center" id="createdBy">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
-                <!-- Toggle Buttons for Data Panel and Command Guide - Positioned together -->
-                <div class="flex justify-end space-x-3 mb-2"> <!-- Condensed margin-bottom -->
+                <!-- Toggle Buttons for Data Panel and Command Guide - Positioned together and left-aligned -->
+                <div class="flex justify-start space-x-3 mb-2" id="toggleButtons">
                     <button id="toggleDataPanelBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out hidden md:flex items-center space-x-2">
                         <i class="fas fa-eye mr-2"></i> <span id="toggleButtonText">Show Data Panel</span>
                     </button>
@@ -229,7 +257,7 @@
             </div>
 
             <!-- Chat Area - Now takes up all available space -->
-            <div id="chatArea" class="flex-grow bg-gray-800 px-6 py-6 rounded-2xl overflow-y-auto custom-scrollbar shadow-lg border border-gray-700 mx-8 my-2"> <!-- Adjusted vertical margins -->
+            <div id="chatArea" class="flex-grow bg-gray-800 px-6 py-6 rounded-2xl overflow-y-auto custom-scrollbar shadow-lg border border-gray-700 mx-8">
                 <!-- Initial AI message -->
                 <div class="flex items-start mb-4 fade-in-message">
                     <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
@@ -240,7 +268,7 @@
             </div>
 
             <!-- Chat Input -->
-            <div class="flex items-center space-x-3 px-8 pb-6 pt-2"> <!-- Adjusted padding for input area -->
+            <div class="flex items-center space-x-3 px-8 pb-6 pt-4"> <!-- Adjusted padding for input area -->
                 <input type="text" id="chatInput" placeholder="Ask CoDA a question about your data, e.g., 'Show me the average sales'..." class="flex-grow p-4 border border-gray-600 bg-gray-700 text-gray-200 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-600 shadow-lg text-base transition duration-300 ease-in-out">
                 <button id="sendMessageBtn" class="send-button-gradient text-white p-4 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
                     <i class="fas fa-paper-plane text-xl"></i>
@@ -286,6 +314,9 @@
         const commandGuideContent = document.getElementById('commandGuideContent'); // Content area inside the overlay
         const closeCommandGuideBtn = document.getElementById('closeCommandGuideBtn'); // Button to close the overlay
         const toggleCommandGuideText = document.getElementById('toggleCommandGuideText'); // Text for command guide toggle button
+        const headerContainer = document.getElementById('headerContainer'); // Reference to the header container
+
+        let isHeaderShrunk = false; // New flag to track header state
 
 
         // Function to parse CSV data
@@ -1973,6 +2004,12 @@
             if (query) {
                 appendMessage('You', query, 'user');
                 chatInput.value = ''; // Clear input
+
+                if (!isHeaderShrunk) {
+                    headerContainer.classList.add('header-shrunk');
+                    isHeaderShrunk = true;
+                }
+
                 simulateAIResponse(query);
             }
         });
