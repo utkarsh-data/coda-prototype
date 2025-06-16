@@ -184,7 +184,7 @@
         <div id="data-panel" class="p-8 flex-col border-r border-gray-700 bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar hidden md:w-0 md:hidden">
             <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
             <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
-            <p class="text-sm text-gray-500 mb-6 text-center">Founded by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
+            <p class="text-sm text-gray-500 mb-6 text-center">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
             <div class="mb-4 border-2 border-dashed border-blue-600 bg-gray-700 rounded-2xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
                 <label for="csvFileInput" class="cursor-pointer text-blue-300 hover:text-blue-100 font-bold text-base flex flex-col items-center justify-center">
@@ -212,18 +212,19 @@
 
         <!-- Right Pane: Conversational Interface & Results - Now takes full width on larger screens by default -->
         <div id="chat-panel" class="w-full flex flex-col p-8 bg-gray-900 rounded-3xl">
-            <h2 class="text-4xl font-extrabold text-blue-400 mb-6 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
+            <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
+            <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
+            <p class="text-sm text-gray-500 mb-6 text-center">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
-            <!-- Toggle Button for Data Panel - Now globally positioned relative to main-container -->
-            <button id="toggleDataPanelBtn" class="absolute top-4 right-4 bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out hidden md:flex items-center space-x-2">
-                <i class="fas fa-eye mr-2"></i> <span id="toggleButtonText">Show Data Panel</span>
-            </button>
-
-            <!-- Toggle Button for Command Guide - Positioned inside chat panel -->
-            <button id="toggleCommandGuideBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out flex items-center space-x-2 self-end mb-4">
-                <i class="fas fa-book mr-2"></i> <span id="toggleCommandGuideText">Hide Command Guide</span>
-            </button>
-
+            <!-- Toggle Buttons for Data Panel and Command Guide - Positioned together -->
+            <div class="flex justify-end space-x-3 mb-4">
+                <button id="toggleDataPanelBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out hidden md:flex items-center space-x-2">
+                    <i class="fas fa-eye mr-2"></i> <span id="toggleButtonText">Show Data Panel</span>
+                </button>
+                <button id="toggleCommandGuideBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out flex items-center space-x-2">
+                    <i class="fas fa-book mr-2"></i> <span id="toggleCommandGuideText">Hide Command Guide</span>
+                </button>
+            </div>
 
             <!-- Chat Area -->
             <div id="chatArea" class="flex-grow bg-gray-800 p-6 rounded-2xl overflow-y-auto custom-scrollbar shadow-lg border border-gray-700 mb-6">
