@@ -142,6 +142,30 @@
             max-height: 100%;
             max-width: 100%;
         }
+
+        /* Table specific styles for the command list */
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .command-table th, .command-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #4a5568; /* Slightly lighter border for table rows */
+        }
+        .command-table th {
+            background-color: #2d3748; /* Darker header background */
+            font-weight: 600;
+            color: #a0aec0; /* Lighter text for headers */
+        }
+        .command-table tbody tr:hover {
+            background-color: #4a5568; /* Hover effect for rows */
+        }
+        .command-table tbody tr:last-child td {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center min-h-screen">
@@ -300,6 +324,42 @@
             if (numericValues.length === 0) return { min: null, max: null };
             return { min: Math.min(...numericValues), max: Math.max(...numericValues) };
         }
+
+        // Helper to calculate median
+        function calculateMedian(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n)).sort((a, b) => a - b);
+            if (numericValues.length === 0) return null;
+            const mid = Math.floor(numericValues.length / 2);
+            return numericValues.length % 2 === 0 ? (numericValues[mid - 1] + numericValues[mid]) / 2 : numericValues[mid];
+        }
+
+        // Helper to calculate standard deviation
+        function calculateStandardDeviation(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
+            if (numericValues.length < 2) return null;
+            const mean = calculateColumnAverage(columnName, data);
+            const sumOfSquares = numericValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0);
+            return Math.sqrt(sumOfSquares / (numericValues.length - 1)); // Sample standard deviation
+        }
+
+        // Helper to calculate quartiles (Q1, Median, Q3, IQR)
+        function calculateQuartiles(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n)).sort((a, b) => a - b);
+            if (numericValues.length === 0) return { q1: null, median: null, q3: null, iqr: null };
+
+            const getMedian = arr => {
+                const mid = Math.floor(arr.length / 2);
+                return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+            };
+
+            const median = getMedian(numericValues);
+            const q1 = getMedian(numericValues.slice(0, Math.floor(numericValues.length / 2)));
+            const q3 = getMedian(numericValues.slice(Math.ceil(numericValues.length / 2)));
+            const iqr = q3 - q1;
+
+            return { q1: q1.toFixed(2), median: median.toFixed(2), q3: q3.toFixed(2), iqr: iqr.toFixed(2) };
+        }
+
 
         // Helper for grouping and aggregating data for charts (e.g., for bar charts)
         function groupByAndAggregate(data, groupByColumn, aggregateColumn, aggregateType) {
@@ -525,7 +585,149 @@
         // Simulated AI response and local execution
         function simulateAIResponse(query) {
             query = query.toLowerCase();
-            let aiResponseText = "I'm sorry, I couldn't quite understand that. My current prototype capabilities are limited. I can demonstrate:<br><ul><li><strong>'Show all data'</strong> or <strong>'show [column name]'</strong></li><li><strong>'Describe my dataset'</strong></li><li><strong>'Count unique [column name]'</strong> or <strong>'How many unique [column name]'</strong></li><li><strong>'Show frequency of [column name]'</strong> or <strong>'Top values in [column name]'</strong></li><li><strong>'Min [column name]'</strong> or <strong>'Max [column name]'</strong></li><li><strong>'Sum [column name]'</strong> or <strong>'Average [column name]'</strong></li><li><strong>'Filter data where [column] [operator] [value]'</strong> (e.g., 'sales > 1000' or 'city = \"London\"')</li><li><strong>'Count rows'</strong></li><li><strong>'Average [numeric column] by [categorical column]'</strong></li><li><strong>'Show bar chart of [numeric_col] by [categorical_col]'</strong> (e.g., 'show bar chart of sales by region')</li><li><strong>'Show line chart with X as [column] and Y as [numeric_column]'</strong></li><li><strong>'Show scatter plot with X as [numeric_column1] and Y as [numeric_column2]'</strong></li></ul>If I've made a cleaning suggestion, you can type 'yes' to confirm.";
+            // Refactored AI response text into a structured table
+            let aiResponseText = `I'm ready to help with your data analysis! Here's a quick guide to what I can do:<br><br>
+                <table class="command-table">
+                    <thead>
+                        <tr>
+                            <th>Sr. No.</th>
+                            <th>Category</th>
+                            <th>Command</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>General Overview</td>
+                            <td>Show all data</td>
+                            <td><code>show all data</code></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>General Overview</td>
+                            <td>Show specific column data</td>
+                            <td><code>show [column name]</code> (e.g., <code>show City</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>General Overview</td>
+                            <td>Count rows</td>
+                            <td><code>count rows</code></td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>General Overview</td>
+                            <td>Describe dataset</td>
+                            <td><code>describe my dataset</code></td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>Statistical Analysis</td>
+                            <td>Sum a numeric column</td>
+                            <td><code>sum [numeric column]</code> (e.g., <code>sum sales</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>Statistical Analysis</td>
+                            <td>Average a numeric column</td>
+                            <td><code>average [numeric column]</code> (e.g., <code>average age</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td>Statistical Analysis</td>
+                            <td>Median of a numeric column</td>
+                            <td><code>median [numeric column]</code> (e.g., <code>median income</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td>Statistical Analysis</td>
+                            <td>Standard deviation of a numeric column</td>
+                            <td><code>standard deviation [numeric column]</code> (e.g., <code>standard deviation price</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td>Statistical Analysis</td>
+                            <td>Quartiles of a numeric column</td>
+                            <td><code>quartiles [numeric column]</code> (e.g., <code>quartiles score</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td>Statistical Analysis</td>
+                            <td>Count unique values in a column</td>
+                            <td><code>count unique [column name]</code> (e.g., <code>count unique city</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>11</td>
+                            <td>Statistical Analysis</td>
+                            <td>Show frequency/top values</td>
+                            <td><code>show frequency of [column name]</code> or <code>top values in [column name]</code> (e.g., <code>show frequency of product type</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td>Statistical Analysis</td>
+                            <td>Min/Max of a numeric column</td>
+                            <td><code>min [numeric column]</code> or <code>max [numeric column]</code> (e.g., <code>min temperature</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>13</td>
+                            <td>Statistical Analysis</td>
+                            <td>Average a numeric column by categorical group</td>
+                            <td><code>average [numeric column] by [categorical column]</code> (e.g., <code>average sales by region</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>14</td>
+                            <td>Data Manipulation</td>
+                            <td>Filter data</td>
+                            <td><code>filter data where [column] [operator] [value]</code> (e.g., <code>sales > 1000</code> or <code>city = "London"</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>15</td>
+                            <td>Data Manipulation</td>
+                            <td>Add a new calculated column</td>
+                            <td><code>add column [new_name] as [col1] [operator] [col2]</code> (Operators: 'plus', 'minus', 'times', 'divided by'. E.g., <code>add column profit as revenue minus cost</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>16</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Bar Chart</td>
+                            <td><code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>17</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Line Chart</td>
+                            <td><code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>18</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Scatter Plot</td>
+                            <td><code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>19</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Pie Chart</td>
+                            <td><code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
+                        </tr>
+                        <tr>
+                            <td>20</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Doughnut Chart</td>
+                            <td><code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
+                        </tr>
+                        <tr>
+                            <td>21</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Polar Area Chart</td>
+                            <td><code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+                If I've made a cleaning suggestion, you can simply type <strong>'yes'</strong> to confirm.`;
+
             let analysisContent = '';
 
             if (rawData.length === 0) {
@@ -533,7 +735,200 @@
                 return;
             }
 
-            // --- Charting Commands (with X/Y axis control) ---
+            // --- New Advanced Analytical Features ---
+
+            // Calculate Median
+            if (query.includes('median ')) {
+                const match = query.match(/median\s+([\w\s]+)/);
+                if (match && match[1]) {
+                    const colNameRaw = match[1].trim();
+                    let foundColumn = null;
+                    for (const col in schema) {
+                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundColumn = col;
+                            break;
+                        }
+                    }
+                    if (foundColumn) {
+                        const median = calculateMedian(foundColumn, rawData);
+                        if (median !== null) {
+                            aiResponseText = `The **median** for the column "<strong>${foundColumn}</strong>" is: <strong>${median.toFixed(2)}</strong>.`;
+                        } else {
+                            aiResponseText = `I couldn't calculate the median for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
+                        }
+                    } else {
+                        aiResponseText = `To find the median, please specify a valid numeric column. Example: 'median age'.`;
+                    }
+                }
+            }
+            // Calculate Standard Deviation
+            else if (query.includes('standard deviation ')) {
+                const match = query.match(/standard deviation\s+([\w\s]+)/);
+                if (match && match[1]) {
+                    const colNameRaw = match[1].trim();
+                    let foundColumn = null;
+                    for (const col in schema) {
+                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundColumn = col;
+                            break;
+                        }
+                    }
+                    if (foundColumn) {
+                        const stdDev = calculateStandardDeviation(foundColumn, rawData);
+                        if (stdDev !== null) {
+                            aiResponseText = `The **standard deviation** for the column "<strong>${foundColumn}</strong>" is: <strong>${stdDev.toFixed(2)}</strong>.`;
+                        } else {
+                            aiResponseText = `I couldn't calculate the standard deviation for "<strong>${foundColumn}</strong>" as it contains insufficient numeric data (at least 2 values are needed).`;
+                        }
+                    } else {
+                        aiResponseText = `To find the standard deviation, please specify a valid numeric column. Example: 'standard deviation sales'.`;
+                    }
+                }
+            }
+            // Calculate Quartiles
+            else if (query.includes('quartiles ')) {
+                const match = query.match(/quartiles\s+([\w\s]+)/);
+                if (match && match[1]) {
+                    const colNameRaw = match[1].trim();
+                    let foundColumn = null;
+                    for (const col in schema) {
+                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundColumn = col;
+                            break;
+                        }
+                    }
+                    if (foundColumn) {
+                        const quartiles = calculateQuartiles(foundColumn, rawData);
+                        if (quartiles.median !== null) {
+                            aiResponseText = `For the column "<strong>${foundColumn}</strong>":<br>
+                                            **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
+                                            **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
+                                            **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
+                                            **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
+                        } else {
+                            aiResponseText = `I couldn't calculate quartiles for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
+                        }
+                    } else {
+                        aiResponseText = `To find quartiles, please specify a valid numeric column. Example: 'quartiles age'.`;
+                    }
+                }
+            }
+            // Add Calculated Column
+            else if (query.includes('add column') && query.includes('as')) {
+                const match = query.match(/add column\s+([\w\s]+)\s+as\s+([\w\s]+)\s*(plus|minus|times|divided by)\s+([\w\s]+)/);
+                if (match && match.length === 5) {
+                    const newColName = match[1].trim().replace(/\s/g, '_'); // Replace spaces for valid key
+                    const col1Raw = match[2].trim();
+                    const operatorWord = match[3].trim();
+                    const col2Raw = match[4].trim();
+
+                    let foundCol1 = null;
+                    let foundCol2 = null;
+
+                    for (const col in schema) {
+                        if (col1Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundCol1 = col;
+                        }
+                        if (col2Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundCol2 = col;
+                        }
+                    }
+
+                    if (foundCol1 && foundCol2) {
+                        let operator = '';
+                        switch (operatorWord) {
+                            case 'plus': operator = '+'; break;
+                            case 'minus': operator = '-'; break;
+                            case 'times': operator = '*'; break;
+                            case 'divided by': operator = '/'; break;
+                            default: operator = '';
+                        }
+
+                        if (operator) {
+                            rawData = rawData.map(row => {
+                                const val1 = Number(row[foundCol1]);
+                                const val2 = Number(row[foundCol2]);
+                                let result;
+
+                                if (!isNaN(val1) && !isNaN(val2)) {
+                                    if (operator === '+') result = val1 + val2;
+                                    else if (operator === '-') result = val1 - val2;
+                                    else if (operator === '*') result = val1 * val2;
+                                    else if (operator === '/') result = val2 !== 0 ? val1 / val2 : 0; // Handle division by zero
+                                } else {
+                                    result = ''; // Set to empty string if inputs are not valid numbers
+                                }
+                                return { ...row, [newColName]: result.toFixed(2) }; // Add new column, format to 2 decimals
+                            });
+                            schema[newColName] = 'number'; // Add new column to schema
+                            displaySchema(schema); // Update schema display
+
+                            aiResponseText = `I've successfully added a new column named "<strong>${newColName}</strong>" to your dataset. It calculates "${foundCol1} ${operatorWord} ${foundCol2}". Your schema has been updated!`;
+                        } else {
+                            aiResponseText = `I couldn't understand the operator "${operatorWord}". Please use 'plus', 'minus', 'times', or 'divided by'.`;
+                        }
+                    } else {
+                        aiResponseText = `To add a calculated column, I need two valid numeric columns. Please check your column names and types. Example: 'add column Net_Profit as Revenue minus Cost'.`;
+                    }
+                } else {
+                    aiResponseText = `Please use the format: 'add column [new_name] as [col1] [operator] [col2]', where operator is 'plus', 'minus', 'times', or 'divided by'.`;
+                }
+            }
+
+
+            // --- Charting Commands ---
+            const pieDoughnutPolarMatch = query.match(/show (pie|doughnut|polar area) chart of\s+([\w\s]+)(?:\s+by\s+([\w\s]+))?(\s+as\s+(sum|average))?/);
+            if (pieDoughnutPolarMatch) {
+                const chartType = pieDoughnutPolarMatch[1];
+                const primaryColRaw = pieDoughnutPolarMatch[2].trim();
+                const secondaryColRaw = pieDoughnutPolarMatch[3] ? pieDoughnutPolarMatch[3].trim() : null;
+                const aggregateType = pieDoughnutPolarMatch[5] ? pieDoughnutPolarMatch[5].toLowerCase() : 'sum';
+
+                let primaryColumn = null;
+                let secondaryColumn = null;
+
+                for (const col in schema) {
+                    if (primaryColRaw.includes(col.toLowerCase())) {
+                        primaryColumn = col;
+                    }
+                    if (secondaryColRaw && secondaryColRaw.includes(col.toLowerCase())) {
+                        secondaryColumn = col;
+                    }
+                }
+
+                if (primaryColumn) {
+                    let labels, data, chartTitle;
+
+                    if (secondaryColumn && schema[primaryColumn] === 'number') {
+                        // Aggregate numeric by categorical
+                        const aggregated = groupByAndAggregate(rawData, secondaryColumn, primaryColumn, aggregateType);
+                        labels = aggregated.labels;
+                        data = aggregated.data;
+                        chartTitle = `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${primaryColumn} by ${secondaryColumn}`;
+                    } else if (!secondaryColumn) {
+                        // Frequency count for a single column
+                        const values = rawData.map(row => row[primaryColumn]);
+                        const valueCounts = {};
+                        values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
+                        labels = Object.keys(valueCounts);
+                        data = Object.values(valueCounts);
+                        chartTitle = `Frequency of ${primaryColumn}`;
+                    } else {
+                        aiResponseText = `For a ${chartType} chart, if specifying 'by' you need a numeric column for aggregation and a categorical column to group by. Or just provide a single column for frequency.`;
+                        appendMessage('AI', aiResponseText, 'ai');
+                        return;
+                    }
+
+                    createChart(chartType.replace(' ', ''), chartTitle, labels, data); // remove space from 'polar area'
+                    aiResponseText = `Here's a **${chartType} chart** for "<strong>${chartTitle}</strong>".`;
+                    return;
+                } else {
+                    aiResponseText = `I couldn't find the column "${primaryColRaw}" to create that chart. Please specify a valid column name.`;
+                }
+            }
+
+
+            // --- Existing Charting Commands ---
             // Bar Chart: show bar chart of [numeric_col] by [categorical_col] (average/sum)
             const barChartMatch = query.match(/show bar chart of\s+([\w\s]+)\s+by\s+([\w\s]+)(\s+as\s+(sum|average))?/);
             if (barChartMatch) {
@@ -636,7 +1031,7 @@
                     aiResponseText = `I need two valid numeric columns to create a scatter plot. Example: 'show scatter plot with x as age and y as income'`;
                 }
             }
-            // --- End Charting Commands ---
+
 
             // Handle cleaning confirmation
             if (pendingCleaningSuggestion && (query === 'yes' || query.includes('confirm') || query.includes('go ahead'))) {
@@ -852,7 +1247,7 @@
                                 }
                             });
                         } else {
-                            parsedValue = valueRaw.replace(/['"]/g, '').toLowerCase();
+                            parsedValue = valueRaw.replace(/['']/g, '').toLowerCase();
                             filteredData = rawData.filter(row => {
                                 const cellValue = (row[foundColumn] || '').toLowerCase();
                                 switch (operator) {
@@ -915,9 +1310,15 @@
                         const numericValues = values.map(Number).filter(n => !isNaN(n));
                         const { min: minVal, max: maxVal } = calculateColumnMinMax(col, rawData);
                         const avgVal = calculateColumnAverage(col, rawData);
+                        const medianVal = calculateMedian(col, rawData);
+                        const stdDevVal = calculateStandardDeviation(col, rawData);
+                        const quartiles = calculateQuartiles(col, rawData);
 
                         if (numericValues.length > 0) {
                             descriptionNarrative += `This column contains numerical data, ranging from <strong>${minVal}</strong> to <strong>${maxVal}</strong>, with an average value of approximately <strong>${avgVal.toFixed(2)}</strong>.`;
+                            if (medianVal !== null) descriptionNarrative += ` The median is <strong>${medianVal.toFixed(2)}</strong>.`;
+                            if (stdDevVal !== null) descriptionNarrative += ` Standard deviation is <strong>${stdDevVal.toFixed(2)}</strong>.`;
+                            if (quartiles.q1 !== null) descriptionNarrative += ` Q1 is <strong>${quartiles.q1}</strong>, Q3 is <strong>${quartiles.q3}</strong>, and the IQR is <strong>${quartiles.iqr}</strong>.`;
                         } else {
                             descriptionNarrative += `This numeric column currently has no valid numerical entries.`;
                         }
