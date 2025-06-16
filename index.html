@@ -19,8 +19,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            padding: 0; /* Remove padding to allow app to go truly full screen */
             overflow: hidden; /* Prevent scrollbar from background animation */
             position: relative;
         }
@@ -167,7 +167,7 @@
         }
     </style>
 </head>
-<body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center min-h-screen">
+<body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center h-screen w-screen">
     <!-- Background Bubbles Animation -->
     <div class="background-bubbles">
         <div class="bubble"></div>
@@ -178,49 +178,65 @@
         <div class="bubble"></div>
     </div>
 
-    <div class="relative z-10 flex flex-col md:flex-row bg-gray-900 text-gray-200 rounded-3xl shadow-2xl overflow-hidden w-full max-w-7xl h-[90vh] md:h-[80vh] transform transition-all duration-300 hover:shadow-4xl border border-gray-700">
+    <div id="main-container" class="relative z-10 flex flex-col md:flex-row bg-gray-900 text-gray-200 rounded-3xl shadow-2xl overflow-hidden w-full h-full transform transition-all duration-300 border border-gray-700">
         <!-- Left Pane: CSV Upload & Data Preview -->
-        <div class="w-full md:w-1/3 p-8 flex flex-col border-r border-gray-700 bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar">
+        <!-- This pane is now conditionally hidden/shown by JavaScript, default hidden on md+ -->
+        <div id="data-panel" class="p-8 flex-col border-r border-gray-700 bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar hidden md:w-0 md:hidden">
             <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
             <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
             <p class="text-sm text-gray-500 mb-6 text-center">Founded by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
-            <div class="mb-8 border-2 border-dashed border-blue-600 bg-gray-700 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
-                <label for="csvFileInput" class="cursor-pointer text-blue-300 hover:text-blue-100 font-bold text-lg flex flex-col items-center justify-center">
-                    <i class="fas fa-cloud-upload-alt text-5xl mb-3 text-blue-500"></i>
-                    <span class="block text-xl">Upload CSV File</span>
-                    <span class="block text-sm text-gray-400 mt-1">Click or drag & drop</span>
+            <div class="mb-4 border-2 border-dashed border-blue-600 bg-gray-700 rounded-2xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
+                <label for="csvFileInput" class="cursor-pointer text-blue-300 hover:text-blue-100 font-bold text-base flex flex-col items-center justify-center">
+                    <i class="fas fa-cloud-upload-alt text-4xl mb-2 text-blue-500"></i>
+                    <span class="block text-lg">Upload CSV File</span>
+                    <span class="block text-xs text-gray-400 mt-1">Click or drag & drop</span>
                 </label>
                 <input type="file" id="csvFileInput" accept=".csv" class="hidden">
-                <p id="fileNameDisplay" class="mt-4 text-gray-300 text-base font-medium"></p>
-                <p id="uploadStatus" class="mt-2 text-sm font-semibold text-gray-300"></p>
+                <p id="fileNameDisplay" class="mt-3 text-gray-300 text-sm font-medium"></p>
+                <p id="uploadStatus" class="mt-1 text-xs font-semibold text-gray-300"></p>
             </div>
 
             <!-- New Download Button -->
-            <button id="downloadCsvBtn" class="send-button-gradient text-white p-4 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-lg font-bold">
+            <button id="downloadCsvBtn" class="send-button-gradient text-white p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-base font-bold">
                 <i class="fas fa-download"></i>
                 <span>Download Modified CSV</span>
             </button>
 
 
             <h3 class="text-2xl font-bold text-gray-200 mb-4 border-b pb-2 border-gray-600 mt-8">Data Schema</h3>
-            <div id="schemaDisplay" class="bg-gray-700 p-5 rounded-2xl flex-grow overflow-y-auto custom-scrollbar text-sm text-gray-300 shadow-lg border border-gray-600">
+            <div id="schemaDisplay" class="bg-gray-700 p-5 rounded-2xl flex-grow overflow-y-auto custom-scrollbar text-sm text-gray-300 shadow-lg border border-gray-600 min-h-[250px]">
                 <p class="text-gray-400 text-center py-4">Upload a CSV to intelligently infer and display its schema here.</p>
             </div>
         </div>
 
-        <!-- Right Pane: Conversational Interface & Results -->
-        <div class="w-full md:w-2/3 flex flex-col p-8 bg-gray-900 rounded-r-3xl">
-            <h2 class="text-4xl font-extrabold text-blue-400 mb-6 text-center tracking-tight">Conversational Analysis</h2>
+        <!-- Right Pane: Conversational Interface & Results - Now takes full width on larger screens by default -->
+        <div id="chat-panel" class="w-full flex flex-col p-8 bg-gray-900 rounded-3xl">
+            <h2 class="text-4xl font-extrabold text-blue-400 mb-6 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
+
+            <!-- Toggle Button for Data Panel - Now globally positioned relative to main-container -->
+            <button id="toggleDataPanelBtn" class="absolute top-4 right-4 bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out hidden md:flex items-center space-x-2">
+                <i class="fas fa-eye mr-2"></i> <span id="toggleButtonText">Show Data Panel</span>
+            </button>
+
+            <!-- Toggle Button for Command Guide - Positioned inside chat panel -->
+            <button id="toggleCommandGuideBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out flex items-center space-x-2 self-end mb-4">
+                <i class="fas fa-book mr-2"></i> <span id="toggleCommandGuideText">Hide Command Guide</span>
+            </button>
+
 
             <!-- Chat Area -->
             <div id="chatArea" class="flex-grow bg-gray-800 p-6 rounded-2xl overflow-y-auto custom-scrollbar shadow-lg border border-gray-700 mb-6">
-                <!-- Chat messages will be appended here -->
+                <!-- Initial AI message -->
                 <div class="flex items-start mb-4 fade-in-message">
                     <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
                     <div class="bg-blue-600 text-white p-4 rounded-3xl max-w-[80%] shadow-md transform hover:scale-[1.01] transition duration-200 ease-in-out">
                         <p class="leading-relaxed">Hello! Welcome to CoDA. Upload your CSV data to begin our private, client-side analysis. I'm ready to collaborate!</p>
                     </div>
+                </div>
+                <!-- Command Guide Display Area -->
+                <div id="commandGuideDisplay" class="fade-in-message bg-gray-700 text-gray-200 p-4 rounded-3xl max-w-full shadow-md transform hover:scale-[1.005] transition duration-200 ease-in-out mb-4">
+                    <!-- Command guide content will be inserted here by JS -->
                 </div>
             </div>
 
@@ -248,6 +264,15 @@
         const uploadStatus = document.getElementById('uploadStatus');
         const schemaDisplay = document.getElementById('schemaDisplay');
         const downloadCsvBtn = document.getElementById('downloadCsvBtn'); // New button element
+        const toggleDataPanelBtn = document.getElementById('toggleDataPanelBtn'); // New toggle button for data panel
+        const dataPanel = document.getElementById('data-panel'); // Reference to the data panel
+        const chatPanel = document.getElementById('chat-panel'); // Reference to the chat panel
+        const toggleButtonText = document.getElementById('toggleButtonText'); // Text for data panel toggle button
+
+        const toggleCommandGuideBtn = document.getElementById('toggleCommandGuideBtn'); // New toggle button for command guide
+        const commandGuideDisplay = document.getElementById('commandGuideDisplay'); // Div to hold command guide HTML
+        const toggleCommandGuideText = document.getElementById('toggleCommandGuideText'); // Text for command guide toggle button
+
 
         // Function to parse CSV data
         function parseCSV(text) {
@@ -815,7 +840,7 @@
             if (file) {
                 fileNameDisplay.textContent = `File: ${file.name}`;
                 uploadStatus.textContent = 'Loading and parsing...';
-                uploadStatus.className = 'mt-2 text-base font-semibold text-blue-400 animate-pulse';
+                uploadStatus.className = 'mt-1 text-xs font-semibold text-blue-400 animate-pulse';
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -824,18 +849,21 @@
                         schema = inferSchema(rawData);
                         displaySchema(schema);
                         uploadStatus.textContent = `Successfully loaded ${rawData.length} rows.`;
-                        uploadStatus.className = 'mt-2 text-base font-semibold text-green-500';
+                        uploadStatus.className = 'mt-1 text-xs font-semibold text-green-500';
+
+                        // Always append the command guide after a successful upload
+                        commandGuideDisplay.innerHTML = getCommandListHtml();
+                        commandGuideDisplay.classList.remove('hidden'); // Ensure it's visible on upload
+                        toggleCommandGuideText.textContent = 'Hide Command Guide';
+                        toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
 
                         appendMessage('AI', `Fantastic! I've successfully loaded your CSV and detected the following schema: <br><div class="code-block">${JSON.stringify(schema, null, 2)}</div><br>`, 'ai');
-                        // Append the command list immediately after successful upload
-                        appendMessage('AI', getCommandListHtml(), 'ai');
-
                         // Proactively check for data cleaning needs
                         checkAndSuggestDataCleaning(rawData, schema);
 
                     } catch (error) {
                         uploadStatus.textContent = `Error parsing CSV: ${error.message}`;
-                        uploadStatus.className = 'mt-2 text-base font-semibold text-red-500';
+                        uploadStatus.className = 'mt-1 text-xs font-semibold text-red-500';
                         appendMessage('AI', 'Oops! There was an error loading your CSV. Please ensure it\'s a valid CSV format with correct delimiters.', 'ai');
                     }
                 };
@@ -843,7 +871,7 @@
             } else {
                 fileNameDisplay.textContent = '';
                 uploadStatus.textContent = 'No file selected.';
-                uploadStatus.className = 'mt-2 text-base font-semibold text-gray-400';
+                uploadStatus.className = 'mt-1 text-xs font-semibold text-gray-400';
             }
         });
 
@@ -858,7 +886,6 @@
                         <p class="leading-relaxed">${text}</p>
                     </div>
                 `;
-                // Removed the user avatar div to prevent the "blank circle"
             } else { // AI message
                 messageDiv.innerHTML = `
                     <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
@@ -1069,6 +1096,53 @@
 
         // Event listener for the download button
         downloadCsvBtn.addEventListener('click', downloadCSV);
+
+        // --- Data Panel Toggle Logic ---
+        // Initial setup for data panel: ensure it starts hidden and button reflects this
+        dataPanel.classList.add('hidden', 'md:w-0', 'md:hidden'); // Ensure it starts hidden and collapses on md+
+        chatPanel.classList.remove('md:w-2/3'); // Ensure chat panel takes full width initially on md+
+        chatPanel.classList.add('md:w-full');
+        toggleButtonText.textContent = 'Show Data Panel';
+        toggleDataPanelBtn.querySelector('i').className = 'fas fa-eye mr-2';
+
+        toggleDataPanelBtn.addEventListener('click', () => {
+            // Determine visibility by checking for 'hidden' class
+            const isCurrentlyHidden = dataPanel.classList.contains('hidden');
+
+            if (isCurrentlyHidden) {
+                // Show data panel
+                dataPanel.classList.remove('hidden', 'md:w-0', 'md:hidden');
+                dataPanel.classList.add('flex', 'md:w-1/3');
+                chatPanel.classList.remove('md:w-full');
+                chatPanel.classList.add('md:w-2/3');
+                toggleButtonText.textContent = 'Hide Data Panel';
+                toggleDataPanelBtn.querySelector('i').className = 'fas fa-eye-slash mr-2';
+            } else {
+                // Hide data panel
+                dataPanel.classList.remove('flex', 'md:w-1/3');
+                dataPanel.classList.add('hidden', 'md:w-0', 'md:hidden');
+                chatPanel.classList.remove('md:w-2/3');
+                chatPanel.classList.add('md:w-full');
+                toggleButtonText.textContent = 'Show Data Panel';
+                toggleDataPanelBtn.querySelector('i').className = 'fas fa-eye mr-2';
+            }
+        });
+
+        // Event listener for the toggle command guide button
+        toggleCommandGuideBtn.addEventListener('click', () => {
+            const isVisible = !commandGuideDisplay.classList.contains('hidden'); // Check if it's currently visible
+            if (isVisible) {
+                commandGuideDisplay.classList.add('hidden');
+                toggleCommandGuideText.textContent = 'Show Command Guide';
+                toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book mr-2';
+            } else {
+                commandGuideDisplay.innerHTML = getCommandListHtml(); // Re-insert content if it was empty
+                commandGuideDisplay.classList.remove('hidden');
+                toggleCommandGuideText.textContent = 'Hide Command Guide';
+                toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
+                chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom to show guide
+            }
+        });
 
 
         // Simulated AI response and local execution
@@ -1899,6 +1973,12 @@
                 sendMessageBtn.click();
             }
         });
+
+        // Initial setup for command guide: hide it by default on load, then show it on CSV upload.
+        // This ensures it only appears after a file is loaded.
+        commandGuideDisplay.classList.add('hidden');
+        toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book mr-2'; // Set initial icon
+        toggleCommandGuideText.textContent = 'Show Command Guide'; // Set initial text
 
         // Initial schema display
         displaySchema(schema);
