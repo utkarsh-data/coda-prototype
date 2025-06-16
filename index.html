@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoDA: Cognitive Data Assistant Prototype</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter (for body) & Roboto Mono (for code) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); /* Darker, professional gradient */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden; /* Prevent scrollbar from background animation */
+            position: relative;
+        }
+
+        /* Subtle background animation - Darker bubbles */
+        .background-bubbles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.05); /* Very subtle white bubbles */
+            border-radius: 50%;
+            animation: bubble-flow 20s infinite ease-in-out alternate; /* Slower animation */
+            filter: blur(8px); /* More blur */
+        }
+
+        .bubble:nth-child(1) { width: 80px; height: 80px; left: 15%; top: 10%; animation-duration: 22s; opacity: 0.05; }
+        .bubble:nth-child(2) { width: 120px; height: 120px; left: 35%; top: 80%; animation-duration: 25s; opacity: 0.04; }
+        .bubble:nth-child(3) { width: 90px; height: 90px; left: 70%; top: 15%; animation-duration: 19s; opacity: 0.06; }
+        .bubble:nth-child(4) { width: 140px; height: 140px; left: 90%; top: 50%; animation-duration: 28s; opacity: 0.03; }
+        .bubble:nth-child(5) { width: 70px; height: 70px; left: 5%; top: 60%; animation-duration: 21s; opacity: 0.07; }
+        .bubble:nth-child(6) { width: 100px; height: 100px; left: 50%; top: 30%; animation-duration: 23s; opacity: 0.05; }
+
+        @keyframes bubble-flow {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(70px, -70px) scale(1.1); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Custom scrollbar for chat and results */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #2d3748; /* Darker track */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4a5568; /* Medium grey thumb */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #718096; /* Lighter grey on hover */
+        }
+
+        /* Animation for new messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-message {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Gradient for AI avatar */
+        .ai-avatar-gradient {
+            background: linear-gradient(45deg, #4299e1, #3182ce); /* Techy blue gradient */
+        }
+
+        /* Gradient for Send button */
+        .send-button-gradient {
+            background: linear-gradient(90deg, #4299e1, #3182ce); /* Techy blue gradient */
+            transition: all 0.3s ease-in-out;
+        }
+        .send-button-gradient:hover {
+            background: linear-gradient(90deg, #3182ce, #4299e1); /* Reverse gradient on hover */
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 15px rgba(66, 153, 225, 0.4);
+        }
+        .send-button-gradient:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 5px rgba(66, 153, 225, 0.2);
+        }
+
+        /* Code block styling */
+        .code-block {
+            background-color: #2d3748; /* Dark code background */
+            border-left: 4px solid #4299e1; /* Techy blue left border */
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-family: 'Roboto Mono', monospace; /* Techy monospace font */
+            color: #edf2f7; /* Light text for dark background */
+            white-space: pre-wrap; /* Wrap long lines */
+            word-break: break-all; /* Break words for very long lines */
+            overflow-x: auto;
+            max-height: 200px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2); /* Inner shadow for depth */
+        }
+
+        /* Input field focus glow */
+        input:focus {
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6); /* Blue glow */
+            border-color: #4299e1;
+        }
+    </style>
+</head>
+<body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center min-h-screen">
+    <!-- Background Bubbles Animation -->
+    <div class="background-bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <div class="relative z-10 flex flex-col md:flex-row bg-gray-900 text-gray-200 rounded-3xl shadow-2xl overflow-hidden w-full max-w-7xl h-[90vh] md:h-[80vh] transform transition-all duration-300 hover:shadow-4xl border border-gray-700">
+        <!-- Left Pane: CSV Upload & Data Preview -->
+        <div class="w-full md:w-1/3 p-8 flex flex-col border-r border-gray-700 bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar">
+            <h2 class="text-4xl font-extrabold text-blue-400 mb-6 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
+            <p class="text-md text-gray-400 mb-6 text-center italic">Your Private, Conversational Data Analyst</p>
+
+            <div class="mb-8 border-2 border-dashed border-blue-600 bg-gray-700 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
+                <label for="csvFileInput" class="cursor-pointer text-blue-300 hover:text-blue-100 font-bold text-lg flex flex-col items-center justify-center">
+                    <i class="fas fa-cloud-upload-alt text-5xl mb-3 text-blue-500"></i>
+                    <span class="block text-xl">Upload CSV File</span>
+                    <span class="block text-sm text-gray-400 mt-1">Click or drag & drop</span>
+                </label>
+                <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+                <p id="fileNameDisplay" class="mt-4 text-gray-300 text-base font-medium"></p>
+                <p id="uploadStatus" class="mt-2 text-sm font-semibold text-gray-300"></p>
+            </div>
+
+            <h3 class="text-2xl font-bold text-gray-200 mb-4 border-b pb-2 border-gray-600">Data Schema</h3>
+            <div id="schemaDisplay" class="bg-gray-700 p-5 rounded-2xl flex-grow overflow-y-auto custom-scrollbar text-sm text-gray-300 shadow-lg border border-gray-600">
+                <p class="text-gray-400 text-center py-4">Upload a CSV to intelligently infer and display its schema here.</p>
+            </div>
+        </div>
+
+        <!-- Right Pane: Conversational Interface & Results -->
+        <div class="w-full md:w-2/3 flex flex-col p-8 bg-gray-900 rounded-r-3xl">
+            <h2 class="text-4xl font-extrabold text-blue-400 mb-6 text-center tracking-tight">Conversational Analysis</h2>
+
+            <!-- Chat Area -->
+            <div id="chatArea" class="flex-grow bg-gray-800 p-6 rounded-2xl overflow-y-auto custom-scrollbar shadow-lg border border-gray-700 mb-6">
+                <!-- Chat messages will be appended here -->
+                <div class="flex items-start mb-4 fade-in-message">
+                    <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
+                    <div class="bg-blue-600 text-white p-4 rounded-3xl max-w-[80%] shadow-md transform hover:scale-[1.01] transition duration-200 ease-in-out">
+                        <p class="leading-relaxed">Hello! Welcome to CoDA. Upload your CSV data to begin our private, client-side analysis. I'm ready to collaborate!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="flex items-center space-x-3">
+                <input type="text" id="chatInput" placeholder="Ask CoDA a question about your data, e.g., 'Show me the average sales'..." class="flex-grow p-4 border border-gray-600 bg-gray-700 text-gray-200 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-600 shadow-lg text-base transition duration-300 ease-in-out">
+                <button id="sendMessageBtn" class="send-button-gradient text-white p-4 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
+                    <i class="fas fa-paper-plane text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawData = []; // Stores the parsed CSV data
+        let schema = {}; // Stores the column names and inferred types
+        let pendingCleaningSuggestion = null; // Stores details of a pending cleaning action
+
+        const chatArea = document.getElementById('chatArea');
+        const chatInput = document.getElementById('chatInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const schemaDisplay = document.getElementById('schemaDisplay');
+
+        // Function to parse CSV data
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== ''); // Filter out empty lines
+            if (lines.length === 0) return [];
+
+            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(value => value.trim().replace(/"/g, ''));
+                if (values.length === headers.length) { // Ensure row has correct number of columns
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index];
+                    });
+                    data.push(row);
+                }
+            }
+            return data;
+        }
+
+        // Function to infer schema (basic type inference)
+        function inferSchema(data) {
+            if (data.length === 0) return {};
+            const inferredSchema = {};
+            const sampleRow = data[0];
+
+            for (const key in sampleRow) {
+                let type = 'string';
+                // Very basic type inference: check if all values in column can be parsed as numbers
+                const isNumeric = data.every(row => {
+                    const value = row[key];
+                    return value === '' || !isNaN(Number(value)); // Empty string or parseable as number
+                });
+
+                if (isNumeric) {
+                    type = 'number';
+                }
+                inferredSchema[key] = type;
+            }
+            return inferredSchema;
+        }
+
+        // Function to display schema in the UI
+        function displaySchema(schema) {
+            schemaDisplay.innerHTML = '';
+            if (Object.keys(schema).length === 0) {
+                schemaDisplay.innerHTML = '<p class="text-gray-400 text-center py-4">Upload a CSV to intelligently infer and display its schema here.</p>';
+                return;
+            }
+            const ul = document.createElement('ul');
+            ul.className = 'list-disc list-inside space-y-3'; // Added space-y for better spacing
+            for (const key in schema) {
+                const li = document.createElement('li');
+                li.className = 'mb-1 text-gray-300';
+                li.innerHTML = `<span class="font-bold text-blue-400">${key}</span>: <span class="text-blue-300 font-medium">${schema[key]}</span>`;
+                ul.appendChild(li);
+            }
+            schemaDisplay.appendChild(ul);
+        }
+
+        // Helper function to calculate average of a numeric column
+        function calculateColumnAverage(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
+            if (numericValues.length === 0) return 0;
+            const sum = numericValues.reduce((acc, val) => acc + val, 0);
+            return sum / numericValues.length;
+        }
+
+        // Helper function to calculate sum of a numeric column
+        function calculateColumnSum(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
+            if (numericValues.length === 0) return 0;
+            return numericValues.reduce((acc, val) => acc + val, 0);
+        }
+
+        // Helper function to find min/max of a numeric column
+        function calculateColumnMinMax(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
+            if (numericValues.length === 0) return { min: null, max: null };
+            return { min: Math.min(...numericValues), max: Math.max(...numericValues) };
+        }
+
+        // Advanced Feature: Check for missing values and suggest cleaning
+        function checkAndSuggestDataCleaning(data, currentSchema) {
+            let suggestions = [];
+            for (const col in currentSchema) {
+                if (currentSchema[col] === 'number') {
+                    const missingCount = data.filter(row => row[col] === '' || row[col] === undefined || row[col] === null).length;
+                    if (missingCount > 0) {
+                        suggestions.push({
+                            column: col,
+                            type: 'missing_numeric',
+                            count: missingCount,
+                            action: 'fill_average'
+                        });
+                    }
+                }
+                // Add more checks here for other types of cleaning (e.g., inconsistent strings, outliers)
+            }
+
+            if (suggestions.length > 0) {
+                const firstSuggestion = suggestions[0]; // For simplicity, handle only the first suggestion
+                pendingCleaningSuggestion = firstSuggestion;
+                appendMessage('AI', `I noticed ${firstSuggestion.count} missing values in the numeric column "<strong>${firstSuggestion.column}</strong>". Would you like me to fill them with the column's average? (Type "yes" to confirm)`, 'ai');
+            } else {
+                pendingCleaningSuggestion = null;
+            }
+        }
+
+        // Handle CSV file input change
+        csvFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = `File: ${file.name}`;
+                uploadStatus.textContent = 'Loading and parsing...';
+                uploadStatus.className = 'mt-2 text-base font-semibold text-blue-400 animate-pulse';
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        rawData = parseCSV(e.target.result);
+                        schema = inferSchema(rawData);
+                        displaySchema(schema);
+                        uploadStatus.textContent = `Successfully loaded ${rawData.length} rows.`;
+                        uploadStatus.className = 'mt-2 text-base font-semibold text-green-500';
+
+                        appendMessage('AI', `Fantastic! I've successfully loaded your CSV and detected the following schema: <br><div class="code-block">${JSON.stringify(schema, null, 2)}</div><br>How can I assist you with your data analysis today?`, 'ai');
+
+                        // Proactively check for data cleaning needs
+                        checkAndSuggestDataCleaning(rawData, schema);
+
+                    } catch (error) {
+                        uploadStatus.textContent = `Error parsing CSV: ${error.message}`;
+                        uploadStatus.className = 'mt-2 text-base font-semibold text-red-500';
+                        appendMessage('AI', 'Oops! There was an error loading your CSV. Please ensure it\'s a valid CSV format with correct delimiters.', 'ai');
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                fileNameDisplay.textContent = '';
+                uploadStatus.textContent = 'No file selected.';
+                uploadStatus.className = 'mt-2 text-base font-semibold text-gray-400';
+            }
+        });
+
+        // Function to append messages to the chat area
+        function appendMessage(sender, text, type = 'user') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex mb-4 ${type === 'user' ? 'justify-end' : 'items-start'} fade-in-message`;
+
+            if (type === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="bg-blue-600 text-white p-4 rounded-3xl max-w-[80%] shadow-md transform hover:scale-[1.01] transition duration-200 ease-in-out">
+                        <p class="leading-relaxed">${text}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-lg ml-4 shadow-md">You</div>
+                `;
+            } else { // AI message
+                messageDiv.innerHTML = `
+                    <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
+                    <div class="bg-gray-700 text-gray-200 p-4 rounded-3xl max-w-[80%] shadow-md transform hover:scale-[1.01] transition duration-200 ease-in-out">
+                        <p class="leading-relaxed">${text}</p>
+                    </div>
+                `;
+            }
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to bottom
+        }
+
+        // Simulated AI response and local execution
+        function simulateAIResponse(query) {
+            query = query.toLowerCase();
+            let aiResponseText = "I'm sorry, I couldn't quite understand that. My current prototype capabilities are limited. I can demonstrate:<br><ul><li><strong>'Show all data'</strong> or <strong>'show [column name]'</strong></li><li><strong>'Describe my dataset'</strong></li><li><strong>'Sum [column name]'</strong> or <strong>'Average [column name]'</strong></li><li><strong>'Filter data where [column] [operator] [value]'</strong> (e.g., 'sales > 1000' or 'city = \"London\"')</li></ul>If I've made a cleaning suggestion, you can type 'yes' to confirm.";
+            let analysisContent = '';
+            let codeExplanation = ''; // Separate variable for the code snippet explanation
+
+            if (rawData.length === 0) {
+                appendMessage('AI', "Please upload a CSV file first before asking questions. I'm ready when you are!", 'ai');
+                return;
+            }
+
+            // Handle cleaning confirmation
+            if (pendingCleaningSuggestion && (query === 'yes' || query.includes('confirm') || query.includes('go ahead'))) {
+                const colToClean = pendingCleaningSuggestion.column;
+                if (pendingCleaningSuggestion.action === 'fill_average') {
+                    const average = calculateColumnAverage(colToClean, rawData);
+                    codeExplanation = `// AI generated JavaScript to fill missing values in '${colToClean}' with average\nfunction fillMissingWithAverage(columnName, data, average) {\n  return data.map(row => {\n    if (row[columnName] === '' || isNaN(Number(row[columnName]))) {\n      row[columnName] = average.toFixed(2); // Keep two decimal places\n    }\n    return row;\n  });\n}`;
+                    rawData = rawData.map(row => {
+                        if (row[colToClean] === '' || isNaN(Number(row[colToClean])) || row[colToClean] === null || row[colToClean] === undefined) {
+                            row[colToClean] = average.toFixed(2); // Fill with average, keeping two decimal places
+                        }
+                        return row;
+                    });
+                    aiResponseText = `Great! I've successfully filled the ${pendingCleaningSuggestion.count} missing values in the column "<strong>${colToClean}</strong>" with the calculated average of <strong>${average.toFixed(2)}</strong>. Your data has been updated locally and privately.<br><br>Here's the JavaScript code that performed this action:`;
+                    pendingCleaningSuggestion = null; // Clear the suggestion after execution
+                    // No analysis content needed here, just the confirmation
+                }
+            } else if (query.includes('sum ')) {
+                let foundColumn = null;
+                for (const col in schema) {
+                    if (query.includes(col.toLowerCase()) && schema[col] === 'number') {
+                        foundColumn = col;
+                        break;
+                    }
+                }
+                if (foundColumn) {
+                    const sum = calculateColumnSum(foundColumn, rawData);
+                    codeExplanation = `// AI generated JavaScript to calculate sum of '${foundColumn}'\nfunction calculateSum(columnName, data) {\n  return data.map(row => Number(row[columnName])).filter(n => !isNaN(n)).reduce((acc, val) => acc + val, 0);\n}`;
+                    analysisContent = `<p class="text-xl text-blue-400 font-bold mt-2">The sum of "${foundColumn}" is: ${sum.toFixed(2)}</p>`;
+                    aiResponseText = `Alright, I've calculated the **total sum** for the column "<strong>${foundColumn}</strong>". Here's the result and the JavaScript code I used:`;
+                } else {
+                    aiResponseText = "I couldn't find a **numeric column** to calculate the sum for. Please specify a valid numeric column, like 'sum sales'.";
+                }
+            } else if (query.includes('average ') || query.includes('avg ')) {
+                let foundColumn = null;
+                for (const col in schema) {
+                    if (query.includes(col.toLowerCase()) && schema[col] === 'number') {
+                        foundColumn = col;
+                        break;
+                    }
+                }
+                if (foundColumn) {
+                    const average = calculateColumnAverage(foundColumn, rawData);
+                    codeExplanation = `// AI generated JavaScript to calculate average of '${foundColumn}'\nfunction calculateAverage(columnName, data) {\n  const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));\n  return numericValues.length > 0 ? (numericValues.reduce((sum, val) => sum + val, 0) / numericValues.length) : 0;\n}`;
+                    analysisContent = `<p class="text-xl text-blue-400 font-bold mt-2">The average of "${foundColumn}" is: ${average.toFixed(2)}</p>`;
+                    aiResponseText = `Understood! Here's the **average value** for the "<strong>${foundColumn}</strong>" column. Take a look at the result and the underlying JavaScript:`;
+                } else {
+                    aiResponseText = "I couldn't find a **numeric column** to calculate the average for. Please specify a valid numeric column, like 'average age'.";
+                }
+            } else if (query.includes('filter data where') || query.includes('show rows where') || query.includes('find entries where')) {
+                // Basic regex to extract column, operator, and value (simple cases only)
+                const match = query.match(/(filter data where|show rows where|find entries where)\s+([\w\s]+)\s*(<=|>=|<|>|=|!=)\s*([\w\s."']+)/);
+                if (match && match.length === 5) {
+                    const colNameRaw = match[2].trim();
+                    const operator = match[3].trim();
+                    let valueRaw = match[4].trim();
+
+                    let foundColumn = null;
+                    for (const col in schema) {
+                        if (colNameRaw.includes(col.toLowerCase())) {
+                            foundColumn = col;
+                            break;
+                        }
+                    }
+
+                    if (foundColumn) {
+                        let filteredData = [];
+                        let parsedValue;
+
+                        // Attempt to parse value based on schema type
+                        if (schema[foundColumn] === 'number') {
+                            parsedValue = Number(valueRaw.replace(/['"]/g, ''));
+                            if (isNaN(parsedValue)) {
+                                aiResponseText = `It looks like the value "${valueRaw}" for numeric column "${foundColumn}" isn't a valid number. Please provide a numeric value for filtering.`;
+                                appendMessage('AI', aiResponseText, 'ai');
+                                return;
+                            }
+                            filteredData = rawData.filter(row => {
+                                const cellValue = Number(row[foundColumn]);
+                                if (isNaN(cellValue)) return false; // Exclude non-numeric or missing values
+                                switch (operator) {
+                                    case '>': return cellValue > parsedValue;
+                                    case '<': return cellValue < parsedValue;
+                                    case '>=': return cellValue >= parsedValue;
+                                    case '<=': return cellValue <= parsedValue;
+                                    case '=': return cellValue === parsedValue;
+                                    case '!=': return cellValue !== parsedValue;
+                                    default: return false;
+                                }
+                            });
+                        } else { // String comparison
+                            parsedValue = valueRaw.replace(/['"]/g, '').toLowerCase(); // Remove quotes and make lowercase for case-insensitive match
+                            filteredData = rawData.filter(row => {
+                                const cellValue = (row[foundColumn] || '').toLowerCase(); // Handle undefined/null gracefully
+                                switch (operator) {
+                                    case '=': return cellValue === parsedValue;
+                                    case '!=': return cellValue !== parsedValue;
+                                    // Add other string operators if needed (e.g., .includes)
+                                    default: return false; // Only equals and not equals for strings in this prototype
+                                }
+                            });
+                        }
+
+                        codeExplanation = `// AI generated JavaScript to filter data where '${foundColumn}' ${operator} '${valueRaw}'\nfunction filterData(data, column, operator, value) {\n  return data.filter(row => {\n    // ... complex filtering logic based on type and operator\n  });\n}`;
+                        analysisContent = `<p class="text-gray-300 mt-2">I found <strong>${filteredData.length} rows</strong> that match your condition where **${foundColumn} ${operator} ${valueRaw}**.</p>
+                                          <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
+                                          <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
+                        aiResponseText = `Filtering complete! I've processed your data based on the condition "${foundColumn} ${operator} ${valueRaw}". Here's the summary and the code:`;
+                    } else {
+                        aiResponseText = "I couldn't identify the column to filter on. Please specify a valid column from your schema.";
+                    }
+                } else {
+                    aiResponseText = "I need a clearer filter condition. Please use the format: **'filter data where [column] [operator] [value]'**, e.g., 'filter data where sales > 1000' or 'filter data where city = \"London\"'.";
+                }
+
+            }
+            // Existing commands
+            else if (query.includes('show all data') || query.includes('display all data')) {
+                codeExplanation = `// AI generated JavaScript to display all data\nfunction displayAllData() {\n  return rawData.map(row => JSON.stringify(row)).join('\\n');\n}`;
+                analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
+                                  <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                  <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
+                aiResponseText = `Understood! I've generated and executed the following JavaScript code to display your data.`;
+            } else if (query.includes('show schema') || query.includes('display schema')) {
+                codeExplanation = `// AI generated JavaScript to display schema\nfunction displaySchema() {\n  return JSON.stringify(schema, null, 2);\n}`;
+                analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
+                                  <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
+                aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
+            } else if (query.includes('show') || query.includes('display')) {
+                // Try to find a column name in the query
+                let foundColumn = null;
+                for (const col in schema) {
+                    if (query.includes(col.toLowerCase())) {
+                        foundColumn = col;
+                        break;
+                    }
+                }
+
+                if (foundColumn) {
+                    codeExplanation = `// AI generated JavaScript to display column '${foundColumn}'\nfunction displayColumn(columnName) {\n  return rawData.map(row => row[columnName]);\n}`;
+                    const columnValues = rawData.map(row => row[foundColumn]);
+                    analysisContent = `<p class="text-gray-300 mt-2">Here are the **first 10 values** from the "<strong>${foundColumn}</strong>" column:</p>
+                                      <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
+                                      <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
+                    aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
+                }
+            } else if (query.includes('describe my dataset') || query.includes('summarize data') || query.includes('give me an overview') || query.includes('tell me about my data') || query.includes("what's in my data")) {
+                let numRows = rawData.length;
+                let numCols = Object.keys(schema).length;
+                let descriptionNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have **${numRows} rows**, which means ${numRows} individual records, and **${numCols} columns**, representing ${numCols} different types of information.</p>
+                                            <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
+                                            <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
+
+                codeExplanation = `// AI generated JavaScript to describe the dataset\nfunction describeDataset() {\n  const stats = {};\n  const numRows = rawData.length;\n  const numCols = Object.keys(rawData[0]).length;\n\n  for (const col in schema) {\n    const values = rawData.map(row => row[col]);\n    if (schema[col] === 'number') {\n      const numericValues = values.map(Number).filter(n => !isNaN(n));\n      if (numericValues.length > 0) {\n        stats[col] = {\n          type: 'number',\n          min: Math.min(...numericValues),\n          max: Math.max(...numericValues),\n          avg: (numericValues.reduce((sum, val) => sum + val, 0) / numericValues.length).toFixed(2)\n        };\n      }\n    } else {\n      const uniqueValues = [...new Set(values)];\n      const valueCounts = {};\n      values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });\n      const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);\n      stats[col] = {\n        type: 'string',\n        unique: uniqueValues.length,\n        top_5: sortedCounts.slice(0,5).map(item => \`"\${item[0]}" (\${item[1]} occurrences)\`)\n      };\n    }\n  }\n  return stats;\n}`;
+
+
+                for (const col in schema) {
+                    descriptionNarrative += `<li class="font-medium">${col}: (<span class="text-blue-400">${schema[col]}</span> type) `;
+                    const values = rawData.map(row => row[col]);
+
+                    if (schema[col] === 'number') {
+                        const numericValues = values.map(Number).filter(n => !isNaN(n));
+                        const { min: minVal, max: maxVal } = calculateColumnMinMax(col, rawData);
+                        const avgVal = calculateColumnAverage(col, rawData);
+
+                        if (numericValues.length > 0) {
+                            descriptionNarrative += `This column contains numerical data, ranging from **${minVal}** to **${maxVal}**, with an average value of approximately **${avgVal.toFixed(2)}**.`;
+                        } else {
+                            descriptionNarrative += `This numeric column currently has no valid numerical entries.`;
+                        }
+                    } else { // string type
+                        const uniqueValues = [...new Set(values)];
+                        const valueCounts = {};
+                        values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
+                        const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
+                        descriptionNarrative += `This column holds text information. I found **${uniqueValues.length} unique values**. The most frequent entries are: ${sortedCounts.slice(0, 5).map(item => `"${item[0]}" appearing ${item[1]} times`).join(', ')}.`;
+                    }
+                    descriptionNarrative += `</li>`;
+                }
+                descriptionNarrative += `</ul>`;
+
+                analysisContent = descriptionNarrative; // Direct use of the narrative HTML
+                aiResponseText = `Certainly! Here's a comprehensive overview and description of your dataset, crafted to give you quick insights. This analysis was performed entirely client-side, ensuring your data's privacy.<br><br>Here's the JavaScript code for this analysis:`;
+            }
+
+            // Construct the final AI message, combining narrative, code, and result
+            let finalAIMessage = aiResponseText;
+            if (codeExplanation) {
+                finalAIMessage += `<div class="code-block mt-4">${codeExplanation}</div>`;
+            }
+            if (analysisContent) {
+                finalAIMessage += `<div class="mt-4">${analysisContent}</div>`;
+            }
+
+            appendMessage('AI', finalAIMessage, 'ai');
+        }
+
+        // Handle sending messages
+        sendMessageBtn.addEventListener('click', () => {
+            const query = chatInput.value.trim();
+            if (query) {
+                appendMessage('You', query, 'user');
+                chatInput.value = ''; // Clear input
+                simulateAIResponse(query);
+            }
+        });
+
+        chatInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessageBtn.click();
+            }
+        });
+
+        // Initial schema display
+        displaySchema(schema);
+    </script>
+</body>
+</html>
+
