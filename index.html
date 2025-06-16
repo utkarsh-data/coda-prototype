@@ -456,7 +456,7 @@
                         groupedData[groupKey] = { sum: 0, count: 0 };
                     }
                     groupedData[groupKey].sum += value;
-                    groupedData[key].count++;
+                    groupedData[groupKey].count++; // Corrected: should be groupKey, not key
                 }
             });
 
@@ -541,7 +541,9 @@
             `;
             chatArea.appendChild(chartMessageDiv); // Append the AI text bubble
             chatArea.appendChild(chartContainer); // Append the chart below the text bubble
-            chatArea.scrollTop = 0; // Scroll to top
+            // Scroll to the bottom of the chat area to show the latest chart
+            chatArea.scrollTop = chatArea.scrollHeight;
+
 
             const ctx = chartCanvas.getContext('2d');
             myChart = new Chart(ctx, {
@@ -855,8 +857,8 @@
                     <div class="bg-blue-600 text-white p-4 rounded-3xl max-w-[80%] shadow-md transform hover:scale-[1.01] transition duration-200 ease-in-out">
                         <p class="leading-relaxed">${text}</p>
                     </div>
-                    <div class="flex-shrink-0 w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-lg ml-4 shadow-md">You</div>
                 `;
+                // Removed the user avatar div to prevent the "blank circle"
             } else { // AI message
                 messageDiv.innerHTML = `
                     <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
@@ -866,7 +868,7 @@
                 `;
             }
             chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = 0; // Scroll to top
+            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
         }
 
         // Helper to find a column by name (case-insensitive and partial match)
