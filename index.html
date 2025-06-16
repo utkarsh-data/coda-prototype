@@ -136,8 +136,9 @@
     <div class="relative z-10 flex flex-col md:flex-row bg-gray-900 text-gray-200 rounded-3xl shadow-2xl overflow-hidden w-full max-w-7xl h-[90vh] md:h-[80vh] transform transition-all duration-300 hover:shadow-4xl border border-gray-700">
         <!-- Left Pane: CSV Upload & Data Preview -->
         <div class="w-full md:w-1/3 p-8 flex flex-col border-r border-gray-700 bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar">
-            <h2 class="text-4xl font-extrabold text-blue-400 mb-6 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
-            <p class="text-md text-gray-400 mb-6 text-center italic">Your Private, Conversational Data Analyst</p>
+            <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
+            <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
+            <p class="text-sm text-gray-500 mb-6 text-center">Founded by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
             <div class="mb-8 border-2 border-dashed border-blue-600 bg-gray-700 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
                 <label for="csvFileInput" class="cursor-pointer text-blue-300 hover:text-blue-100 font-bold text-lg flex flex-col items-center justify-center">
@@ -524,11 +525,11 @@
             } else if (query.includes('describe my dataset') || query.includes('summarize data') || query.includes('give me an overview') || query.includes('tell me about my data') || query.includes("what's in my data")) {
                 let numRows = rawData.length;
                 let numCols = Object.keys(schema).length;
-                let descriptionNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have **${numRows} rows**, which means ${numRows} individual records, and **${numCols} columns**, representing ${numCols} different types of information.</p>
+                let descriptionNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have <strong>${numRows} rows</strong>, which means ${numRows} individual records, and <strong>${numCols} columns</strong>, representing ${numCols} different types of information.</p>
                                             <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
                                             <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
 
-                codeExplanation = `// AI generated JavaScript to describe the dataset\nfunction describeDataset() {\n  const stats = {};\n  const numRows = rawData.length;\n  const numCols = Object.keys(rawData[0]).length;\n\n  for (const col in schema) {\n    const values = rawData.map(row => row[col]);\n    if (schema[col] === 'number') {\n      const numericValues = values.map(Number).filter(n => !isNaN(n));\n      if (numericValues.length > 0) {\n        stats[col] = {\n          type: 'number',\n          min: Math.min(...numericValues),\n          max: Math.max(...numericValues),\n          avg: (numericValues.reduce((sum, val) => sum + val, 0) / numericValues.length).toFixed(2)\n        };\n      }\n    } else {\n      const uniqueValues = [...new Set(values)];\n      const valueCounts = {};\n      values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });\n      const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);\n      stats[col] = {\n        type: 'string',\n        unique: uniqueValues.length,\n        top_5: sortedCounts.slice(0,5).map(item => \`"\${item[0]}" (\${item[1]} occurrences)\`)\n      };\n    }\n  }\n  return stats;\n}`;
+                codeExplanation = `// AI generated JavaScript to describe the dataset\nfunction describeDataset() {\n  const stats = {};\n  const numRows = rawData.length;\n  const numCols = Object.keys(rawData[0]).length;\n\n  for (const col in schema) {\n    const values = rawData.map(row => row[col]);\n    if (schema[col] === 'number') {\n      const numericValues = values.map(Number).filter(n => !isNaN(n));\n      if (numericValues.length > 0) {\n        stats[col] = {\n          type: 'number',\n          min: Math.min(...numericValues),\n          max: Math.max(...numericValues),\n          avg: (numericValues.reduce((sum, val) => sum + val, 0) / numericValues.length).toFixed(2)\n        };\n      }\n    } else {\n      const uniqueValues = [...new Set(values)];\n      const valueCounts = {};\n      values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });\n      const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);\n      stats[col] = {\n        type: 'string',\n        unique: uniqueValues.length,\n        top_5: sortedCounts.slice(0,5).map(item => \`"\${item[0]}" (\${item[1]} occurrences)\`)\n       };\n    }\n  }\n  return stats;\n}`;
 
 
                 for (const col in schema) {
@@ -541,7 +542,7 @@
                         const avgVal = calculateColumnAverage(col, rawData);
 
                         if (numericValues.length > 0) {
-                            descriptionNarrative += `This column contains numerical data, ranging from **${minVal}** to **${maxVal}**, with an average value of approximately **${avgVal.toFixed(2)}**.`;
+                            descriptionNarrative += `This column contains numerical data, ranging from <strong>${minVal}</strong> to <strong>${maxVal}</strong>, with an average value of approximately <strong>${avgVal.toFixed(2)}</strong>.`;
                         } else {
                             descriptionNarrative += `This numeric column currently has no valid numerical entries.`;
                         }
@@ -550,7 +551,7 @@
                         const valueCounts = {};
                         values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
                         const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
-                        descriptionNarrative += `This column holds text information. I found **${uniqueValues.length} unique values**. The most frequent entries are: ${sortedCounts.slice(0, 5).map(item => `"${item[0]}" appearing ${item[1]} times`).join(', ')}.`;
+                        descriptionNarrative += `This column holds text information. I found <strong>${uniqueValues.length} unique values</strong>. The most frequent entries are: ${sortedCounts.slice(0, 5).map(item => `"${item[0]}" appearing ${item[1]} times`).join(', ')}.`;
                     }
                     descriptionNarrative += `</li>`;
                 }
@@ -593,4 +594,3 @@
     </script>
 </body>
 </html>
-
