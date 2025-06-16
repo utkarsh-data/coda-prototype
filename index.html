@@ -360,6 +360,82 @@
             return { q1: q1.toFixed(2), median: median.toFixed(2), q3: q3.toFixed(2), iqr: iqr.toFixed(2) };
         }
 
+        // Helper to calculate Pearson correlation coefficient
+        function calculateCorrelation(col1, col2, data) {
+            const validData = data.filter(row => !isNaN(Number(row[col1])) && !isNaN(Number(row[col2])));
+            if (validData.length < 2) return null; // Need at least two data points
+
+            const xValues = validData.map(row => Number(row[col1]));
+            const yValues = validData.map(row => Number(row[col2]));
+
+            const sumX = xValues.reduce((a, b) => a + b, 0);
+            const sumY = yValues.reduce((a, b) => a + b, 0);
+            const sumXY = xValues.reduce((sum, x, i) => sum + (x * yValues[i]), 0);
+            const sumX2 = xValues.reduce((sum, x) => sum + (x * x), 0);
+            const sumY2 = yValues.reduce((sum, y) => sum + (y * y), 0);
+
+            const n = validData.length;
+
+            const numerator = n * sumXY - sumX * sumY;
+            const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+
+            if (denominator === 0) return 0; // Avoid division by zero, implies no variance
+            return numerator / denominator;
+        }
+
+        // Helper to find outliers using IQR method
+        function findOutliers(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n)).sort((a, b) => a - b);
+            if (numericValues.length === 0) return { outliers: [], lowerBound: null, upperBound: null };
+
+            const { q1, q3, iqr } = calculateQuartiles(columnName, data); // Uses existing function
+            if (q1 === null || q3 === null || iqr === null) return { outliers: [], lowerBound: null, upperBound: null };
+
+            const lowerBound = parseFloat(q1) - 1.5 * parseFloat(iqr);
+            const upperBound = parseFloat(q3) + 1.5 * parseFloat(iqr);
+
+            const outliers = numericValues.filter(val => val < lowerBound || val > upperBound);
+
+            return { outliers, lowerBound: lowerBound.toFixed(2), upperBound: upperBound.toFixed(2) };
+        }
+
+        // Helper to perform simple linear regression
+        function performLinearRegression(xCol, yCol, data) {
+            const validData = data.filter(row => !isNaN(Number(row[xCol])) && !isNaN(Number(row[yCol])));
+            if (validData.length < 2) return null; // Need at least two points for regression
+
+            const xValues = validData.map(row => Number(row[xCol]));
+            const yValues = validData.map(row => Number(row[yCol]));
+
+            const n = validData.length;
+            const meanX = xValues.reduce((sum, x) => sum + x, 0) / n;
+            const meanY = yValues.reduce((sum, y) => sum + y, 0) / n;
+
+            let sumXY = 0;
+            let sumX2 = 0;
+            let sumY2 = 0; // For R-squared calculation
+
+            for (let i = 0; i < n; i++) {
+                sumXY += (xValues[i] - meanX) * (yValues[i] - meanY);
+                sumX2 += (xValues[i] - meanX) * (xValues[i] - meanX);
+                sumY2 += (yValues[i] - meanY) * (yValues[i] - meanY); // For R-squared
+            }
+
+            const slope = sumX2 === 0 ? 0 : sumXY / sumX2; // b1
+            const intercept = meanY - slope * meanX; // b0
+
+            // Calculate R-squared
+            let ssResidual = 0;
+            let ssTotal = 0;
+            for (let i = 0; i < n; i++) {
+                const yPredicted = slope * xValues[i] + intercept;
+                ssResidual += Math.pow(yValues[i] - yPredicted, 2);
+                ssTotal += Math.pow(yValues[i] - meanY, 2);
+            }
+            const rSquared = ssTotal === 0 ? 0 : (1 - (ssResidual / ssTotal));
+
+            return { slope: slope.toFixed(4), intercept: intercept.toFixed(4), rSquared: rSquared.toFixed(4) };
+        }
 
         // Helper for grouping and aggregating data for charts (e.g., for bar charts)
         function groupByAndAggregate(data, groupByColumn, aggregateColumn, aggregateType) {
@@ -372,8 +448,8 @@
                     if (!groupedData[groupKey]) {
                         groupedData[groupKey] = { sum: 0, count: 0 };
                     }
-                    groupedData[groupKey].sum += value;
-                    groupedData[groupKey].count++;
+                    groupedData[groupKey].sum += value; // Fixed: Use groupedData[groupKey] instead of groupedData[key]
+                    groupedData[groupKey].count++; // Fixed: Use groupedData[groupKey] instead of groupedData[key]
                 }
             });
 
@@ -677,51 +753,69 @@
                         </tr>
                         <tr>
                             <td>14</td>
+                            <td>Statistical Analysis</td>
+                            <td>Correlation between two numeric columns</td>
+                            <td><code>show correlation between [numeric_col1] and [numeric_col2]</code> (e.g., <code>show correlation between Age and Income</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>15</td>
+                            <td>Statistical Analysis</td>
+                            <td>Find outliers in a numeric column</td>
+                            <td><code>find outliers in [numeric column]</code> (e.g., <code>find outliers in Sales</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>16</td>
                             <td>Data Manipulation</td>
                             <td>Filter data</td>
                             <td><code>filter data where [column] [operator] [value]</code> (e.g., <code>sales > 1000</code> or <code>city = "London"</code>)</td>
                         </tr>
                         <tr>
-                            <td>15</td>
+                            <td>17</td>
                             <td>Data Manipulation</td>
                             <td>Add a new calculated column</td>
                             <td><code>add column [new_name] as [col1] [operator] [col2]</code> (Operators: 'plus', 'minus', 'times', 'divided by'. E.g., <code>add column profit as revenue minus cost</code>)</td>
                         </tr>
                         <tr>
-                            <td>16</td>
+                            <td>18</td>
                             <td>Charting & Visualization</td>
                             <td>Show Bar Chart</td>
                             <td><code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)</td>
                         </tr>
                         <tr>
-                            <td>17</td>
+                            <td>19</td>
                             <td>Charting & Visualization</td>
                             <td>Show Line Chart</td>
                             <td><code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)</td>
                         </tr>
                         <tr>
-                            <td>18</td>
+                            <td>20</td>
                             <td>Charting & Visualization</td>
                             <td>Show Scatter Plot</td>
                             <td><code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)</td>
                         </tr>
                         <tr>
-                            <td>19</td>
+                            <td>21</td>
                             <td>Charting & Visualization</td>
                             <td>Show Pie Chart</td>
                             <td><code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>20</td>
+                            <td>22</td>
                             <td>Charting & Visualization</td>
                             <td>Show Doughnut Chart</td>
                             <td><code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>21</td>
+                            <td>23</td>
                             <td>Charting & Visualization</td>
                             <td>Show Polar Area Chart</td>
                             <td><code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
+                        </tr>
+                        <tr>
+                            <td>24</td>
+                            <td>Modeling</td>
+                            <td>Perform Simple Linear Regression</td>
+                            <td><code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)</td>
                         </tr>
                     </tbody>
                 </table>
@@ -759,6 +853,8 @@
                     } else {
                         aiResponseText = `To find the median, please specify a valid numeric column. Example: 'median age'.`;
                     }
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 }
             }
             // Calculate Standard Deviation
@@ -783,6 +879,8 @@
                     } else {
                         aiResponseText = `To find the standard deviation, please specify a valid numeric column. Example: 'standard deviation sales'.`;
                     }
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 }
             }
             // Calculate Quartiles
@@ -811,7 +909,117 @@
                     } else {
                         aiResponseText = `To find quartiles, please specify a valid numeric column. Example: 'quartiles age'.`;
                     }
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 }
+            }
+            // Correlation Analysis
+            else if (query.includes('show correlation between')) {
+                const match = query.match(/show correlation between\s+([\w\s]+)\s+and\s+([\w\s]+)/);
+                if (match && match.length === 3) {
+                    const col1Raw = match[1].trim();
+                    const col2Raw = match[2].trim();
+
+                    let foundCol1 = null;
+                    let foundCol2 = null;
+
+                    for (const col in schema) {
+                        if (col1Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundCol1 = col;
+                        }
+                        if (col2Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundCol2 = col;
+                        }
+                    }
+
+                    if (foundCol1 && foundCol2) {
+                        const correlation = calculateCorrelation(foundCol1, foundCol2, rawData);
+                        if (correlation !== null) {
+                            let interpretation = '';
+                            if (correlation >= 0.7) interpretation = 'a **strong positive correlation**';
+                            else if (correlation >= 0.3) interpretation = 'a **moderate positive correlation**';
+                            else if (correlation > -0.3) interpretation = 'a **very weak or no linear correlation**';
+                            else if (correlation > -0.7) interpretation = 'a **moderate negative correlation**';
+                            else interpretation = 'a **strong negative correlation**';
+
+                            aiResponseText = `The **Pearson correlation coefficient** between "<strong>${foundCol1}</strong>" and "<strong>${foundCol2}</strong>" is: <strong>${correlation.toFixed(4)}</strong>. This indicates ${interpretation}.`;
+                        } else {
+                            aiResponseText = `I couldn't calculate the correlation between "<strong>${foundCol1}</strong>" and "<strong>${foundCol2}</strong>" due to insufficient or invalid numeric data.`;
+                        }
+                    } else {
+                        aiResponseText = `To calculate correlation, I need two valid numeric columns. Example: 'show correlation between Age and Income'.`;
+                    }
+                } else {
+                    aiResponseText = `Please use the format: 'show correlation between [numeric_col1] and [numeric_col2]'.`;
+                }
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
+            }
+            // Outlier Detection
+            else if (query.includes('find outliers in ')) {
+                const match = query.match(/find outliers in\s+([\w\s]+)/);
+                if (match && match[1]) {
+                    const colNameRaw = match[1].trim();
+                    let foundColumn = null;
+                    for (const col in schema) {
+                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundColumn = col;
+                            break;
+                        }
+                    }
+                    if (foundColumn) {
+                        const { outliers, lowerBound, upperBound } = findOutliers(foundColumn, rawData);
+                        if (outliers.length > 0) {
+                            aiResponseText = `I found **${outliers.length} potential outliers** in the column "<strong>${foundColumn}</strong>".<br>
+                                            These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
+                                            Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
+                        } else {
+                            aiResponseText = `No significant outliers were detected in the column "<strong>${foundColumn}</strong>" based on the IQR method.`;
+                        }
+                    } else {
+                        aiResponseText = `To find outliers, please specify a valid numeric column. Example: 'find outliers in Sales'.`;
+                    }
+                }
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
+            }
+            // Simple Linear Regression
+            else if (query.includes('perform regression with y as') && query.includes('and x as')) {
+                const match = query.match(/perform regression with y as\s+([\w\s]+)\s+and x as\s+([\w\s]+)/);
+                if (match && match.length === 3) {
+                    const yColRaw = match[1].trim();
+                    const xColRaw = match[2].trim();
+
+                    let foundXCol = null;
+                    let foundYCol = null;
+
+                    for (const col in schema) {
+                        if (xColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundXCol = col;
+                        }
+                        if (yColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
+                            foundYCol = col;
+                        }
+                    }
+
+                    if (foundXCol && foundYCol) {
+                        const regressionResults = performLinearRegression(foundXCol, foundYCol, rawData);
+                        if (regressionResults !== null) {
+                            aiResponseText = `**Simple Linear Regression Results** (${foundYCol} ~ ${foundXCol}):<br>
+                                            - **Slope (Coefficient for ${foundXCol})**: <strong>${regressionResults.slope}</strong><br>
+                                            - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
+                                            - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${foundYCol} can be explained by ${foundXCol}. A value closer to 1 is better).`;
+                        } else {
+                            aiResponseText = `I couldn't perform linear regression between "<strong>${foundYCol}</strong>" and "<strong>${foundXCol}</strong>" due to insufficient or invalid numeric data.`;
+                        }
+                    } else {
+                        aiResponseText = `To perform linear regression, I need two valid numeric columns. Please check your column names and types. Example: 'perform regression with Y as Sales and X as Advertising'.`;
+                    }
+                } else {
+                    aiResponseText = `Please use the format: 'perform regression with Y as [numeric_col_y] and X as [numeric_col_x]'.`;
+                }
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
             }
             // Add Calculated Column
             else if (query.includes('add column') && query.includes('as')) {
@@ -873,6 +1081,8 @@
                 } else {
                     aiResponseText = `Please use the format: 'add column [new_name] as [col1] [operator] [col2]', where operator is 'plus', 'minus', 'times', or 'divided by'.`;
                 }
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
             }
 
 
@@ -921,9 +1131,12 @@
 
                     createChart(chartType.replace(' ', ''), chartTitle, labels, data); // remove space from 'polar area'
                     aiResponseText = `Here's a **${chartType} chart** for "<strong>${chartTitle}</strong>".`;
+                    appendMessage('AI', aiResponseText, 'ai'); // Added append and return here
                     return;
                 } else {
                     aiResponseText = `I couldn't find the column "${primaryColRaw}" to create that chart. Please specify a valid column name.`;
+                    appendMessage('AI', aiResponseText, 'ai'); // Added append and return here
+                    return;
                 }
             }
 
@@ -954,9 +1167,12 @@
                                 aggregated.labels, aggregated.data,
                                 categoricalColumn, `${aggregateType} of ${numericColumn}`);
                     aiResponseText = `Here's a **bar chart** showing the ${aggregateType} of "<strong>${numericColumn}</strong>" for each "<strong>${categoricalColumn}</strong>".`;
-                    return;
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 } else {
                     aiResponseText = `To create that bar chart, I need a valid numeric column and a valid categorical column. Please check your column names. Example: 'show bar chart of sales by region'`;
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 }
             }
             // Line Chart: show line chart with x as [column] and y as [numeric_column]
@@ -990,16 +1206,19 @@
                     }
 
                     aiResponseText = `Here's a **line chart** showing "<strong>${yColumn}</strong>" as it relates to "<strong>${xColumn}</strong>".`;
-                    return;
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 } else {
                     aiResponseText = `To create that line chart, I need a valid X-axis column and a valid numeric Y-axis column. Example: 'show line chart with x as date and y as temperature'`;
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 }
             }
             // Scatter Plot: show scatter plot with x as [numeric_column1] and y as [numeric_column2]
             const scatterPlotMatch = query.match(/show scatter plot with x as\s+([\w\s]+)\s+and y as\s+([\w\s]+)/);
             if (scatterPlotMatch) {
                 const xColRaw = scatterPlotMatch[1].trim();
-                const yColRaw = scatterPlotMatch[2].trim();
+                const yColRaw = match[2].trim();
 
                 let xColumn = null;
                 let yColumn = null;
@@ -1026,9 +1245,12 @@
                         }
                     });
                     aiResponseText = `Here's a **scatter plot** visualizing the relationship between "<strong>${xColumn}</strong>" and "<strong>${yColumn}</strong>".`;
-                    return;
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 } else {
                     aiResponseText = `I need two valid numeric columns to create a scatter plot. Example: 'show scatter plot with x as age and y as income'`;
+                    appendMessage('AI', aiResponseText, 'ai');
+                    return; // Added return
                 }
             }
 
@@ -1047,6 +1269,8 @@
                     aiResponseText = `Great! I've successfully filled the ${pendingCleaningSuggestion.count} missing values in the column "<strong>${colToClean}</strong>" with the calculated average of <strong>${average.toFixed(2)}</strong>. Your data has been updated locally and privately.`;
                     pendingCleaningSuggestion = null; // Clear the suggestion after execution
                 }
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
             } else if (query.includes('count unique')) {
                 let foundColumn = null;
                 const match = query.match(/count unique\s+([\w\s]+)/);
@@ -1067,6 +1291,8 @@
                 } else {
                     aiResponseText = "I couldn't find that column to count unique values. Please specify a valid column name.";
                 }
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
             } else if (query.includes('show frequency of') || query.includes('top values in')) {
                 let foundColumn = null;
                 const match = query.match(/(show frequency of|top values in)\s+([\w\s]+)/);
@@ -1098,6 +1324,8 @@
                 } else {
                     aiResponseText = "I couldn't find that column to show its frequency. Please specify a valid column name.";
                 }
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             } else if (query.includes('min ') || query.includes('max ')) {
                 let foundColumn = null;
                 const matchMin = query.match(/min\s+([\w\s]+)/);
@@ -1123,9 +1351,13 @@
                 } else {
                     aiResponseText = "I couldn't find a numeric column to calculate min/max for. Please specify a valid numeric column.";
                 }
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
             } else if (query.includes('how many rows') || query.includes('row count') || query === 'count rows') {
                 const numRows = rawData.length;
                 aiResponseText = `Your dataset currently contains **${numRows} rows** (records).`;
+                appendMessage('AI', aiResponseText, 'ai');
+                return; // Added return
             } else if (query.includes('average ') && query.includes(' by ')) {
                 const match = query.match(/average\s+([\w\s]+)\s+by\s+([\w\s]+)/);
                 if (match && match.length === 3) {
@@ -1177,6 +1409,8 @@
                 } else {
                     aiResponseText = `Please rephrase your 'average by' query as: 'average [numeric column] by [categorical column]'.`;
                 }
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             } else if (query.includes('sum ')) {
                 let foundColumn = null;
                 for (const col in schema) {
@@ -1192,6 +1426,8 @@
                 } else {
                     aiResponseText = "I couldn't find a **numeric column** to calculate the sum for. Please specify a valid numeric column, like 'sum sales'.";
                 }
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             } else if (query.includes('average ') || query.includes('avg ')) {
                 let foundColumn = null;
                 for (const col in schema) {
@@ -1207,6 +1443,8 @@
                 } else {
                     aiResponseText = "I couldn't find a **numeric column** to calculate the average for. Please specify a valid numeric column, like 'average age'.";
                 }
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             } else if (query.includes('filter data where') || query.includes('show rows where') || query.includes('find entries where')) {
                 const match = query.match(/(filter data where|show rows where|find entries where)\s+([\w\s]+)\s*(<=|>=|<|>|=|!=)\s*([\w\s."']+)/);
                 if (match && match.length === 5) {
@@ -1268,17 +1506,22 @@
                 } else {
                     aiResponseText = "I need a clearer filter condition. Please use the format: **'filter data where [column] [operator] [value]'**, e.g., 'filter data where sales > 1000' or 'filter data where city = \"London\"'.";
                 }
-
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             }
             else if (query.includes('show all data') || query.includes('display all data')) {
                 analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
                                   <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
                                   <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
                 aiResponseText = `Understood! Here's your data:`;
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             } else if (query.includes('show schema') || query.includes('display schema')) {
                 analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
                                   <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
                 aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             } else if (query.includes('show') || query.includes('display')) {
                 let foundColumn = null;
                 for (const col in schema) {
@@ -1295,6 +1538,8 @@
                                       <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
                     aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
                 }
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             } else if (query.includes('describe my dataset') || query.includes('summarize data') || query.includes('give me an overview') || query.includes('tell me about my data') || query.includes("what's in my data")) {
                 let numRows = rawData.length;
                 let numCols = Object.keys(schema).length;
@@ -1319,6 +1564,18 @@
                             if (medianVal !== null) descriptionNarrative += ` The median is <strong>${medianVal.toFixed(2)}</strong>.`;
                             if (stdDevVal !== null) descriptionNarrative += ` Standard deviation is <strong>${stdDevVal.toFixed(2)}</strong>.`;
                             if (quartiles.q1 !== null) descriptionNarrative += ` Q1 is <strong>${quartiles.q1}</strong>, Q3 is <strong>${quartiles.q3}</strong>, and the IQR is <strong>${quartiles.iqr}</strong>.`;
+                            const correlationWithOtherNumerics = [];
+                            for (const otherCol in schema) {
+                                if (otherCol !== col && schema[otherCol] === 'number') {
+                                    const corr = calculateCorrelation(col, otherCol, rawData);
+                                    if (corr !== null && !isNaN(corr)) {
+                                        correlationWithOtherNumerics.push(`${otherCol}: ${corr.toFixed(2)}`);
+                                    }
+                                }
+                            }
+                            if (correlationWithOtherNumerics.length > 0) {
+                                descriptionNarrative += ` It shows correlations with other numeric columns: ${correlationWithOtherNumerics.join(', ')}.`;
+                            }
                         } else {
                             descriptionNarrative += `This numeric column currently has no valid numerical entries.`;
                         }
@@ -1335,6 +1592,8 @@
 
                 analysisContent = descriptionNarrative; // Direct use of the narrative HTML
                 aiResponseText = `Certainly! Here's a comprehensive overview and description of your dataset, crafted to give you quick insights. This analysis was performed entirely client-side, ensuring your data's privacy.`;
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return; // Added return
             }
 
             // Construct the final AI message, combining narrative, and result
@@ -1343,6 +1602,7 @@
                 finalAIMessage += `<div class="mt-4">${analysisContent}</div>`;
             }
 
+            // Fallback for unrecognized commands (should rarely be hit with returns above)
             appendMessage('AI', finalAIMessage, 'ai');
         }
 
