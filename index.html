@@ -135,8 +135,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             display: flex;
             justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            align-items: column;
         }
         .chart-container canvas {
             max-height: 100%;
@@ -605,6 +604,208 @@
             });
         }
 
+        // Function to get the HTML for the command list table
+        function getCommandListHtml() {
+            return `I'm ready to help with your data analysis! Here's a quick guide to what I can do:<br><br>
+                <table class="command-table">
+                    <thead>
+                        <tr>
+                            <th>Sr. No.</th>
+                            <th>Category</th>
+                            <th>Command</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>General Overview</td>
+                            <td>Show all data</td>
+                            <td><code>show all data</code></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>General Overview</td>
+                            <td>Show specific column data</td>
+                            <td><code>show [column name]</code> (e.g., <code>show City</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>General Overview</td>
+                            <td>Count rows</td>
+                            <td><code>count rows</code></td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>General Overview</td>
+                            <td>Describe dataset</td>
+                            <td><code>describe my dataset</code></td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>Statistical Analysis</td>
+                            <td>Sum a numeric column</td>
+                            <td><code>sum [numeric column]</code> (e.g., <code>sum sales</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>Statistical Analysis</td>
+                            <td>Average a numeric column</td>
+                            <td><code>average [numeric column]</code> (e.g., <code>average age</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td>Statistical Analysis</td>
+                            <td>Median of a numeric column</td>
+                            <td><code>median [numeric column]</code> (e.g., <code>median income</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td>Statistical Analysis</td>
+                            <td>Standard deviation of a numeric column</td>
+                            <td><code>standard deviation [numeric column]</code> (e.g., <code>standard deviation price</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td>Statistical Analysis</td>
+                            <td>Quartiles of a numeric column</td>
+                            <td><code>quartiles [numeric column]</code> (e.g., <code>quartiles score</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td>Statistical Analysis</td>
+                            <td>Count unique values in a column</td>
+                            <td><code>count unique [column name]</code> (e.g., <code>count unique city</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>11</td>
+                            <td>Statistical Analysis</td>
+                            <td>Show frequency/top values</td>
+                            <td><code>show frequency of [column name]</code> or <code>top values in [column name]</code> (e.g., <code>show frequency of product type</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td>Statistical Analysis</td>
+                            <td>Min/Max of a numeric column</td>
+                            <td><code>min [numeric column]</code> or <code>max [numeric column]</code> (e.g., <code>min temperature</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>13</td>
+                            <td>Statistical Analysis</td>
+                            <td>Average a numeric column by categorical group</td>
+                            <td><code>average [numeric column] by [categorical column]</code> (e.g., <code>average sales by region</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>14</td>
+                            <td>Statistical Analysis</td>
+                            <td>Correlation between two numeric columns</td>
+                            <td><code>show correlation between [numeric_col1] and [numeric_col2]</code> (e.g., <code>show correlation between Age and Income</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>15</td>
+                            <td>Statistical Analysis</td>
+                            <td>Find outliers in a numeric column</td>
+                            <td><code>find outliers in [numeric column]</code> (e.g., <code>find outliers in Sales</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>16</td>
+                            <td>Data Manipulation</td>
+                            <td>Filter data</td>
+                            <td><code>filter data where [column] [operator] [value]</code> (e.g., <code>sales > 1000</code> or <code>city = "London"</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>17</td>
+                            <td>Data Manipulation</td>
+                            <td>Add a new calculated column</td>
+                            <td><code>add column [new_name] as [col1] [operator] [col2]</code> (Operators: 'plus', 'minus', 'times', 'divided by'. E.g., <code>add column profit as revenue minus cost</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>18</td>
+                            <td>Data Manipulation</td>
+                            <td>Categorize numeric data into bins</td>
+                            <td><code>categorize [numeric_col] into [num_bins] bins as [new_col_name]</code> (e.g., <code>categorize Age into 5 bins as Age_Group</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>19</td>
+                            <td>Data Manipulation</td>
+                            <td>Remove duplicate rows</td>
+                            <td><code>remove duplicate rows</code></td>
+                        </tr>
+                        <tr>
+                            <td>20</td>
+                            <td>Data Manipulation</td>
+                            <td>Rename column</td>
+                            <td><code>rename column [old_name] to [new_name]</code> (e.g., <code>rename column Product_ID to SKU</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>21</td>
+                            <td>Business Intelligence</td>
+                            <td>Summarize numeric by categorical</td>
+                            <td><code>summarize [numeric_col] by [categorical_col]</code> (e.g., <code>summarize Sales by Region</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>22</td>
+                            <td>Business Intelligence</td>
+                            <td>Show overall business overview</td>
+                            <td><code>show overall business overview</code></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">New Feature: Data Export</td>
+                        </tr>
+                        <tr>
+                            <td>23</td>
+                            <td>Data Export</td>
+                            <td>Download modified dataset</td>
+                            <td>Click the "Download Modified CSV" button</td>
+                        </tr>
+                        <tr>
+                            <td>24</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Bar Chart</td>
+                            <td><code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>25</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Line Chart</td>
+                            <td><code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>26</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Scatter Plot</td>
+                            <td><code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>27</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Pie Chart</td>
+                            <td><code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
+                        </tr>
+                        <tr>
+                            <td>28</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Doughnut Chart</td>
+                            <td><code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
+                        </tr>
+                        <tr>
+                            <td>29</td>
+                            <td>Charting & Visualization</td>
+                            <td>Show Polar Area Chart</td>
+                            <td><code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
+                        </tr>
+                        <tr>
+                            <td>30</td>
+                            <td>Modeling</td>
+                            <td>Perform Simple Linear Regression</td>
+                            <td><code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+                If I've made a cleaning suggestion, you can simply type <strong>'yes'</strong> to confirm.`;
+        }
+
 
         // Handle CSV file input change
         csvFileInput.addEventListener('change', (event) => {
@@ -623,7 +824,9 @@
                         uploadStatus.textContent = `Successfully loaded ${rawData.length} rows.`;
                         uploadStatus.className = 'mt-2 text-base font-semibold text-green-500';
 
-                        appendMessage('AI', `Fantastic! I've successfully loaded your CSV and detected the following schema: <br><div class="code-block">${JSON.stringify(schema, null, 2)}</div><br>How can I assist you with your data analysis today?`, 'ai');
+                        appendMessage('AI', `Fantastic! I've successfully loaded your CSV and detected the following schema: <br><div class="code-block">${JSON.stringify(schema, null, 2)}</div><br>`, 'ai');
+                        // Append the command list immediately after successful upload
+                        appendMessage('AI', getCommandListHtml(), 'ai');
 
                         // Proactively check for data cleaning needs
                         checkAndSuggestDataCleaning(rawData, schema);
@@ -869,205 +1072,7 @@
         // Simulated AI response and local execution
         function simulateAIResponse(query) {
             query = query.toLowerCase();
-            let aiResponseText = `I'm ready to help with your data analysis! Here's a quick guide to what I can do:<br><br>
-                <table class="command-table">
-                    <thead>
-                        <tr>
-                            <th>Sr. No.</th>
-                            <th>Category</th>
-                            <th>Command</th>
-                            <th>Example</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>General Overview</td>
-                            <td>Show all data</td>
-                            <td><code>show all data</code></td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>General Overview</td>
-                            <td>Show specific column data</td>
-                            <td><code>show [column name]</code> (e.g., <code>show City</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>General Overview</td>
-                            <td>Count rows</td>
-                            <td><code>count rows</code></td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>General Overview</td>
-                            <td>Describe dataset</td>
-                            <td><code>describe my dataset</code></td>
-                        </tr>
-                        <tr>
-                            <td>5</td>
-                            <td>Statistical Analysis</td>
-                            <td>Sum a numeric column</td>
-                            <td><code>sum [numeric column]</code> (e.g., <code>sum sales</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>6</td>
-                            <td>Statistical Analysis</td>
-                            <td>Average a numeric column</td>
-                            <td><code>average [numeric column]</code> (e.g., <code>average age</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>7</td>
-                            <td>Statistical Analysis</td>
-                            <td>Median of a numeric column</td>
-                            <td><code>median [numeric column]</code> (e.g., <code>median income</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>8</td>
-                            <td>Statistical Analysis</td>
-                            <td>Standard deviation of a numeric column</td>
-                            <td><code>standard deviation [numeric column]</code> (e.g., <code>standard deviation price</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>9</td>
-                            <td>Statistical Analysis</td>
-                            <td>Quartiles of a numeric column</td>
-                            <td><code>quartiles [numeric column]</code> (e.g., <code>quartiles score</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>10</td>
-                            <td>Statistical Analysis</td>
-                            <td>Count unique values in a column</td>
-                            <td><code>count unique [column name]</code> (e.g., <code>count unique city</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>11</td>
-                            <td>Statistical Analysis</td>
-                            <td>Show frequency/top values</td>
-                            <td><code>show frequency of [column name]</code> or <code>top values in [column name]</code> (e.g., <code>show frequency of product type</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>12</td>
-                            <td>Statistical Analysis</td>
-                            <td>Min/Max of a numeric column</td>
-                            <td><code>min [numeric column]</code> or <code>max [numeric column]</code> (e.g., <code>min temperature</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>13</td>
-                            <td>Statistical Analysis</td>
-                            <td>Average a numeric column by categorical group</td>
-                            <td><code>average [numeric column] by [categorical column]</code> (e.g., <code>average sales by region</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>14</td>
-                            <td>Statistical Analysis</td>
-                            <td>Correlation between two numeric columns</td>
-                            <td><code>show correlation between [numeric_col1] and [numeric_col2]</code> (e.g., <code>show correlation between Age and Income</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>15</td>
-                            <td>Statistical Analysis</td>
-                            <td>Find outliers in a numeric column</td>
-                            <td><code>find outliers in [numeric column]</code> (e.g., <code>find outliers in Sales</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>16</td>
-                            <td>Data Manipulation</td>
-                            <td>Filter data</td>
-                            <td><code>filter data where [column] [operator] [value]</code> (e.g., <code>sales > 1000</code> or <code>city = "London"</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>17</td>
-                            <td>Data Manipulation</td>
-                            <td>Add a new calculated column</td>
-                            <td><code>add column [new_name] as [col1] [operator] [col2]</code> (Operators: 'plus', 'minus', 'times', 'divided by'. E.g., <code>add column profit as revenue minus cost</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>18</td>
-                            <td>Data Manipulation</td>
-                            <td>Categorize numeric data into bins</td>
-                            <td><code>categorize [numeric_col] into [num_bins] bins as [new_col_name]</code> (e.g., <code>categorize Age into 5 bins as Age_Group</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>19</td>
-                            <td>Data Manipulation</td>
-                            <td>Remove duplicate rows</td>
-                            <td><code>remove duplicate rows</code></td>
-                        </tr>
-                        <tr>
-                            <td>20</td>
-                            <td>Data Manipulation</td>
-                            <td>Rename column</td>
-                            <td><code>rename column [old_name] to [new_name]</code> (e.g., <code>rename column Product_ID to SKU</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>21</td>
-                            <td>Business Intelligence</td>
-                            <td>Summarize numeric by categorical</td>
-                            <td><code>summarize [numeric_col] by [categorical_col]</code> (e.g., <code>summarize Sales by Region</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>22</td>
-                            <td>Business Intelligence</td>
-                            <td>Show overall business overview</td>
-                            <td><code>show overall business overview</code></td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">New Feature: Data Export</td>
-                        </tr>
-                        <tr>
-                            <td>23</td>
-                            <td>Data Export</td>
-                            <td>Download modified dataset</td>
-                            <td>Click the "Download Modified CSV" button</td>
-                        </tr>
-                        <tr>
-                            <td>24</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Bar Chart</td>
-                            <td><code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>25</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Line Chart</td>
-                            <td><code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>26</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Scatter Plot</td>
-                            <td><code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>27</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Pie Chart</td>
-                            <td><code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
-                        </tr>
-                        <tr>
-                            <td>28</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Doughnut Chart</td>
-                            <td><code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
-                        </tr>
-                        <tr>
-                            <td>29</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Polar Area Chart</td>
-                            <td><code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
-                        </tr>
-                        <tr>
-                            <td>30</td>
-                            <td>Modeling</td>
-                            <td>Perform Simple Linear Regression</td>
-                            <td><code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <br>
-                If I've made a cleaning suggestion, you can simply type <strong>'yes'</strong> to confirm.`;
-
+            let aiResponseText = ''; // Initialize as empty, as the command list will be generated on upload now
             let analysisContent = '';
 
             if (rawData.length === 0) {
