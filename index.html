@@ -456,7 +456,7 @@
                         groupedData[groupKey] = { sum: 0, count: 0 };
                     }
                     groupedData[groupKey].sum += value;
-                    groupedData[groupKey].count++;
+                    groupedData[key].count++;
                 }
             });
 
@@ -541,7 +541,7 @@
             `;
             chatArea.appendChild(chartMessageDiv); // Append the AI text bubble
             chatArea.appendChild(chartContainer); // Append the chart below the text bubble
-            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to bottom
+            chatArea.scrollTop = 0; // Scroll to top
 
             const ctx = chartCanvas.getContext('2d');
             myChart = new Chart(ctx, {
@@ -866,7 +866,7 @@
                 `;
             }
             chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to bottom
+            chatArea.scrollTop = 0; // Scroll to top
         }
 
         // Helper to find a column by name (case-insensitive and partial match)
