@@ -197,7 +197,14 @@
                 <p id="uploadStatus" class="mt-2 text-sm font-semibold text-gray-300"></p>
             </div>
 
-            <h3 class="text-2xl font-bold text-gray-200 mb-4 border-b pb-2 border-gray-600">Data Schema</h3>
+            <!-- New Download Button -->
+            <button id="downloadCsvBtn" class="send-button-gradient text-white p-4 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-lg font-bold">
+                <i class="fas fa-download"></i>
+                <span>Download Modified CSV</span>
+            </button>
+
+
+            <h3 class="text-2xl font-bold text-gray-200 mb-4 border-b pb-2 border-gray-600 mt-8">Data Schema</h3>
             <div id="schemaDisplay" class="bg-gray-700 p-5 rounded-2xl flex-grow overflow-y-auto custom-scrollbar text-sm text-gray-300 shadow-lg border border-gray-600">
                 <p class="text-gray-400 text-center py-4">Upload a CSV to intelligently infer and display its schema here.</p>
             </div>
@@ -241,6 +248,7 @@
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const uploadStatus = document.getElementById('uploadStatus');
         const schemaDisplay = document.getElementById('schemaDisplay');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn'); // New button element
 
         // Function to parse CSV data
         function parseCSV(text) {
@@ -448,8 +456,8 @@
                     if (!groupedData[groupKey]) {
                         groupedData[groupKey] = { sum: 0, count: 0 };
                     }
-                    groupedData[groupKey].sum += value; // Fixed: Use groupedData[groupKey] instead of groupedData[key]
-                    groupedData[groupKey].count++; // Fixed: Use groupedData[groupKey] instead of groupedData[key]
+                    groupedData[groupKey].sum += value;
+                    groupedData[groupKey].count++;
                 }
             });
 
@@ -658,10 +666,209 @@
             chatArea.scrollTop = chatArea.scrollHeight; // Scroll to bottom
         }
 
+        // Helper to find a column by name (case-insensitive and partial match)
+        function findColumnByName(rawName) {
+            const lowerRawName = rawName.toLowerCase();
+            for (const col in schema) {
+                if (col.toLowerCase().includes(lowerRawName)) {
+                    return col;
+                }
+            }
+            return null;
+        }
+
+        // Helper to find a numeric column by name
+        function findNumericColumn(rawName) {
+            const col = findColumnByName(rawName);
+            if (col && schema[col] === 'number') {
+                return col;
+            }
+            return null;
+        }
+
+        // Helper to find a categorical column by name
+        function findCategoricalColumn(rawName) {
+            const col = findColumnByName(rawName);
+            if (col && schema[col] === 'string') {
+                return col;
+            }
+            return null;
+        }
+
+        // Helper for basic descriptive statistics for a numeric column
+        function getDescriptiveStats(columnName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
+            if (numericValues.length === 0) return null;
+
+            const sum = numericValues.reduce((a, b) => a + b, 0);
+            const mean = sum / numericValues.length;
+
+            const sorted = [...numericValues].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+
+            const min = Math.min(...numericValues);
+            const max = Math.max(...numericValues);
+
+            const sumOfSquares = numericValues.reduce((s, val) => s + Math.pow(val - mean, 2), 0);
+            const variance = sumOfSquares / (numericValues.length - 1);
+            const stdDev = Math.sqrt(variance);
+
+            return {
+                count: numericValues.length,
+                mean: mean,
+                median: median,
+                min: min,
+                max: max,
+                stdDev: stdDev,
+                sum: sum
+            };
+        }
+
+        // New Feature: Categorize numeric column into bins
+        function categorizeNumericColumn(columnName, numBins, newColName, data) {
+            const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
+            if (numericValues.length === 0 || numBins <= 0) return { success: false, message: 'Invalid data or number of bins.' };
+
+            const minVal = Math.min(...numericValues);
+            const maxVal = Math.max(...numericValues);
+            const binSize = (maxVal - minVal) / numBins;
+
+            if (binSize === 0) { // All values are the same
+                rawData = rawData.map(row => ({
+                    ...row,
+                    [newColName]: `${minVal.toFixed(2)} - ${maxVal.toFixed(2)}`
+                }));
+                schema[newColName] = 'string';
+                displaySchema(schema);
+                return { success: true, message: `All values in "${columnName}" are the same. Created a single bin for "${newColName}".` };
+            }
+
+            rawData = rawData.map(row => {
+                const value = Number(row[columnName]);
+                if (isNaN(value)) {
+                    return { ...row, [newColName]: 'N/A' };
+                }
+                let binIndex = Math.floor((value - minVal) / binSize);
+                // Ensure the max value falls into the last bin
+                if (binIndex === numBins) {
+                    binIndex = numBins - 1;
+                }
+
+                const binStart = minVal + binIndex * binSize;
+                const binEnd = minVal + (binIndex + 1) * binSize;
+                return {
+                    ...row,
+                    [newColName]: `${binStart.toFixed(2)} - ${binEnd.toFixed(2)}`
+                };
+            });
+            schema[newColName] = 'string';
+            displaySchema(schema);
+            return { success: true, message: `Categorized "<strong>${columnName}</strong>" into <strong>${numBins} bins</strong> and created a new column "<strong>${newColName}</strong>".` };
+        }
+
+        // New Feature: Remove duplicate rows
+        function removeDuplicateRows(data) {
+            const initialLength = data.length;
+            const seen = new Set();
+            const uniqueData = [];
+
+            data.forEach(row => {
+                const rowString = JSON.stringify(row); // Simple serialization for comparison
+                if (!seen.has(rowString)) {
+                    seen.add(rowString);
+                    uniqueData.push(row);
+                }
+            });
+            rawData = uniqueData; // Update global rawData
+            const removedCount = initialLength - rawData.length;
+            return { success: true, removedCount };
+        }
+
+        // New Feature: Rename column
+        function renameColumn(oldName, newName) {
+            const actualOldName = findColumnByName(oldName);
+            if (!actualOldName) {
+                return { success: false, message: `Column "<strong>${oldName}</strong>" not found.` };
+            }
+            if (Object.keys(schema).includes(newName)) {
+                return { success: false, message: `Column "<strong>${newName}</strong>" already exists.` };
+            }
+
+            rawData = rawData.map(row => {
+                const newRow = {};
+                for (const key in row) {
+                    if (key === actualOldName) {
+                        newRow[newName] = row[key];
+                    } else {
+                        newRow[key] = row[key];
+                    }
+                }
+                return newRow;
+            });
+
+            // Update schema
+            const newSchema = {};
+            for (const key in schema) {
+                if (key === actualOldName) {
+                    newSchema[newName] = schema[key];
+                } else {
+                    newSchema[key] = schema[key];
+                }
+            }
+            schema = newSchema;
+            displaySchema(schema);
+            return { success: true, message: `Column "<strong>${actualOldName}</strong>" successfully renamed to "<strong>${newName}</strong>".` };
+        }
+
+        // Function to download the current rawData as a CSV file
+        function downloadCSV() {
+            if (rawData.length === 0 || Object.keys(schema).length === 0) {
+                appendMessage('AI', 'There is no data loaded to download. Please upload a CSV first!', 'ai');
+                return;
+            }
+
+            const headers = Object.keys(schema);
+            const csvRows = [];
+
+            // Add headers row
+            csvRows.push(headers.map(header => `"${header}"`).join(','));
+
+            // Add data rows
+            rawData.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    // Escape double quotes by doubling them, and wrap in quotes if contains comma or double quote
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value;
+                });
+                csvRows.push(values.join(','));
+            });
+
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'CoDA_Modified_Data.csv');
+            link.style.visibility = 'hidden'; // Hide the link
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link); // Clean up
+            URL.revokeObjectURL(url); // Free up memory
+
+            appendMessage('AI', 'Your modified dataset has been downloaded as **CoDA_Modified_Data.csv**!', 'ai');
+        }
+
+        // Event listener for the download button
+        downloadCsvBtn.addEventListener('click', downloadCSV);
+
+
         // Simulated AI response and local execution
         function simulateAIResponse(query) {
             query = query.toLowerCase();
-            // Refactored AI response text into a structured table
             let aiResponseText = `I'm ready to help with your data analysis! Here's a quick guide to what I can do:<br><br>
                 <table class="command-table">
                     <thead>
@@ -777,42 +984,81 @@
                         </tr>
                         <tr>
                             <td>18</td>
+                            <td>Data Manipulation</td>
+                            <td>Categorize numeric data into bins</td>
+                            <td><code>categorize [numeric_col] into [num_bins] bins as [new_col_name]</code> (e.g., <code>categorize Age into 5 bins as Age_Group</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>19</td>
+                            <td>Data Manipulation</td>
+                            <td>Remove duplicate rows</td>
+                            <td><code>remove duplicate rows</code></td>
+                        </tr>
+                        <tr>
+                            <td>20</td>
+                            <td>Data Manipulation</td>
+                            <td>Rename column</td>
+                            <td><code>rename column [old_name] to [new_name]</code> (e.g., <code>rename column Product_ID to SKU</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>21</td>
+                            <td>Business Intelligence</td>
+                            <td>Summarize numeric by categorical</td>
+                            <td><code>summarize [numeric_col] by [categorical_col]</code> (e.g., <code>summarize Sales by Region</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>22</td>
+                            <td>Business Intelligence</td>
+                            <td>Show overall business overview</td>
+                            <td><code>show overall business overview</code></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">New Feature: Data Export</td>
+                        </tr>
+                        <tr>
+                            <td>23</td>
+                            <td>Data Export</td>
+                            <td>Download modified dataset</td>
+                            <td>Click the "Download Modified CSV" button</td>
+                        </tr>
+                        <tr>
+                            <td>24</td>
                             <td>Charting & Visualization</td>
                             <td>Show Bar Chart</td>
                             <td><code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)</td>
                         </tr>
                         <tr>
-                            <td>19</td>
+                            <td>25</td>
                             <td>Charting & Visualization</td>
                             <td>Show Line Chart</td>
                             <td><code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)</td>
                         </tr>
                         <tr>
-                            <td>20</td>
+                            <td>26</td>
                             <td>Charting & Visualization</td>
                             <td>Show Scatter Plot</td>
                             <td><code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)</td>
                         </tr>
                         <tr>
-                            <td>21</td>
+                            <td>27</td>
                             <td>Charting & Visualization</td>
                             <td>Show Pie Chart</td>
                             <td><code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>22</td>
+                            <td>28</td>
                             <td>Charting & Visualization</td>
                             <td>Show Doughnut Chart</td>
                             <td><code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>23</td>
+                            <td>29</td>
                             <td>Charting & Visualization</td>
                             <td>Show Polar Area Chart</td>
                             <td><code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>24</td>
+                            <td>30</td>
                             <td>Modeling</td>
                             <td>Perform Simple Linear Regression</td>
                             <td><code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)</td>
@@ -829,20 +1075,164 @@
                 return;
             }
 
+            // Handle cleaning confirmation
+            if (pendingCleaningSuggestion && (query === 'yes' || query.includes('confirm') || query.includes('go ahead'))) {
+                const colToClean = pendingCleaningSuggestion.column;
+                if (pendingCleaningSuggestion.action === 'fill_average') {
+                    const average = calculateColumnAverage(colToClean, rawData);
+                    rawData = rawData.map(row => {
+                        if (row[colToClean] === '' || isNaN(Number(row[colToClean])) || row[colToClean] === null || row[colToClean] === undefined) {
+                            row[colToClean] = average.toFixed(2); // Fill with average, keeping two decimal places
+                        }
+                        return row;
+                    });
+                    aiResponseText = `Great! I've successfully filled the ${pendingCleaningSuggestion.count} missing values in the column "<strong>${colToClean}</strong>" with the calculated average of <strong>${average.toFixed(2)}</strong>. Your data has been updated locally and privately.`;
+                    pendingCleaningSuggestion = null; // Clear the suggestion after execution
+                }
+                appendMessage('AI', aiResponseText, 'ai');
+                return;
+            }
+
             // --- New Advanced Analytical Features ---
+
+            // Categorize numeric column into bins
+            const categorizeMatch = query.match(/categorize\s+([\w\s]+)\s+into\s+(\d+)\s+bins\s+as\s+([\w\s]+)/);
+            if (categorizeMatch) {
+                const numericColRaw = categorizeMatch[1].trim();
+                const numBins = parseInt(categorizeMatch[2]);
+                const newColName = categorizeMatch[3].trim();
+
+                const numericColumn = findNumericColumn(numericColRaw);
+
+                if (numericColumn) {
+                    const result = categorizeNumericColumn(numericColumn, numBins, newColName, rawData);
+                    aiResponseText = result.message;
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${numericColRaw}</strong>" to categorize. Please check the column name and ensure it's numeric.`;
+                }
+                appendMessage('AI', aiResponseText, 'ai');
+                return;
+            }
+
+            // Remove duplicate rows
+            if (query.includes('remove duplicate rows')) {
+                const result = removeDuplicateRows(rawData);
+                if (result.success) {
+                    aiResponseText = `Successfully removed <strong>${result.removedCount} duplicate row(s)</strong> from your dataset. Total rows now: <strong>${rawData.length}</strong>.`;
+                } else {
+                    aiResponseText = `An error occurred while trying to remove duplicate rows.`;
+                }
+                appendMessage('AI', aiResponseText, 'ai');
+                return;
+            }
+
+            // Rename column
+            const renameMatch = query.match(/rename column\s+([\w\s]+)\s+to\s+([\w\s]+)/);
+            if (renameMatch) {
+                const oldNameRaw = renameMatch[1].trim();
+                const newName = renameMatch[2].trim();
+                const result = renameColumn(oldNameRaw, newName);
+                aiResponseText = result.message;
+                appendMessage('AI', aiResponseText, 'ai');
+                return;
+            }
+
+            // Summarize numeric by categorical
+            const summarizeByMatch = query.match(/summarize\s+([\w\s]+)\s+by\s+([\w\s]+)/);
+            if (summarizeByMatch) {
+                const numericColRaw = summarizeByMatch[1].trim();
+                const categoricalColRaw = summarizeByMatch[2].trim();
+
+                const numericColumn = findNumericColumn(numericColRaw);
+                const categoricalColumn = findCategoricalColumn(categoricalColRaw);
+
+                if (numericColumn && categoricalColumn) {
+                    const groupedStats = {};
+                    rawData.forEach(row => {
+                        const category = row[categoricalColumn];
+                        const value = Number(row[numericColumn]);
+
+                        if (!isNaN(value)) {
+                            if (!groupedStats[category]) {
+                                groupedStats[category] = { sum: 0, count: 0, min: Infinity, max: -Infinity };
+                            }
+                            groupedStats[category].sum += value;
+                            groupedStats[category].count++;
+                            if (value < groupedStats[category].min) groupedStats[category].min = value;
+                            if (value > groupedStats[category].max) groupedStats[category].max = value;
+                        }
+                    });
+
+                    let resultsHtml = `<p class="text-gray-300">Summary of <strong>${numericColumn}</strong> by <strong>${categoricalColumn}</strong>:</p>
+                                      <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
+                    for (const category in groupedStats) {
+                        const stats = groupedStats[category];
+                        const avg = (stats.sum / stats.count).toFixed(2);
+                        resultsHtml += `<li><strong>${category}</strong>: <br>
+                                            &nbsp;&nbsp;Entries: ${stats.count}, <br>
+                                            &nbsp;&nbsp;Average ${numericColumn}: ${avg}, <br>
+                                            &nbsp;&nbsp;Min ${numericColumn}: ${stats.min.toFixed(2)}, <br>
+                                            &nbsp;&nbsp;Max ${numericColumn}: ${stats.max.toFixed(2)}
+                                        </li>`;
+                    }
+                    resultsHtml += `</ul>`;
+                    aiResponseText = `Here's a detailed summary:`;
+                    analysisContent = resultsHtml;
+                } else {
+                    aiResponseText = `To summarize, I need a valid numeric column and a valid categorical column. Example: 'summarize Sales by Region'.`;
+                }
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return;
+            }
+
+            // Show overall business overview
+            if (query.includes('show overall business overview') || query.includes('business overview')) {
+                let overviewText = `<p class="text-gray-300 leading-relaxed mb-3">Here's a high-level overview of your dataset's key business metrics:</p>`;
+                
+                const numericColumns = Object.keys(schema).filter(col => schema[col] === 'number');
+                if (numericColumns.length > 0) {
+                    overviewText += `<h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Key Numeric Metrics:</h5><ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
+                    numericColumns.forEach(col => {
+                        const stats = getDescriptiveStats(col, rawData);
+                        if (stats) {
+                            overviewText += `<li><strong>${col}</strong>:<br>
+                                                &nbsp;&nbsp;Total Sum: ${stats.sum.toFixed(2)}<br>
+                                                &nbsp;&nbsp;Average: ${stats.mean.toFixed(2)}<br>
+                                                &nbsp;&nbsp;Min: ${stats.min.toFixed(2)}<br>
+                                                &nbsp;&nbsp;Max: ${stats.max.toFixed(2)}
+                                            </li>`;
+                        }
+                    });
+                    overviewText += `</ul>`;
+                }
+
+                const stringColumns = Object.keys(schema).filter(col => schema[col] === 'string');
+                if (stringColumns.length > 0) {
+                    overviewText += `<h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Categorical Insights:</h5><ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
+                    stringColumns.forEach(col => {
+                        const values = rawData.map(row => row[col]);
+                        const uniqueCount = new Set(values).size;
+                        const valueCounts = {};
+                        values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
+                        const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
+                        overviewText += `<li><strong>${col}</strong>: ${uniqueCount} unique values. Top 3: ${sortedCounts.slice(0,3).map(item => `${item[0]} (${item[1]} occurrences)`).join(', ')}.</li>`;
+                    });
+                    overviewText += `</ul>`;
+                }
+
+                aiResponseText = `Here's your overall business overview:`;
+                analysisContent = overviewText;
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+                return;
+            }
+
 
             // Calculate Median
             if (query.includes('median ')) {
                 const match = query.match(/median\s+([\w\s]+)/);
                 if (match && match[1]) {
                     const colNameRaw = match[1].trim();
-                    let foundColumn = null;
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    let foundColumn = findNumericColumn(colNameRaw);
                     if (foundColumn) {
                         const median = calculateMedian(foundColumn, rawData);
                         if (median !== null) {
@@ -854,7 +1244,7 @@
                         aiResponseText = `To find the median, please specify a valid numeric column. Example: 'median age'.`;
                     }
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 }
             }
             // Calculate Standard Deviation
@@ -862,13 +1252,7 @@
                 const match = query.match(/standard deviation\s+([\w\s]+)/);
                 if (match && match[1]) {
                     const colNameRaw = match[1].trim();
-                    let foundColumn = null;
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    let foundColumn = findNumericColumn(colNameRaw);
                     if (foundColumn) {
                         const stdDev = calculateStandardDeviation(foundColumn, rawData);
                         if (stdDev !== null) {
@@ -880,7 +1264,7 @@
                         aiResponseText = `To find the standard deviation, please specify a valid numeric column. Example: 'standard deviation sales'.`;
                     }
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 }
             }
             // Calculate Quartiles
@@ -888,13 +1272,7 @@
                 const match = query.match(/quartiles\s+([\w\s]+)/);
                 if (match && match[1]) {
                     const colNameRaw = match[1].trim();
-                    let foundColumn = null;
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    let foundColumn = findNumericColumn(colNameRaw);
                     if (foundColumn) {
                         const quartiles = calculateQuartiles(foundColumn, rawData);
                         if (quartiles.median !== null) {
@@ -910,7 +1288,7 @@
                         aiResponseText = `To find quartiles, please specify a valid numeric column. Example: 'quartiles age'.`;
                     }
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 }
             }
             // Correlation Analysis
@@ -920,17 +1298,8 @@
                     const col1Raw = match[1].trim();
                     const col2Raw = match[2].trim();
 
-                    let foundCol1 = null;
-                    let foundCol2 = null;
-
-                    for (const col in schema) {
-                        if (col1Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundCol1 = col;
-                        }
-                        if (col2Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundCol2 = col;
-                        }
-                    }
+                    let foundCol1 = findNumericColumn(col1Raw);
+                    let foundCol2 = findNumericColumn(col2Raw);
 
                     if (foundCol1 && foundCol2) {
                         const correlation = calculateCorrelation(foundCol1, foundCol2, rawData);
@@ -938,7 +1307,7 @@
                             let interpretation = '';
                             if (correlation >= 0.7) interpretation = 'a **strong positive correlation**';
                             else if (correlation >= 0.3) interpretation = 'a **moderate positive correlation**';
-                            else if (correlation > -0.3) interpretation = 'a **very weak or no linear correlation**';
+                            else if (correlation > -0.3 && correlation < 0.3) interpretation = 'a **very weak or no linear correlation**';
                             else if (correlation > -0.7) interpretation = 'a **moderate negative correlation**';
                             else interpretation = 'a **strong negative correlation**';
 
@@ -953,20 +1322,14 @@
                     aiResponseText = `Please use the format: 'show correlation between [numeric_col1] and [numeric_col2]'.`;
                 }
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             }
             // Outlier Detection
             else if (query.includes('find outliers in ')) {
                 const match = query.match(/find outliers in\s+([\w\s]+)/);
                 if (match && match[1]) {
                     const colNameRaw = match[1].trim();
-                    let foundColumn = null;
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    let foundColumn = findNumericColumn(colNameRaw);
                     if (foundColumn) {
                         const { outliers, lowerBound, upperBound } = findOutliers(foundColumn, rawData);
                         if (outliers.length > 0) {
@@ -981,7 +1344,7 @@
                     }
                 }
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             }
             // Simple Linear Regression
             else if (query.includes('perform regression with y as') && query.includes('and x as')) {
@@ -990,17 +1353,8 @@
                     const yColRaw = match[1].trim();
                     const xColRaw = match[2].trim();
 
-                    let foundXCol = null;
-                    let foundYCol = null;
-
-                    for (const col in schema) {
-                        if (xColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundXCol = col;
-                        }
-                        if (yColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundYCol = col;
-                        }
-                    }
+                    let foundXCol = findNumericColumn(xColRaw);
+                    let foundYCol = findNumericColumn(yColRaw);
 
                     if (foundXCol && foundYCol) {
                         const regressionResults = performLinearRegression(foundXCol, foundYCol, rawData);
@@ -1019,7 +1373,7 @@
                     aiResponseText = `Please use the format: 'perform regression with Y as [numeric_col_y] and X as [numeric_col_x]'.`;
                 }
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             }
             // Add Calculated Column
             else if (query.includes('add column') && query.includes('as')) {
@@ -1030,17 +1384,8 @@
                     const operatorWord = match[3].trim();
                     const col2Raw = match[4].trim();
 
-                    let foundCol1 = null;
-                    let foundCol2 = null;
-
-                    for (const col in schema) {
-                        if (col1Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundCol1 = col;
-                        }
-                        if (col2Raw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundCol2 = col;
-                        }
-                    }
+                    let foundCol1 = findNumericColumn(col1Raw);
+                    let foundCol2 = findNumericColumn(col2Raw);
 
                     if (foundCol1 && foundCol2) {
                         let operator = '';
@@ -1058,7 +1403,7 @@
                                 const val2 = Number(row[foundCol2]);
                                 let result;
 
-                                if (!isNaN(val1) && !isNaN(val2)) {
+                                if (!isNaN(val1) && !isNaN(val1) && val1 !== null && val2 !== null) { // Check for nulls explicitly as well
                                     if (operator === '+') result = val1 + val2;
                                     else if (operator === '-') result = val1 - val2;
                                     else if (operator === '*') result = val1 * val2;
@@ -1082,7 +1427,7 @@
                     aiResponseText = `Please use the format: 'add column [new_name] as [col1] [operator] [col2]', where operator is 'plus', 'minus', 'times', or 'divided by'.`;
                 }
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             }
 
 
@@ -1094,17 +1439,8 @@
                 const secondaryColRaw = pieDoughnutPolarMatch[3] ? pieDoughnutPolarMatch[3].trim() : null;
                 const aggregateType = pieDoughnutPolarMatch[5] ? pieDoughnutPolarMatch[5].toLowerCase() : 'sum';
 
-                let primaryColumn = null;
-                let secondaryColumn = null;
-
-                for (const col in schema) {
-                    if (primaryColRaw.includes(col.toLowerCase())) {
-                        primaryColumn = col;
-                    }
-                    if (secondaryColRaw && secondaryColRaw.includes(col.toLowerCase())) {
-                        secondaryColumn = col;
-                    }
-                }
+                let primaryColumn = findColumnByName(primaryColRaw);
+                let secondaryColumn = secondaryColRaw ? findColumnByName(secondaryColRaw) : null;
 
                 if (primaryColumn) {
                     let labels, data, chartTitle;
@@ -1131,11 +1467,11 @@
 
                     createChart(chartType.replace(' ', ''), chartTitle, labels, data); // remove space from 'polar area'
                     aiResponseText = `Here's a **${chartType} chart** for "<strong>${chartTitle}</strong>".`;
-                    appendMessage('AI', aiResponseText, 'ai'); // Added append and return here
+                    appendMessage('AI', aiResponseText, 'ai');
                     return;
                 } else {
                     aiResponseText = `I couldn't find the column "${primaryColRaw}" to create that chart. Please specify a valid column name.`;
-                    appendMessage('AI', aiResponseText, 'ai'); // Added append and return here
+                    appendMessage('AI', aiResponseText, 'ai');
                     return;
                 }
             }
@@ -1149,17 +1485,8 @@
                 const categoricalColRaw = barChartMatch[2].trim();
                 const aggregateType = barChartMatch[4] ? barChartMatch[4].toLowerCase() : 'sum'; // Default to sum
 
-                let numericColumn = null;
-                let categoricalColumn = null;
-
-                for (const col in schema) {
-                    if (numericColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                        numericColumn = col;
-                    }
-                    if (categoricalColRaw.includes(col.toLowerCase())) { // Categorical can be any type really
-                        categoricalColumn = col;
-                    }
-                }
+                let numericColumn = findNumericColumn(numericColRaw);
+                let categoricalColumn = findCategoricalColumn(categoricalColRaw);
 
                 if (numericColumn && categoricalColumn) {
                     const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateType);
@@ -1168,11 +1495,11 @@
                                 categoricalColumn, `${aggregateType} of ${numericColumn}`);
                     aiResponseText = `Here's a **bar chart** showing the ${aggregateType} of "<strong>${numericColumn}</strong>" for each "<strong>${categoricalColumn}</strong>".`;
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 } else {
                     aiResponseText = `To create that bar chart, I need a valid numeric column and a valid categorical column. Please check your column names. Example: 'show bar chart of sales by region'`;
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 }
             }
             // Line Chart: show line chart with x as [column] and y as [numeric_column]
@@ -1181,17 +1508,8 @@
                 const xColRaw = lineChartMatch[1].trim();
                 const yColRaw = lineChartMatch[2].trim();
 
-                let xColumn = null;
-                let yColumn = null;
-
-                for (const col in schema) {
-                    if (xColRaw.includes(col.toLowerCase())) {
-                        xColumn = col;
-                    }
-                    if (yColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                        yColumn = col;
-                    }
-                }
+                let xColumn = findColumnByName(xColRaw);
+                let yColumn = findNumericColumn(yColRaw);
 
                 if (xColumn && yColumn) {
                     const labels = rawData.map(row => row[xColumn]);
@@ -1207,30 +1525,21 @@
 
                     aiResponseText = `Here's a **line chart** showing "<strong>${yColumn}</strong>" as it relates to "<strong>${xColumn}</strong>".`;
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 } else {
                     aiResponseText = `To create that line chart, I need a valid X-axis column and a valid numeric Y-axis column. Example: 'show line chart with x as date and y as temperature'`;
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 }
             }
             // Scatter Plot: show scatter plot with x as [numeric_column1] and y as [numeric_column2]
             const scatterPlotMatch = query.match(/show scatter plot with x as\s+([\w\s]+)\s+and y as\s+([\w\s]+)/);
             if (scatterPlotMatch) {
                 const xColRaw = scatterPlotMatch[1].trim();
-                const yColRaw = match[2].trim();
+                const yColRaw = scatterPlotMatch[2].trim();
 
-                let xColumn = null;
-                let yColumn = null;
-
-                for (const col in schema) {
-                    if (xColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                        xColumn = col;
-                    }
-                    if (yColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                        yColumn = col;
-                    }
-                }
+                let xColumn = findNumericColumn(xColRaw);
+                let yColumn = findNumericColumn(yColRaw);
 
                 if (xColumn && yColumn) {
                     const scatterData = rawData.map(row => ({
@@ -1246,11 +1555,11 @@
                     });
                     aiResponseText = `Here's a **scatter plot** visualizing the relationship between "<strong>${xColumn}</strong>" and "<strong>${yColumn}</strong>".`;
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 } else {
                     aiResponseText = `I need two valid numeric columns to create a scatter plot. Example: 'show scatter plot with x as age and y as income'`;
                     appendMessage('AI', aiResponseText, 'ai');
-                    return; // Added return
+                    return;
                 }
             }
 
@@ -1270,18 +1579,13 @@
                     pendingCleaningSuggestion = null; // Clear the suggestion after execution
                 }
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('count unique')) {
                 let foundColumn = null;
                 const match = query.match(/count unique\s+([\w\s]+)/);
                 if (match && match[1]) {
                     const colNameRaw = match[1].trim();
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase())) {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    foundColumn = findColumnByName(colNameRaw);
                 }
 
                 if (foundColumn) {
@@ -1292,18 +1596,13 @@
                     aiResponseText = "I couldn't find that column to count unique values. Please specify a valid column name.";
                 }
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('show frequency of') || query.includes('top values in')) {
                 let foundColumn = null;
                 const match = query.match(/(show frequency of|top values in)\s+([\w\s]+)/);
                 if (match && match[2]) {
                     const colNameRaw = match[2].trim();
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase())) {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    foundColumn = findColumnByName(colNameRaw);
                 }
 
                 if (foundColumn) {
@@ -1325,7 +1624,7 @@
                     aiResponseText = "I couldn't find that column to show its frequency. Please specify a valid column name.";
                 }
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('min ') || query.includes('max ')) {
                 let foundColumn = null;
                 const matchMin = query.match(/min\s+([\w\s]+)/);
@@ -1333,12 +1632,7 @@
                 const colNameRaw = matchMin ? matchMin[1].trim() : (matchMax ? matchMax[1].trim() : null);
 
                 if (colNameRaw) {
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    foundColumn = findNumericColumn(colNameRaw);
                 }
 
                 if (foundColumn) {
@@ -1352,29 +1646,20 @@
                     aiResponseText = "I couldn't find a numeric column to calculate min/max for. Please specify a valid numeric column.";
                 }
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('how many rows') || query.includes('row count') || query === 'count rows') {
                 const numRows = rawData.length;
                 aiResponseText = `Your dataset currently contains **${numRows} rows** (records).`;
                 appendMessage('AI', aiResponseText, 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('average ') && query.includes(' by ')) {
                 const match = query.match(/average\s+([\w\s]+)\s+by\s+([\w\s]+)/);
                 if (match && match.length === 3) {
                     const numericColRaw = match[1].trim();
                     const categoricalColRaw = match[2].trim();
 
-                    let numericColumn = null;
-                    let categoricalColumn = null;
-
-                    for (const col in schema) {
-                        if (numericColRaw.includes(col.toLowerCase()) && schema[col] === 'number') {
-                            numericColumn = col;
-                        }
-                        if (categoricalColRaw.includes(col.toLowerCase()) && schema[col] === 'string') {
-                            categoricalColumn = col;
-                        }
-                    }
+                    let numericColumn = findNumericColumn(numericColRaw);
+                    let categoricalColumn = findCategoricalColumn(categoricalColRaw);
 
                     if (numericColumn && categoricalColumn) {
                         const groupedAverages = {};
@@ -1410,14 +1695,13 @@
                     aiResponseText = `Please rephrase your 'average by' query as: 'average [numeric column] by [categorical column]'.`;
                 }
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('sum ')) {
                 let foundColumn = null;
-                for (const col in schema) {
-                    if (query.includes(col.toLowerCase()) && schema[col] === 'number') {
-                        foundColumn = col;
-                        break;
-                    }
+                const match = query.match(/sum\s+([\w\s]+)/);
+                if (match && match[1]) {
+                    const colNameRaw = match[1].trim();
+                    foundColumn = findNumericColumn(colNameRaw);
                 }
                 if (foundColumn) {
                     const sum = calculateColumnSum(foundColumn, rawData);
@@ -1427,14 +1711,13 @@
                     aiResponseText = "I couldn't find a **numeric column** to calculate the sum for. Please specify a valid numeric column, like 'sum sales'.";
                 }
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('average ') || query.includes('avg ')) {
                 let foundColumn = null;
-                for (const col in schema) {
-                    if (query.includes(col.toLowerCase()) && schema[col] === 'number') {
-                        foundColumn = col;
-                        break;
-                    }
+                const match = query.match(/(average|avg)\s+([\w\s]+)/);
+                if (match && match[2]) {
+                    const colNameRaw = match[2].trim();
+                    foundColumn = findNumericColumn(colNameRaw);
                 }
                 if (foundColumn) {
                     const average = calculateColumnAverage(foundColumn, rawData);
@@ -1444,7 +1727,7 @@
                     aiResponseText = "I couldn't find a **numeric column** to calculate the average for. Please specify a valid numeric column, like 'average age'.";
                 }
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('filter data where') || query.includes('show rows where') || query.includes('find entries where')) {
                 const match = query.match(/(filter data where|show rows where|find entries where)\s+([\w\s]+)\s*(<=|>=|<|>|=|!=)\s*([\w\s."']+)/);
                 if (match && match.length === 5) {
@@ -1452,13 +1735,7 @@
                     const operator = match[3].trim();
                     let valueRaw = match[4].trim();
 
-                    let foundColumn = null;
-                    for (const col in schema) {
-                        if (colNameRaw.includes(col.toLowerCase())) {
-                            foundColumn = col;
-                            break;
-                        }
-                    }
+                    let foundColumn = findColumnByName(colNameRaw);
 
                     if (foundColumn) {
                         let filteredData = [];
@@ -1507,7 +1784,7 @@
                     aiResponseText = "I need a clearer filter condition. Please use the format: **'filter data where [column] [operator] [value]'**, e.g., 'filter data where sales > 1000' or 'filter data where city = \"London\"'.";
                 }
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             }
             else if (query.includes('show all data') || query.includes('display all data')) {
                 analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
@@ -1515,20 +1792,19 @@
                                   <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
                 aiResponseText = `Understood! Here's your data:`;
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('show schema') || query.includes('display schema')) {
                 analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
                                   <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
                 aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('show') || query.includes('display')) {
                 let foundColumn = null;
-                for (const col in schema) {
-                    if (query.includes(col.toLowerCase())) {
-                        foundColumn = col;
-                        break;
-                    }
+                const match = query.match(/(show|display)\s+([\w\s]+)/);
+                if (match && match[2]) {
+                    const colNameRaw = match[2].trim();
+                    foundColumn = findColumnByName(colNameRaw);
                 }
 
                 if (foundColumn) {
@@ -1539,7 +1815,7 @@
                     aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
                 }
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             } else if (query.includes('describe my dataset') || query.includes('summarize data') || query.includes('give me an overview') || query.includes('tell me about my data') || query.includes("what's in my data")) {
                 let numRows = rawData.length;
                 let numCols = Object.keys(schema).length;
@@ -1593,17 +1869,12 @@
                 analysisContent = descriptionNarrative; // Direct use of the narrative HTML
                 aiResponseText = `Certainly! Here's a comprehensive overview and description of your dataset, crafted to give you quick insights. This analysis was performed entirely client-side, ensuring your data's privacy.`;
                 appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
-                return; // Added return
+                return;
             }
 
-            // Construct the final AI message, combining narrative, and result
-            let finalAIMessage = aiResponseText;
-            if (analysisContent) {
-                finalAIMessage += `<div class="mt-4">${analysisContent}</div>`;
-            }
-
-            // Fallback for unrecognized commands (should rarely be hit with returns above)
-            appendMessage('AI', finalAIMessage, 'ai');
+            // Fallback for unrecognized commands
+            aiResponseText = `I'm sorry, I didn't understand that command. Please refer to the command list above for examples, or try rephrasing your request.`;
+            appendMessage('AI', aiResponseText, 'ai');
         }
 
         // Handle sending messages
