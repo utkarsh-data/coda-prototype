@@ -1709,7 +1709,7 @@
                         // Example: "DD/MM/YYYY"
                         let parts = dateString.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
                         if (parts) {
-                            // Reorder to ISO-MM-DD for reliable Date constructor
+                            // Reorder to YYYY-MM-DD for reliable Date constructor
                             const d = new Date(`${parts[3]}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`);
                             return isNaN(d.getTime()) ? null : d;
                         }
@@ -1797,7 +1797,10 @@
 
                         regions.forEach(region => {
                             // Filter data relevant to the current region and valid dates
-                            const regionData = rawData.filter(row => row[regionCol] === region && parseDate(row[dateCol]) !== null);
+                            const regionData = rawData.filter(row => {
+                                const rowDate = parseDate(row[dateCol]);
+                                return row[regionCol] === region && rowDate !== null;
+                            });
 
                             // Calculate sales for the latest day in the loop
                             const currentDaySalesData = regionData.filter(row => {
@@ -1939,7 +1942,7 @@
                                 type: 'trend',
                                 icon: 'fas fa-chart-bar',
                                 title: `Top/Bottom ${numCol} by ${catCol} (Average)`,
-                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}** shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
+                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}</strong>" shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
                                 action: `show bar chart of ${numCol} by ${catCol} as average`
                             });
                         }
@@ -2303,6 +2306,11 @@
                             rawLLMText = rawLLMText.trim();
                         }
 
+                        // Check if the cleaned text is empty or too short to be valid JSON
+                        if (!rawLLMText || rawLLMText.length < 2) { // Minimal JSON is "{}"
+                            throw new Error("LLM returned empty or too short JSON string after cleaning.");
+                        }
+
                         console.log("Cleaned LLM Response Text (attempting to parse):", rawLLMText);
 
                         let nluOutputJson;
@@ -2311,7 +2319,7 @@
                         } catch (parseError) {
                             console.error("JSON Parse Error:", parseError);
                             console.error("Malformed JSON received from LLM:", rawLLMText);
-                            aiResponseText = `I received an invalid response from the AI. It couldn't be parsed. This might be due to an unexpected format from the NLU model. Please try again.`;
+                            aiResponseText = `I received an invalid response from the AI. The response was not in a parsable JSON format. Please try again or rephrase. (Error details: ${parseError.message})`;
                             appendMessage('AI', aiResponseText, 'ai');
                             return; // Exit function as we can't proceed with malformed JSON
                         }
@@ -2580,7 +2588,8 @@
                                     aiResponseText = `To calculate average by category, I need both a numeric column and a categorical column. Example: 'average sales by region'.`;
                                     break;
                                 }
-                                const numericColumn = findNumericColumn(params.column_name); // Changed from params.numeric_column as it seems it was inconsistent
+                                // Use the correct parameter names from the LLM's NLU output
+                                const numericColumn = findNumericColumn(params.numeric_column);
                                 const categoricalColumn = findCategoricalColumn(params.categorical_column);
 
                                 if (numericColumn && categoricalColumn) {
@@ -3091,12 +3100,13 @@
                                 break;
                         }
                     } else {
-                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected. Please try again or rephrase.`;
+                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected or empty. Please try again or rephrase.`;
                     }
                 } catch (error) {
                     hideLoadingIndicator(); // Hide loading indicator on error
                     console.error("Error during NLU processing or command execution:", error);
-                    aiResponseText = `An unexpected error occurred while trying to process your request: "${error.message}". This might be a temporary issue or an unexpected input. Please try again.`;
+                    // Provide a more user-friendly message for internal errors
+                    aiResponseText = `An unexpected internal error occurred: "${error.message}". This might be a temporary issue with the AI's response. Please try again.`;
                 }
                 // This general appendMessage is now only called for non-chart intents, or if there was an error.
                 if (aiResponseText || analysisContent) { // Only append if there's content to add
