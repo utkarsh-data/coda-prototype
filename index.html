@@ -1827,7 +1827,7 @@
 
                                 if (salesDropPercentage > dropThreshold) {
                                     let message = `Sales in the **${region} region** are **down ${salesDropPercentage.toFixed(1)}%** on ${latestDate.toLocaleDateString()} compared to the last 7-day average. This deviation is significant.`;
-                                    // Use a common date format for suggested command, e.g., YYYY-MM-DD or MM/DD/YYYY
+                                    // Use a common date format for suggested command, e.g.,YYYY-MM-DD or MM/DD/YYYY
                                     const suggestedDate = latestDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
                                     // Check for consistent marketing spend if the column exists
@@ -2263,14 +2263,15 @@
                                     "intent": { "type": "STRING" },
                                     "parameters": {
                                         "type": "OBJECT",
-                                        // Removed additionalProperties to be stricter, can add back if needed
+                                        // Re-added additionalProperties to be less strict for parsing; better for LLM flexibility
+                                        "additionalProperties": true, 
                                         properties: {
                                             "column_name": { "type": "STRING" },
                                             "column_name_2": { "type": "STRING" },
                                             "operator": { "type": "STRING" },
-                                            "value": { "type": ["STRING", "NUMBER"] }, // Value can be string or number
-                                            "aggregate_type": { "type": "STRING" }, // Removed enum here, less strict
-                                            "chart_type": { "type": "STRING" }, // NLU will infer type
+                                            "value": { "type": ["STRING", "NUMBER"] },
+                                            "aggregate_type": { "type": "STRING" },
+                                            "chart_type": { "type": "STRING" },
                                             "num_bins": { "type": "NUMBER" },
                                             "new_column_name": { "type": "STRING" },
                                             "old_column_name": { "type": "STRING" },
@@ -2286,7 +2287,7 @@
                         }
                     };
 
-                    const apiKey = "AIzaSyCN6ZKV57_-vnHOcRLGjvxDoVRfsqCph8o"; // Leave this empty; Canvas will inject the key at runtime
+                    const apiKey = ""; // Leave this empty; Canvas will inject the key at runtime
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
@@ -2853,7 +2854,6 @@
                                     aiResponseText = `To summarize by category, I need both a numeric column and a categorical column. Example: 'summarize sales by region'.`;
                                     break;
                                 }
-                                // Use the correct parameter names from the LLM's NLU output
                                 const numericColumn = findNumericColumn(params.numeric_column);
                                 const categoricalColumn = findCategoricalColumn(params.categorical_column);
 
