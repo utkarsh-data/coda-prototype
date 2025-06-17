@@ -276,36 +276,6 @@
         .collapsible-content.show {
             max-height: 500px; /* Adjust as needed for content */
         }
-
-        /* Voice recognition button styles (REMOVED) */
-        /*
-        .voice-button-gradient {
-            background: linear-gradient(90deg, #90cdf4, #63b3ed);
-            transition: all 0.3s ease-in-out;
-        }
-        .voice-button-gradient:hover {
-            background: linear-gradient(90deg, #63b3ed, #90cdf4);
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 15px rgba(99, 179, 237, 0.4);
-        }
-        .voice-button-gradient:active {
-            transform: translateY(0) scale(0.98);
-            box-shadow: 0 2px 5px rgba(99, 179, 237, 0.2);
-        }
-        .voice-button-gradient.recording {
-            background: linear-gradient(90deg, #ef4444, #dc2626);
-            animation: pulse-red 1.5s infinite;
-        }
-
-        @keyframes pulse-red {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-            }
-        }
-        */
     </style>
 </head>
 <body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center h-screen w-screen">
@@ -478,7 +448,6 @@
         const closeProactiveInsightsBtn = document.getElementById('closeProactiveInsightsBtn');
         const insightSearchInput = document.getElementById('insightSearchInput'); // Search input
         const filterButtons = document.querySelectorAll('.filter-btn'); // Filter buttons
-
 
         let isHeaderShrunk = false; // New flag to track header state
 
@@ -759,7 +728,12 @@
                 myChart.destroy();
             }
 
-            // Create the AI message that introduces the chart
+            const chartCanvas = document.createElement('canvas');
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+            chartContainer.appendChild(chartCanvas);
+
+            // Append a temporary message to the chat with the chart container
             const chartMessageDiv = document.createElement('div');
             chartMessageDiv.className = 'flex items-start mb-4 fade-in-message';
             chartMessageDiv.innerHTML = `
@@ -769,13 +743,6 @@
                 </div>
             `;
             chatArea.appendChild(chartMessageDiv); // Append the AI text bubble
-
-            // Create the chart container
-            const chartCanvas = document.createElement('canvas');
-            const chartContainer = document.createElement('div');
-            chartContainer.className = 'chart-container'; // This class has margin-top for spacing
-            chartContainer.appendChild(chartCanvas);
-            
             chatArea.appendChild(chartContainer); // Append the chart below the text bubble
             // Scroll to the bottom of the chat area to show the latest chart
             chatArea.scrollTop = chatArea.scrollHeight;
@@ -1251,7 +1218,7 @@
         // New Feature: Rename column
         function renameColumn(oldName, newName) {
             const actualOldName = findColumnByName(oldName);
-            if (!actualOldOldName) {
+            if (!actualOldName) {
                 return { success: false, message: `Column "<strong>${oldName}</strong>" not found.` };
             }
             if (Object.keys(schema).includes(newName)) {
@@ -1403,35 +1370,6 @@
         }
 
         /**
-         * Helper function to parse dates. Handles common formats.
-         * @param {string} dateString
-         * @returns {Date | null} Parsed Date object or null if invalid.
-         */
-        function parseDate(dateString) {
-            try {
-                const date = new Date(dateString);
-                // Check if date is valid (e.g., handles "Invalid Date")
-                return isNaN(date.getTime()) ? null : date;
-            } catch (e) {
-                console.warn(`Could not parse date string: ${dateString}`);
-                return null;
-            }
-        }
-
-        /**
-         * Helper to get sum of a numeric column for a filtered dataset.
-         * @param {string} colName - The name of the numeric column.
-         * @param {Array<Object>} dataSubset - The subset of data to calculate the sum for.
-         * @returns {number} The sum of the column, or 0 if no valid numbers.
-         */
-        function getSumFromSubset(colName, dataSubset) {
-            return dataSubset.reduce((acc, row) => {
-                const val = Number(row[colName]);
-                return acc + (isNaN(val) ? 0 : val);
-            }, 0);
-        }
-
-        /**
          * Generates and returns proactive insights as an HTML string.
          * This includes anomaly detection and identifying top/bottom performers, and correlations.
          * @returns {string | null} An HTML string containing the insights, or null if no data.
@@ -1444,101 +1382,7 @@
 
             let insights = [];
 
-            // 1. Sales Drop Anomaly Detection with Root Cause Suggestion
-            const dateCol = findColumnByName('Date') || findColumnByName('Order Date') || findColumnByName('Transaction Date');
-            const salesCol = findNumericColumn('Sales') || findNumericColumn('Revenue') || findNumericColumn('Amount');
-            const regionCol = findCategoricalColumn('Region') || findCategoricalColumn('Area') || findCategoricalColumn('Territory');
-            const marketingSpendCol = findNumericColumn('Marketing_Spend') || findNumericColumn('Ad_Spend') || findNumericColumn('Campaign_Cost');
-
-            if (dateCol && salesCol && regionCol) {
-                // Get all unique dates and sort them to find the latest
-                const uniqueDates = [...new Set(rawData.map(row => row[dateCol]))]
-                                    .map(parseDate)
-                                    .filter(d => d !== null)
-                                    .sort((a, b) => a.getTime() - b.getTime());
-
-                if (uniqueDates.length >= 8) { // Need at least 8 days for 1 current + 7 historical
-                    const latestDate = uniqueDates[uniqueDates.length - 1];
-                    const eightDaysAgo = new Date(latestDate.getTime());
-                    eightDaysAgo.setDate(latestDate.getDate() - 7); // Start of the 7-day lookback period
-
-                    const regions = [...new Set(rawData.map(row => row[regionCol]))].filter(r => r); // Get unique regions
-
-                    regions.forEach(region => {
-                        const regionData = rawData.filter(row => row[regionCol] === region && parseDate(row[dateCol]) !== null);
-
-                        const currentDaySalesData = regionData.filter(row => {
-                            const date = parseDate(row[dateCol]);
-                            return date && date.getDate() === latestDate.getDate() &&
-                                   date.getMonth() === latestDate.getMonth() &&
-                                   date.getFullYear() === latestDate.getFullYear();
-                        });
-                        const currentDaySales = getSumFromSubset(salesCol, currentDaySalesData);
-
-                        const last7DaysSalesData = regionData.filter(row => {
-                            const date = parseDate(row[dateCol]);
-                            return date && date.getTime() >= eightDaysAgo.getTime() && date.getTime() < latestDate.getTime();
-                        });
-                        const last7DaysAvgSales = last7DaysSalesData.length > 0 ? getSumFromSubset(salesCol, last7DaysSalesData) / last7DaysSalesData.length : 0;
-
-                        if (last7DaysAvgSales > 0) {
-                            const salesDropPercentage = ((last7DaysAvgSales - currentDaySales) / last7DaysAvgSales) * 100;
-                            const dropThreshold = 15; // Define significant drop threshold
-
-                            if (salesDropPercentage > dropThreshold) {
-                                let message = `Sales in the **${region} region** are **down ${salesDropPercentage.toFixed(1)}%** on ${latestDate.toLocaleDateString()} compared to the last 7-day average. This deviation is significant.`;
-                                let actionText = `filter data where ${regionCol} = "${region}" and ${dateCol} = "${latestDate.toLocaleDateString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit'})}"`; // Adjusted date format for filtering
-
-                                // Check for consistent marketing spend
-                                if (marketingSpendCol) {
-                                    const currentDayMarketingSpend = getSumFromSubset(marketingSpendCol, currentDaySalesData);
-                                    const last7DaysMarketingSpend = last7DaysSalesData.length > 0 ? getSumFromSubset(marketingSpendCol, last7DaysSalesData) / last7DaysSalesData.length : 0;
-                                    const marketingSpendDeviation = last7DaysMarketingSpend > 0 ? Math.abs((currentDayMarketingSpend - last7DaysMarketingSpend) / last7DaysMarketingSpend) * 100 : Infinity;
-                                    const marketingConsistencyThreshold = 10; // e.g., within 10% deviation
-
-                                    if (marketingSpendDeviation <= marketingConsistencyThreshold) {
-                                        message += ` This is despite a **consistent marketing spend** in the region.`;
-                                        message += `<br><br><strong>Recommendation:</strong>
-                                            <ol>
-                                                <li><strong>Investigate Sales Transactions:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()} to identify immediate patterns. Type: \`${actionText}\`</li>
-                                                <li><strong>Review External Factors:</strong> This suggests external factors may be at play. Consider reviewing recent mobile app updates, website traffic analytics, or local events that might impact sales in the ${region} region.</li>
-                                                <li><strong>Engage Relevant Teams:</strong> If external analysis points to a technical issue, consider alerting your mobile development or product team.</li>
-                                            </ol>
-                                            <em>(Note: CoDA is a client-side tool and cannot directly interact with external systems like email or Jira.)</em>`;
-                                    } else {
-                                        message += ` It also appears **marketing spend has changed** significantly in this period.`;
-                                        message += `<br><br><strong>Recommendation:</strong>
-                                            <ol>
-                                                <li><strong>Investigate Marketing Spend:</strong> Analyze the specific marketing activities or budget changes in ${region} for ${latestDate.toLocaleDateString()}. Type: \`show ${marketingSpendCol} for ${region} on ${latestDate.toLocaleDateString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit'})}\`</li>
-                                                <li><strong>Deep Dive Sales Data:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()}. Type: \`${actionText}\`</li>
-                                                <li><strong>Correlate & Act:</strong> Understand if the change in marketing spend directly correlates with the sales drop, then decide on necessary actions.</li>
-                                            </ol>
-                                            <em>(Note: CoDA is a client-side tool and cannot directly interact with external systems like email or Jira.)</em>`;
-                                    }
-                                } else {
-                                    // No marketing spend column, provide general recommendation
-                                    message += `<br><br><strong>Recommendation:</strong>
-                                        <ol>
-                                            <li><strong>Investigate Sales Transactions:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()} to identify immediate patterns. Type: \`${actionText}\`</li>
-                                            <li><strong>Consider External Factors:</strong> Review factors outside this dataset that might influence sales in the ${region} region.</li>
-                                        </ol>`;
-                                }
-
-                                insights.push({
-                                    type: 'anomaly',
-                                    icon: 'fas fa-chart-line-down', // A more specific icon for drops
-                                    title: `Significant Sales Drop Detected in ${region} Region!`, // More specific title
-                                    message: message,
-                                    action: actionText // Action to filter data by region and date
-                                });
-                            }
-                        }
-                    });
-                }
-            }
-
-
-            // 2. Anomaly Detection (using existing findOutliers - now item 3)
+            // 1. Anomaly Detection (using existing findOutliers)
             const numericCols = Object.keys(schema).filter(col => schema[col] === 'number');
             numericCols.forEach(col => {
                 const { outliers, lowerBound, upperBound } = findOutliers(col, rawData);
@@ -1546,62 +1390,62 @@
                     insights.push({
                         type: 'anomaly',
                         icon: 'fas fa-exclamation-triangle',
-                        title: `Outliers Detected in ${col} Column`, // More specific title
+                        title: 'Anomaly Detected',
                         message: `I've detected **${outliers.length} potential outliers** in the numeric column "<strong>${col}</strong>". These values fall outside the IQR bounds (${lowerBound} - ${upperBound}). This could indicate data entry errors or unusual events that warrant further investigation.`,
                         action: `find outliers in ${col}`
                     });
                 }
             });
 
-            // 3. Top/Bottom Performer Identification for numeric values by categorical groups (now item 4)
+            // 2. Top/Bottom Performer Identification for numeric values by categorical groups
             const categoricalCols = Object.keys(schema).filter(col => schema[col] === 'string');
 
             numericCols.forEach(numCol => {
                 categoricalCols.forEach(catCol => {
-                    // Skip if the categorical column is the date column as that's handled by sales drop now
-                    if (catCol === dateCol) return;
-
-                    const groupedData = {}; // Use a single object to hold sum and count
+                    const groupedSums = {};
+                    const groupedAverages = {};
+                    const counts = {};
 
                     rawData.forEach(row => {
                         const category = row[catCol];
                         const numericValue = Number(row[numCol]);
 
                         if (!isNaN(numericValue)) {
-                            if (!groupedData[category]) {
-                                groupedData[category] = { sum: 0, count: 0 };
+                            if (!groupedSums[category]) {
+                                groupedSums[category] = 0;
+                                counts[category] = 0;
                             }
-                            groupedData[category].sum += numericValue;
-                            groupedData[category].count++;
+                            groupedSums[category] += numericValue;
+                            counts[category]++;
                         }
                     });
 
-                    // Ensure there's data before sorting and accessing properties
-                    const sortedBySum = Object.entries(groupedData).sort(([, a], [, b]) => b.sum - a.sum);
-                    const sortedByAvg = Object.entries(groupedData)
-                                            .map(([category, data]) => [category, data.sum / data.count])
-                                            .filter(([, avg]) => !isNaN(avg)) // Filter out NaNs if any categories had no numeric data
-                                            .sort(([, a], [, b]) => b - a);
+                    for (const category in groupedSums) {
+                        groupedAverages[category] = groupedSums[category] / counts[category];
+                    }
 
-                    if (sortedBySum.length > 1) { // Need at least two categories to talk about top/bottom
+                    const sortedBySum = Object.entries(groupedSums).sort(([, a], [, b]) => b - a);
+                    const sortedByAvg = Object.entries(groupedAverages).sort(([, a], [, b]) => b - a);
+
+                    if (sortedBySum.length > 1) {
                         const topSumCat = sortedBySum[0];
                         const bottomSumCat = sortedBySum[sortedBySum.length - 1];
                         insights.push({
                             type: 'trend',
                             icon: 'fas fa-chart-line',
-                            title: `Top/Bottom ${numCol} by ${catCol} (Total)`, // More specific title
-                            message: `For **total ${numCol}**, "<strong>${topSumCat[0]}</strong>" in **${catCol}** has the highest sum (${topSumCat[1].sum.toFixed(2)}), while "<strong>${bottomSumCat[0]}</strong>" has the lowest (${bottomSumCat[1].sum.toFixed(2)}). This highlights key areas of high and low aggregate performance.`,
+                            title: 'Performance Trend (Total)',
+                            message: `For **total ${numCol}**, "<strong>${topSumCat[0]}</strong>" in **${catCol}** has the highest sum (${topSumCat[1].toFixed(2)}), while "<strong>${bottomSumCat[0]}</strong>" has the lowest (${bottomSumCat[1].toFixed(2)}). This highlights key areas of high and low aggregate performance.`,
                             action: `show bar chart of ${numCol} by ${catCol} as sum`
                         });
                     }
 
-                    if (sortedByAvg.length > 1) { // Need at least two categories to talk about top/bottom
+                    if (sortedByAvg.length > 1) {
                         const topAvgCat = sortedByAvg[0];
                         const bottomAvgCat = sortedByAvg[sortedByAvg.length - 1];
                         insights.push({
                             type: 'trend',
                             icon: 'fas fa-chart-bar',
-                            title: `Top/Bottom ${numCol} by ${catCol} (Average)`, // More specific title
+                            title: 'Performance Trend (Average)',
                             message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}** shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
                             action: `show bar chart of ${numCol} by ${catCol} as average`
                         });
@@ -1609,7 +1453,7 @@
                 });
             });
 
-            // 4. Correlation Insights between numeric columns (now item 5)
+            // 3. Correlation Insights between numeric columns
             const numericColumnNames = Object.keys(schema).filter(col => schema[col] === 'number');
             for (let i = 0; i < numericColumnNames.length; i++) {
                 for (let j = i + 1; j < numericColumnNames.length; j++) {
@@ -1639,7 +1483,7 @@
                             insights.push({
                                 type: 'correlation',
                                 icon: 'fas fa-link',
-                                title: `Correlation between ${col1} and ${col2}`, // More specific title
+                                title: 'Relationship Insight (Correlation)',
                                 message: `There's ${correlationStrength} ${direction} correlation (${correlation.toFixed(2)}) between "<strong>${col1}</strong>" and "<strong>${col2}</strong>". ${interpretation}`,
                                 action: `show scatter plot with X as ${col1} and Y as ${col2}`
                             });
@@ -1648,11 +1492,8 @@
                 }
             }
 
-            // 5. Categorical Distribution - Top N most/least frequent values (now item 6)
+            // 4. Categorical Distribution - Top N most/least frequent values
             categoricalCols.forEach(catCol => {
-                // Skip if the categorical column is the date column or region column as that's handled by sales drop now
-                if (catCol === dateCol || catCol === regionCol) return;
-
                 const values = rawData.map(row => row[catCol]);
                 const valueCounts = {};
                 values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
@@ -1663,7 +1504,7 @@
                     insights.push({
                         type: 'distribution',
                         icon: 'fas fa-chart-pie',
-                        title: `Distribution of ${catCol}`, // More specific title
+                        title: 'Categorical Distribution',
                         message: `In "<strong>${catCol}</strong>", the top values are: ${topValues}. There are ${sortedCounts.length} unique values in total. Understanding these distributions is crucial for market segmentation or resource allocation.`,
                         action: `show frequency of ${catCol}`
                     });
@@ -1699,8 +1540,6 @@
             filteredInsights.forEach((insight, index) => {
                 const insightCard = document.createElement('div');
                 insightCard.className = 'insight-card';
-                // Replace action button with a more flexible structure for multi-line recommendations
-                // The 'Suggested Action' part should now correctly parse HTML from the message.
                 insightCard.innerHTML = `
                     <div class="insight-header cursor-pointer" data-insight-index="${index}">
                         <i class="${insight.icon}"></i>
@@ -1709,7 +1548,7 @@
                     </div>
                     <div class="collapsible-content">
                         <p class="insight-message">${insight.message}</p>
-                        ${insight.action ? `<span class="text-sm text-blue-100 italic">Suggested Command: </span><a href="#" class="insight-action" onclick="typeIntoChatAndSubmit('${insight.action.replace(/'/g, "\\'")}'); return false;">'${insight.action}'</a>` : ''}
+                        <span class="text-sm text-blue-100 italic">Suggested Action: </span><a href="#" class="insight-action" onclick="typeIntoChatAndSubmit('${insight.action}'); return false;">'${insight.action}'</a>
                     </div>
                 `;
                 proactiveInsightsContent.appendChild(insightCard);
@@ -1725,11 +1564,6 @@
                         content.classList.remove('show');
                         icon.classList.remove('rotate-180');
                     } else {
-                        // Hide all other open insights
-                        document.querySelectorAll('.collapsible-content.show').forEach(openContent => {
-                            openContent.classList.remove('show');
-                            openContent.previousElementSibling.querySelector('.fa-chevron-down').classList.remove('rotate-180');
-                        });
                         content.classList.add('show');
                         icon.classList.add('rotate-180');
                     }
@@ -1778,9 +1612,6 @@
             showLoadingIndicator();
 
             try {
-                // Escape any backticks that might appear in the stringified schema to prevent premature template literal closure
-                const escapedSchemaJson = JSON.stringify(schema, null, 2).replace(/`/g, '\\`');
-
                 // Construct the prompt for the LLM
                 // Provide the schema to help the LLM understand available columns and their types
                 /*
@@ -1789,7 +1620,7 @@
                  * The JSON *must* strictly adhere to the provided schema, with all keys
                  * and string values enclosed in double quotes.
                  */
-                const prompt = `You are an AI data analysis assistant named CoDA. Your primary goal is to interpret user queries about a dataset and output *only* a structured JSON response. Your response MUST BE PURE JSON, with no surrounding markdown (e.g., no \\\`\`\`json or \\\`\`\`) and no conversational text. The JSON *must* strictly adhere to the provided schema, with all keys and string values enclosed in double quotes.
+                const prompt = `You are an AI data analysis assistant named CoDA. Your primary goal is to interpret user queries about a dataset and output *only* a structured JSON response. Your response MUST BE PURE JSON, with no surrounding markdown (e.g., no \`\`\`json or \`\`\`) and no conversational text. The JSON *must* strictly adhere to the provided schema, with all keys and string values enclosed in double quotes.
 
                 **Prioritize accurately identifying the user's core intent and extracting all relevant parameters.** When identifying column names, be highly flexible:
                 - Use case-insensitive matching.
@@ -1798,7 +1629,7 @@
                 - If a column name is not found or is ambiguous, you MUST still attempt to identify the most likely intent and *output the user's provided column name*. The client-side application will then handle validation (e.g., checking if it's numeric when a numeric column is expected).
 
                 The current dataset has the following schema (column names and their inferred types):
-                ${escapedSchemaJson}
+                ${JSON.stringify(schema, null, 2)}
 
                 Here are the supported intents and their expected parameters (all intent and parameter string values must be in double quotes):
 
@@ -2284,7 +2115,7 @@
                                     aiResponseText = `I couldn't calculate the correlation between "<strong>${col1}</strong>" and "<strong>${col2}</strong>" due to insufficient or invalid numeric data.`;
                                 }
                             } else {
-                                aiResponseText = `I need two valid numeric columns. Please check your column names and types.`;
+                                aiResponseText = `To calculate correlation, I need two valid numeric columns. Please check your column names and types.`;
                             }
                             break;
                         }
@@ -2538,7 +2369,7 @@
                                 createChart('bar', `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`,
                                             aggregated.labels, aggregated.data,
                                             categoricalColumn, `${aggregateType} of ${numericColumn}`);
-                                return; // Important: Exit here to prevent duplicate message from final appendMessage
+                                aiResponseText = `Here's a **bar chart** showing the ${aggregateType} of "<strong>${numericColumn}</strong>" for each "<strong>${categoricalColumn}</strong>".`;
                             } else {
                                 aiResponseText = `To create that bar chart, I need a valid numeric column and a valid categorical column. Please check your column names.`;
                             }
@@ -2562,7 +2393,7 @@
                                 } else {
                                     createChart('line', `${yColumn} over ${xColumn}`, labels, data, xColumn, yColumn);
                                 }
-                                return; // Important: Exit here to prevent duplicate message from final appendMessage
+                                aiResponseText = `Here's a **line chart** showing "<strong>${yColumn}</strong>" as it relates to "<strong>${xColumn}</strong>".`;
                             } else {
                                 aiResponseText = `To create that line chart, I need a valid X-axis column and a valid numeric Y-axis column.`;
                             }
@@ -2588,7 +2419,7 @@
                                         y: { type: 'linear' }
                                     }
                                 });
-                                return; // Important: Exit here to prevent duplicate message from final appendMessage
+                                aiResponseText = `Here's a **scatter plot** visualizing the relationship between "<strong>${xColumn}</strong>" and "<strong>${yColumn}</strong>".`;
                             } else {
                                 aiResponseText = `I need two valid numeric columns to create a scatter plot.`;
                             }
@@ -2636,7 +2467,8 @@
                                 break;
                             }
                             createChart(chartType.replace(' ', ''), chartTitle, labels, data);
-                            return; // Important: Exit here to prevent duplicate message from final appendMessage
+                            aiResponseText = `Here's a **${chartType} chart** for "<strong>${chartTitle}</strong>".`;
+                            break;
                         }
                         case 'perform_linear_regression': {
                             if (!params.y_column || !params.x_column) {
@@ -2685,7 +2517,6 @@
                 console.error("Error during NLU processing:", error);
                 aiResponseText = `An error occurred while trying to understand your request. This might be a temporary issue with the NLU service or an invalid response format. Please try again.`;
             }
-            // This general appendMessage is now only called for non-chart intents, or if there was an error.
             appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
         }
 
