@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoDA: Cognitive Data Assistant Prototype</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:400;500;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:400;500;700&display=swap)" rel="stylesheet">
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css)">
-    <script src="[https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js](https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js)"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter (for body) & Roboto Mono (for code) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Chart.js CDN for graphing - UPDATED to a specific v4.x version to avoid 'extend' errors from deprecated methods -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <style>
         /* Base styles for the body to ensure full screen coverage and a gradient background */
         body {
@@ -268,10 +272,6 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(66, 153, 225, 0.4);
         }
-        .insight-action:active {
-            transform: translateY(0) scale(0.98);
-            box-shadow: 0 2px 5px rgba(66, 153, 225, 0.2);
-        }
 
         /* Collapsible content styles for insights and new file management section */
         .collapsible-content {
@@ -385,6 +385,7 @@
     </style>
 </head>
 <body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center h-screen w-screen">
+    <!-- Background Bubbles Animation -->
     <div class="background-bubbles">
         <div class="bubble"></div>
         <div class="bubble"></div>
@@ -394,18 +395,22 @@
         <div class="bubble"></div>
     </div>
 
+    <!-- Main container for the application -->
     <div id="main-container" class="relative z-10 flex flex-col md:flex-row bg-gray-900 text-gray-200 rounded-3xl shadow-2xl overflow-hidden w-full h-full transform transition-all duration-300 border border-gray-700">
+        <!-- Left Pane: CSV Upload & Data Preview -->
         <div id="data-panel" class="p-8 flex-col border-r bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar hidden md:w-0 md:hidden">
             <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
             <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
             <p class="text-sm text-gray-500 mb-6 text-center">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
+            <!-- File Management Section -->
             <div class="mb-4 file-management-section">
                 <h3 id="fileManagementHeader" class="file-management-header font-bold text-gray-200 pb-2 border-b border-gray-600 flex justify-between items-center cursor-pointer hover:text-blue-300 transition-colors duration-200 ease-in-out">
                     <span><i class="fas fa-file-csv mr-2 text-blue-400"></i> File Management</span>
                     <i class="fas fa-chevron-down text-blue-400 chevron-icon rotate-180"></i>
                 </h3>
                 <div id="fileManagementContent" class="collapsible-content show">
+                    <!-- CSV Upload Section -->
                     <div class="mt-4 csv-upload-area text-center cursor-pointer">
                         <label for="csvFileInput" class="cursor-pointer text-blue-300 hover:text-blue-100 font-bold flex flex-col items-center justify-center">
                             <i class="fas fa-cloud-upload-alt upload-icon mb-2 text-blue-500"></i>
@@ -416,6 +421,7 @@
                         <p id="fileNameDisplay" class="mt-2 text-gray-300 text-sm font-medium"></p>
                         <p id="uploadStatus" class="mt-1 text-xs font-semibold text-gray-300"></p>
                     </div>
+                    <!-- Download Button -->
                     <button id="downloadCsvBtn" class="download-button-blend text-white rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 w-full mt-4">
                         <i class="fas fa-download"></i>
                         <span>Download Modified CSV</span>
@@ -423,14 +429,17 @@
                 </div>
             </div>
 
+            <!-- Data Overview & Tools Section -->
             <div class="data-overview-section mt-6">
                 <h3 class="data-overview-section h3 font-bold text-gray-200 mb-4 border-b pb-2 border-gray-600">
                     <i class="fas fa-database mr-2 text-blue-400"></i> Data Overview & Tools
                 </h3>
+                <!-- Proactive Insights Button -->
                 <button id="showProactiveInsightsBtn" class="send-button-gradient text-white p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 w-full mb-6 text-base font-bold">
                     <i class="fas fa-lightbulb"></i>
                     <span>Show Proactive Insights</span>
                 </button>
+                <!-- Data Schema Display -->
                 <h4 class="data-overview-section h4 font-bold text-gray-200 mb-3">Data Schema</h4>
                 <div id="schemaDisplay" class="bg-gray-800 p-5 rounded-2xl flex-grow overflow-y-auto custom-scrollbar text-sm text-gray-300 shadow-inner border border-gray-600 min-h-[150px]">
                     <p class="text-gray-400 text-center py-4">Upload a CSV to intelligently infer and display its schema here.</p>
@@ -438,12 +447,15 @@
             </div>
         </div>
 
+        <!-- Right Pane: Conversational Interface & Results -->
         <div id="chat-panel" class="w-full flex flex-col bg-gray-900 rounded-3xl">
+            <!-- Header Section (will shrink on user interaction) -->
             <div id="headerContainer" class="px-8 pt-6 pb-2 transition-all duration-500 ease-in-out">
                 <h2 class="text-4xl font-extrabold text-blue-400 mb-1 text-center tracking-tight" id="mainTitle">CoDA <span class="text-blue-600">AI</span></h2>
                 <p class="text-md text-gray-400 mb-1 text-center italic" id="subTitle">Your Private, Conversational Data Analyst</p>
                 <p class="text-sm text-gray-500 mb-4 text-center" id="createdBy">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
+                <!-- Toggle Buttons for Data Panel and Command Guide -->
                 <div class="flex justify-start space-x-3 mb-2" id="toggleButtons">
                     <button id="toggleDataPanelBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out hidden md:flex items-center space-x-2">
                         <i class="fas fa-eye mr-2"></i> <span id="toggleButtonText">Show Data Panel</span>
@@ -454,7 +466,9 @@
                 </div>
             </div>
 
+            <!-- Chat Area -->
             <div id="chatArea" class="flex-grow bg-gray-800 px-6 py-6 rounded-2xl overflow-y-auto custom-scrollbar shadow-lg border border-gray-700 mx-8">
+                <!-- Initial AI message -->
                 <div class="flex items-start mb-4 fade-in-message">
                     <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
                     <div class="bg-blue-600 text-white p-4 rounded-3xl max-w-[80%] shadow-md transform hover:scale-[1.01] transition duration-200 ease-in-out">
@@ -462,10 +476,12 @@
                     </div>
                 </div>
             </div>
+            <!-- Loading Indicator -->
             <div id="loadingIndicator" class="flex items-center justify-center mt-4">
                 <i class="fas fa-spinner fa-spin mr-2"></i> AI is thinking...
             </div>
 
+            <!-- Chat Input Section -->
             <div class="flex items-center space-x-3 px-8 pb-6 pt-4">
                 <input type="text" id="chatInput" placeholder="Ask CoDA a question about your data, e.g., 'Show me the average sales'..." class="flex-grow p-4 border border-gray-600 bg-gray-700 text-gray-200 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-600 shadow-lg text-base transition duration-300 ease-in-out">
                 <button id="sendMessageBtn" class="send-button-gradient text-white p-4 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
@@ -475,6 +491,7 @@
         </div>
     </div>
 
+    <!-- Command Guide Overlay (hidden by default) -->
     <div id="commandGuideOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-95 p-8 flex flex-col rounded-3xl z-50 hidden overflow-y-auto custom-scrollbar">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-3xl font-extrabold text-blue-400">CoDA AI Command Guide</h3>
@@ -483,9 +500,11 @@
             </button>
         </div>
         <div id="commandGuideContent" class="flex-grow text-gray-200">
-            </div>
+            <!-- Command guide content will be inserted here by JS -->
+        </div>
     </div>
 
+    <!-- Proactive Insights Overlay (hidden by default) -->
     <div id="proactiveInsightsOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-95 p-8 flex flex-col rounded-3xl z-50 hidden overflow-y-auto custom-scrollbar">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-3xl font-extrabold text-blue-300 flex items-center">
@@ -496,6 +515,7 @@
                 <i class="fas fa-times mr-2"></i> <span>Close Insights</span>
             </button>
         </div>
+        <!-- Search and Filter Controls for Insights -->
         <div class="mb-6 flex flex-wrap items-center gap-4">
             <input type="text" id="insightSearchInput" placeholder="Search insights..." class="flex-grow p-3 border border-gray-600 bg-gray-700 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-inner max-w-full md:max-w-xs">
             <div class="flex flex-wrap gap-2">
@@ -507,6 +527,7 @@
             </div>
         </div>
         <div id="proactiveInsightsContent" class="flex-grow text-gray-200">
+            <!-- Proactive insights content will be inserted here by JS -->
             <p class="text-gray-400 text-center py-4">Upload a CSV file to generate proactive insights.</p>
         </div>
     </div>
@@ -520,7 +541,7 @@
             const proactiveInsightsOverlay = document.getElementById('proactiveInsightsOverlay');
 
             if (chatInput && sendMessageBtn && proactiveInsightsOverlay) {
-                chatInput.value = decodeURIComponent(command); // Decode the command here
+                chatInput.value = command;
                 sendMessageBtn.click();
                 proactiveInsightsOverlay.classList.add('hidden'); // Close the insights overlay after submitting
             } else {
@@ -590,22 +611,24 @@
                 if (headerMatches) {
                     headerMatches.forEach(match => {
                         // Trim whitespace and remove surrounding double quotes for headers
-                        headers.push(match.trim().replace(/^"|"<span class="math-inline">/g, ''\)\.replace\(/""/g, '"'\)\);
-\}\);
-\} else \{
-console\.warn\("Could not parse headers\. Assuming single column or malformed CSV\."\);
-return \[\];
-\}
-const data \= \[\];
-for \(let i \= 1; i < lines\.length; i\+\+\) \{
-const currentLine \= lines\[i\];
-const values \= \[\];
-// Regex to split by comma, but not if the comma is inside double quotes
-const valueMatches \= currentLine\.match\(/\(?\:\[^,"\]\+\|"\[^"\]\*"\)\+/g\);
-if \(valueMatches\) \{
-valueMatches\.forEach\(match \=\> \{
-// Trim whitespace and remove surrounding double quotes, handle doubled quotes
-values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"'));
+                        headers.push(match.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+                    });
+                } else {
+                    console.warn("Could not parse headers. Assuming single column or malformed CSV.");
+                    return [];
+                }
+
+                const data = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const currentLine = lines[i];
+                    const values = [];
+                    // Regex to split by comma, but not if the comma is inside double quotes
+                    const valueMatches = currentLine.match(/(?:[^,"]+|"[^"]*")+/g);
+
+                    if (valueMatches) {
+                        valueMatches.forEach(match => {
+                            // Trim whitespace and remove surrounding double quotes, handle doubled quotes
+                            values.push(match.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
                         });
                     } else {
                         // If no matches, treat as single empty value or skip malformed line
@@ -706,7 +729,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
              * Finds the minimum and maximum values in a numeric column.
              * @param {string} columnName - The name of the column.
              * @param {Array<Object>} data - The dataset.
-             * @returns {{min: number|null, max: number|null}} Object with min and max, or null if no valid numeric values.
+             * @returns {{min: number|null, max: number|null}} Object with min and max, or null if no valid numbers.
              */
             function calculateColumnMinMax(columnName, data) {
                 const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
@@ -861,7 +884,6 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                 for (let i = 0; i < n; i++) {
                     const yPredicted = slope * xValues[i] + intercept;
                     ssResidual += Math.pow(yValues[i] - yPredicted, 2);
-                    ssTotal += Math.pow(yValues[i] - meanY, 2);
                 }
                 const rSquared = ssTotal === 0 ? 0 : (1 - (ssResidual / ssTotal)); // If ssTotal is 0, all Y values are same, R-squared is 0
 
@@ -887,7 +909,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                             groupedData[groupKey] = { sum: 0, count: 0 };
                         }
                         groupedData[groupKey].sum += value;
-                        groupedData[groupKey].count++; // Fixed: Changed 'key' to 'groupKey'
+                        groupedData[groupKey].count++;
                     }
                 });
 
@@ -1441,7 +1463,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
 
                 const minVal = Math.min(...numericValues);
                 const maxVal = Math.max(...numericValues);
-                let binSize = (maxVal - minVal) / numBins;
+                const binSize = (maxVal - minVal) / numBins;
 
                 // Handle case where all values are the same (binSize would be 0)
                 if (binSize === 0) {
@@ -1718,7 +1740,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                 // Exclude columns that are likely IDs even if numeric
                 const excludeKeywords = ['id', 'zip', 'postcode'];
                 return meaningfulKeywords.some(keyword => lowerColName.includes(keyword)) &&
-                       !excludeKeywords.some(keyword => lowerColName.includes(keyword));
+                            !excludeKeywords.some(keyword => lowerColName.includes(keyword));
             }
 
             /**
@@ -1760,9 +1782,9 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
 
                 if (dateCol && salesCol && regionCol) {
                     const uniqueDates = [...new Set(rawData.map(row => row[dateCol]))]
-                                                     .map(parseDate)
-                                                     .filter(d => d !== null)
-                                                     .sort((a, b) => a.getTime() - b.getTime());
+                                         .map(parseDate)
+                                         .filter(d => d !== null)
+                                         .sort((a, b) => a.getTime() - b.getTime());
 
                     // Need at least 8 days for 1 current + 7 historical for comparison
                     if (uniqueDates.length >= 8) {
@@ -1774,10 +1796,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
 
                         regions.forEach(region => {
                             // Filter data relevant to the current region and valid dates
-                            const regionData = rawData.filter(row => {
-                                const rowDate = parseDate(row[dateCol]);
-                                return row[regionCol] === region && rowDate !== null;
-                            });
+                            const regionData = rawData.filter(row => row[regionCol] === region && parseDate(row[dateCol]) !== null);
 
                             // Calculate sales for the latest day in the loop
                             const currentDaySalesData = regionData.filter(row => {
@@ -1800,8 +1819,8 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
 
                                 if (salesDropPercentage > dropThreshold) {
                                     let message = `Sales in the **${region} region** are **down ${salesDropPercentage.toFixed(1)}%** on ${latestDate.toLocaleDateString()} compared to the last 7-day average. This deviation is significant.`;
-                                    // Use a common date format for suggested command, e.g.,YYYY-MM-DD or MM/DD/YYYY
-                                    const suggestedDate = latestDate.toISOString().split('T')[0]; // Format as ISO YYYY-MM-DD
+                                    // Use a common date format for suggested command, e.g., YYYY-MM-DD or MM/DD/YYYY
+                                    const suggestedDate = latestDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
                                     // Check for consistent marketing spend if the column exists
                                     if (marketingSpendCol) {
@@ -1814,7 +1833,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                             message += ` This is despite a **consistent marketing spend** in the region.`;
                                             message += `<br><br><strong>Recommendation:</strong>
                                                 <ol>
-                                                    <li><strong>Investigate Sales Transactions:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()} to identify immediate patterns. Type: \`filter data where <span class="math-inline">\{regionCol\} \= "</span>{region}" and <span class="math-inline">\{dateCol\} \= "</span>{suggestedDate}"\`</li>
+                                                    <li><strong>Investigate Sales Transactions:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()} to identify immediate patterns. Type: \`filter data where ${regionCol} = "${region}" and ${dateCol} = "${suggestedDate}"\`</li>
                                                     <li><strong>Review External Factors:</strong> This suggests external factors may be at play. Consider reviewing recent mobile app updates, website traffic analytics, or local events that might impact sales in the ${region} region.</li>
                                                     <li><strong>Engage Relevant Teams:</strong> If external analysis points to a technical issue, consider alerting your mobile development or product team.</li>
                                                 </ol>
@@ -1823,8 +1842,8 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                             message += ` It also appears **marketing spend has changed** significantly in this period.`;
                                             message += `<br><br><strong>Recommendation:</strong>
                                                 <ol>
-                                                    <li><strong>Investigate Marketing Spend:</strong> Analyze the specific marketing activities or budget changes in ${region} for ${latestDate.toLocaleDateString()}. Type: \`filter data where <span class="math-inline">\{regionCol\} \= "</span>{region}" and <span class="math-inline">\{dateCol\} \= "</span>{suggestedDate}"\` and then look for ${marketingSpendCol}.</li>
-                                                    <li><strong>Deep Dive Sales Data:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()}. Type: \`filter data where <span class="math-inline">\{regionCol\} \= "</span>{region}" and <span class="math-inline">\{dateCol\} \= "</span>{suggestedDate}"\`</li>
+                                                    <li><strong>Investigate Marketing Spend:</strong> Analyze the specific marketing activities or budget changes in ${region} for ${latestDate.toLocaleDateString()}. Type: \`filter data where ${regionCol} = "${region}" and ${dateCol} = "${suggestedDate}"\` and then look for ${marketingSpendCol}.</li>
+                                                    <li><strong>Deep Dive Sales Data:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()}. Type: \`filter data where ${regionCol} = "${region}" and ${dateCol} = "${suggestedDate}"\`</li>
                                                     <li><strong>Correlate & Act:</strong> Understand if the change in marketing spend directly correlates with the sales drop, then decide on necessary actions.</li>
                                                 </ol>
                                                 <em>(Note: CoDA is a client-side tool and cannot directly interact with external systems like email or Jira.)</em>`;
@@ -1832,10 +1851,10 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                     } else {
                                         // No marketing spend column, provide general recommendation
                                         message += `<br><br><strong>Recommendation:</strong>
-                                                <ol>
-                                                    <li><strong>Investigate Sales Transactions:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()} to identify immediate patterns. Type: \`filter data where <span class="math-inline">\{regionCol\} \= "</span>{region}" and <span class="math-inline">\{dateCol\} \= "</span>{suggestedDate}"\`</li>
-                                                    <li><strong>Consider External Factors:</strong> Review factors outside this dataset that might influence sales in the ${region} region.</li>
-                                                </ol>`;
+                                            <ol>
+                                                <li><strong>Investigate Sales Transactions:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()} to identify immediate patterns. Type: \`filter data where ${regionCol} = "${region}" and ${dateCol} = "${suggestedDate}"\`</li>
+                                                <li><strong>Consider External Factors:</strong> Review factors outside this dataset that might influence sales in the ${region} region.</li>
+                                            </ol>`;
                                     }
 
                                     insights.push({
@@ -1896,9 +1915,9 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                         // Convert to array of [category, {sum, count}] for sorting
                         const sortedBySum = Object.entries(groupedData).sort(([, a], [, b]) => b.sum - a.sum);
                         const sortedByAvg = Object.entries(groupedData)
-                                                    .map(([category, data]) => [category, data.sum / data.count])
-                                                    .filter(([, avg]) => !isNaN(avg)) // Filter out NaNs if any categories had no numeric data
-                                                    .sort(([, a], [, b]) => b - a);
+                                                .map(([category, data]) => [category, data.sum / data.count])
+                                                .filter(([, avg]) => !isNaN(avg)) // Filter out NaNs if any categories had no numeric data
+                                                .sort(([, a], [, b]) => b - a);
 
                         if (sortedBySum.length > 1) { // Need at least two categories to talk about top/bottom
                             const topSumCat = sortedBySum[0];
@@ -1919,7 +1938,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                 type: 'trend',
                                 icon: 'fas fa-chart-bar',
                                 title: `Top/Bottom ${numCol} by ${catCol} (Average)`,
-                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}</strong>" shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
+                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}** shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
                                 action: `show bar chart of ${numCol} by ${catCol} as average`
                             });
                         }
@@ -1962,7 +1981,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                             }
                         }
                     }
-                });
+                }
 
                 // 5. Categorical Distribution - Top N most/least frequent values for meaningful categorical columns
                 meaningfulCategoricalCols.forEach(catCol => {
@@ -1992,26 +2011,25 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
             }
 
             /**
-             * Helper function to safely encode a string for use in a URL component,
-             * then HTML-escape it for safe embedding in an HTML attribute.
-             * This prevents issues with special characters in JS string literals within HTML.
-             * @param {string} str - The string to encode and escape.
-             * @returns {string} The encoded and HTML-escaped string.
+             * Helper function to escape a string for safe embedding in a JavaScript string literal
+             * within an HTML attribute (e.g., for an onclick handler).
+             * Prevents XSS and ensures correct parsing.
+             * @param {string} str - The string to escape.
+             * @returns {string} The escaped string.
              */
-            function encodeAndEscapeForHtmlAttribute(str) {
-                // First, encode for URL component, this handles most special characters for JS string literal safety
-                let encodedStr = encodeURIComponent(String(str));
-
-                // Then, HTML escape to ensure it's safe within an HTML attribute value
-                // Minimal set to avoid breaking HTML structure
-                return encodedStr
-                    .replace(/"/g, '&quot;')    // Escape double quotes
-                    .replace(/'/g, '&#39;')    // Escape single quotes
-                    .replace(/</g, '&lt;')     // Escape less than
-                    .replace(/>/g, '&gt;')     // Escape greater than
-                    .replace(/&/g, '&amp;');   // Escape ampersand
+            function escapeHtmlAndJsString(str) {
+                if (typeof str !== 'string') {
+                    // If not a string, convert to string safely before escaping
+                    str = String(str);
+                }
+                return str
+                    .replace(/\\/g, '\\\\') // Escape backslashes first
+                    .replace(/'/g, '\\\'')  // Escape single quotes
+                    .replace(/"/g, '\\\"')  // Escape double quotes
+                    .replace(/`/g, '\\\`')  // Escape backticks
+                    .replace(/\n/g, '\\n')  // Escape newlines
+                    .replace(/\r/g, '\\r'); // Escape carriage returns
             }
-
 
             /**
              * Renders proactive insights into the `proactiveInsightsContent` area,
@@ -2031,9 +2049,9 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                 let filteredInsights = lastProactiveInsights.filter(insight => {
                     const matchesFilter = filterType === 'all' || insight.type === filterType;
                     const matchesSearch = searchTerm === '' ||
-                                            insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                            insight.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                            insight.action.toLowerCase().includes(searchTerm.toLowerCase());
+                                          insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                          insight.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                          insight.action.toLowerCase().includes(searchTerm.toLowerCase());
                     return matchesFilter && matchesSearch;
                 });
 
@@ -2055,7 +2073,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                         </div>
                         <div class="collapsible-content">
                             <p class="insight-message">${insight.message}</p>
-                            ${insight.action ? `<span class="text-sm text-blue-100 italic">Suggested Command: </span><a href="#" class="insight-action" onclick="typeIntoChatAndSubmit('<span class="math-inline">\{encodeAndEscapeForHtmlAttribute\(insight\.action\)\}'\); return false;"\>'</span>{insight.action}'</a>` : ''}
+                            ${insight.action ? `<span class="text-sm text-blue-100 italic">Suggested Command: </span><a href="#" class="insight-action" onclick="typeIntoChatAndSubmit('${escapeHtmlAndJsString(insight.action)}'); return false;">'${insight.action}'</a>` : ''}
                         </div>
                     `;
                     proactiveInsightsContent.appendChild(insightCard);
@@ -2124,7 +2142,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                     const escapedSchemaJson = JSON.stringify(schema, null, 2).replace(/`/g, '\\`');
 
                     // Construct the prompt for the LLM (NLU model)
-                    const prompt = `You are an AI data analysis assistant named CoDA. Your primary goal is to interpret user queries about a dataset and output *only* a structured JSON response. Your response MUST BE PURE JSON, with no surrounding markdown (e.g., no \`\`\`json or \`\`\`) and no conversational text. The JSON *must* strictly adhere to the provided schema, with all keys and string values enclosed in double quotes.
+                    const prompt = `You are an AI data analysis assistant named CoDA. Your primary goal is to interpret user queries about a dataset and output *only* a structured JSON response. Your response MUST BE PURE JSON, with no surrounding markdown (e.g., no \\\`\`\`json or \\\`\`\`) and no conversational text. The JSON *must* strictly adhere to the provided schema, with all keys and string values enclosed in double quotes.
 
                     **Prioritize accurately identifying the user's core intent and extracting all relevant parameters.** When identifying column names, be highly flexible:
                     - Use case-insensitive matching.
@@ -2223,11 +2241,8 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                     `;
 
                     const chatHistory = [];
-                    // Ensure the prompt text is correctly placed within the 'text' property
                     chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                     const payload = {
-                        // Added model field explicitly
-                        model: "gemini-2.0-flash",
                         contents: chatHistory,
                         generationConfig: {
                             responseMimeType: "application/json",
@@ -2237,13 +2252,12 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                     "intent": { "type": "STRING" },
                                     "parameters": {
                                         "type": "OBJECT",
-                                        "additionalProperties": true, // Re-added for flexibility
                                         properties: {
                                             "column_name": { "type": "STRING" },
                                             "column_name_2": { "type": "STRING" },
                                             "operator": { "type": "STRING" },
                                             "value": { "type": ["STRING", "NUMBER"] },
-                                            "aggregate_type": { "type": "STRING" },
+                                            "aggregate_type": { "type": "STRING", "enum": ["sum", "average"] },
                                             "chart_type": { "type": "STRING" },
                                             "num_bins": { "type": "NUMBER" },
                                             "new_column_name": { "type": "STRING" },
@@ -2253,14 +2267,15 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                             "x_column": { "type": "STRING" },
                                             "y_column": { "type": "STRING" }
                                         },
+                                        additionalProperties: false // IMPORTANT: Set to false for stricter schema adherence
                                     }
                                 },
-                                "required": ["intent", "parameters"]
+                                required: ["intent", "parameters"]
                             }
                         }
                     };
 
-                    const apiKey = "AIzaSyC8Hy4FxyPRsHjj9HYnXOw_uUsvSf_5nWw"; // Leave this empty; Canvas will inject the key at runtime
+                    const apiKey = ""; // Canvas will automatically provide this.
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
@@ -2287,11 +2302,6 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                             rawLLMText = rawLLMText.trim();
                         }
 
-                        // Check if the cleaned text is empty or too short to be valid JSON
-                        if (!rawLLMText || rawLLMText.length < 2) { // Minimal JSON is "{}"
-                            throw new Error("LLM returned empty or too short JSON string after cleaning.");
-                        }
-
                         console.log("Cleaned LLM Response Text (attempting to parse):", rawLLMText);
 
                         let nluOutputJson;
@@ -2300,7 +2310,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                         } catch (parseError) {
                             console.error("JSON Parse Error:", parseError);
                             console.error("Malformed JSON received from LLM:", rawLLMText);
-                            aiResponseText = `I received an invalid response from the AI. The response was not in a parsable JSON format. Please try again or rephrase. (Error details: ${parseError.message})`;
+                            aiResponseText = `I received an invalid response from the AI. It couldn't be parsed. This might be due to an unexpected format from the NLU model. Please try again.`;
                             appendMessage('AI', aiResponseText, 'ai');
                             return; // Exit function as we can't proceed with malformed JSON
                         }
@@ -2476,10 +2486,10 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                     const quartiles = calculateQuartiles(foundColumn, rawData);
                                     if (quartiles.median !== null) {
                                         aiResponseText = `For the column "<strong>${foundColumn}</strong>":<br>
-                                            **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
-                                            **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
-                                            **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
-                                            **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
+                                            <strong>Q1 (25th percentile)</strong>: <strong>${quartiles.q1}</strong><br>
+                                            <strong>Median (50th percentile)</strong>: <strong>${quartiles.median}</strong><br>
+                                            <strong>Q3 (75th percentile)</strong>: <strong>${quartiles.q3}</strong><br>
+                                            <strong>IQR (Interquartile Range)</strong>: <strong>${quartiles.iqr}</strong>.`;
                                     } else {
                                         aiResponseText = `I couldn't calculate quartiles for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
                                     }
@@ -2569,6 +2579,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                     aiResponseText = `To calculate average by category, I need both a numeric column and a categorical column. Example: 'average sales by region'.`;
                                     break;
                                 }
+                                // FIX: Changed from params.column_name to params.numeric_column
                                 const numericColumn = findNumericColumn(params.numeric_column);
                                 const categoricalColumn = findCategoricalColumn(params.categorical_column);
 
@@ -2592,7 +2603,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
 
                                     let resultsHtml = `<ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
                                     for (const category in groupedAverages) {
-                                        const avg = counts[category] > 0 ? (groupedAverages[category] / counts[category]).toFixed(2) : 'N/A';
+                                        const avg = (groupedAverages[category] / counts[category]).toFixed(2);
                                         resultsHtml += `<li><strong>${category}</strong>: Average ${numericColumn} is <strong>${avg}</strong> (${counts[category]} entries)</li>`;
                                     }
                                     resultsHtml += `</ul>`;
@@ -2862,7 +2873,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                     aiResponseText = `Here's a detailed summary:`;
                                     analysisContent = resultsHtml;
                                 } else {
-                                    aiResponseText = `I need a valid numeric column and a valid categorical column to perform that aggregation. Please check your column names and types.`;
+                                    aiResponseText = `To summarize, I need a valid numeric column and a valid categorical column. Please check your column names and types.`;
                                 }
                                 break;
                             }
@@ -2915,15 +2926,15 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                     break;
                                 }
                                 const numericColumn = findNumericColumn(params.numeric_column);
-                                const categoricalColumn = findCategoricalColumn(params.column_name); // Changed to params.categorical_column for robustness
+                                const categoricalColumn = findCategoricalColumn(params.categorical_column);
                                 const aggregateType = params.aggregate_type || 'sum'; // Default to sum
 
                                 if (numericColumn && categoricalColumn) {
                                     const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateType);
                                     if (aggregated.labels.length > 0) {
                                         createChart('bar', `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`,
-                                                     aggregated.labels, aggregated.data,
-                                                     categoricalColumn, `${aggregateType} of ${numericColumn}`);
+                                                    aggregated.labels, aggregated.data,
+                                                    categoricalColumn, `${aggregateType} of ${numericColumn}`);
                                         return; // Exit as chart is handled
                                     } else {
                                         aiResponseText = `No valid data to create a bar chart for "${numericColumn}" by "${categoricalColumn}".`;
@@ -3059,7 +3070,7 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                         aiResponseText = `I couldn't perform linear regression between "<strong>${yCol}</strong>" and "<strong>${xCol}</strong>" due to insufficient or invalid numeric data. Please ensure both columns contain at least two valid numeric entries.`;
                                     }
                                 } else {
-                                    aiResponseText = `I need two valid numeric columns (one for Y, one for X).`;
+                                    aiResponseText = `To perform linear regression, I need two valid numeric columns (one for Y, one for X).`;
                                 }
                                 break;
                             }
@@ -3080,13 +3091,12 @@ values\.push\(match\.trim\(\)\.replace\(/^"\|"</span>/g, '').replace(/""/g, '"')
                                 break;
                         }
                     } else {
-                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected or empty. Please try again or rephrase.`;
+                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected. Please try again or rephrase.`;
                     }
                 } catch (error) {
                     hideLoadingIndicator(); // Hide loading indicator on error
                     console.error("Error during NLU processing or command execution:", error);
-                    // Provide a more user-friendly message for internal errors
-                    aiResponseText = `An unexpected internal error occurred: "${error.message}". This might be a temporary issue with the AI's response. Please try again.`;
+                    aiResponseText = `An unexpected error occurred while trying to process your request: "${error.message}". This might be a temporary issue or an unexpected input. Please try again.`;
                 }
                 // This general appendMessage is now only called for non-chart intents, or if there was an error.
                 if (aiResponseText || analysisContent) { // Only append if there's content to add
