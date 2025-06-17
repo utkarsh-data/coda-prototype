@@ -884,6 +884,7 @@
                 for (let i = 0; i < n; i++) {
                     const yPredicted = slope * xValues[i] + intercept;
                     ssResidual += Math.pow(yValues[i] - yPredicted, 2);
+                    ssTotal += Math.pow(yValues[i] - meanY, 2);
                 }
                 const rSquared = ssTotal === 0 ? 0 : (1 - (ssResidual / ssTotal)); // If ssTotal is 0, all Y values are same, R-squared is 0
 
@@ -1740,7 +1741,7 @@
                 // Exclude columns that are likely IDs even if numeric
                 const excludeKeywords = ['id', 'zip', 'postcode'];
                 return meaningfulKeywords.some(keyword => lowerColName.includes(keyword)) &&
-                            !excludeKeywords.some(keyword => lowerColName.includes(keyword));
+                       !excludeKeywords.some(keyword => lowerColName.includes(keyword));
             }
 
             /**
@@ -1782,9 +1783,9 @@
 
                 if (dateCol && salesCol && regionCol) {
                     const uniqueDates = [...new Set(rawData.map(row => row[dateCol]))]
-                                         .map(parseDate)
-                                         .filter(d => d !== null)
-                                         .sort((a, b) => a.getTime() - b.getTime());
+                                        .map(parseDate)
+                                        .filter(d => d !== null)
+                                        .sort((a, b) => a.getTime() - b.getTime());
 
                     // Need at least 8 days for 1 current + 7 historical for comparison
                     if (uniqueDates.length >= 8) {
@@ -1796,7 +1797,10 @@
 
                         regions.forEach(region => {
                             // Filter data relevant to the current region and valid dates
-                            const regionData = rawData.filter(row => row[regionCol] === region && parseDate(row[dateCol]) !== null);
+                            const regionData = rawData.filter(row => {
+                                const rowDate = parseDate(row[dateCol]);
+                                return row[regionCol] === region && rowDate !== null;
+                            });
 
                             // Calculate sales for the latest day in the loop
                             const currentDaySalesData = regionData.filter(row => {
@@ -1819,7 +1823,7 @@
 
                                 if (salesDropPercentage > dropThreshold) {
                                     let message = `Sales in the **${region} region** are **down ${salesDropPercentage.toFixed(1)}%** on ${latestDate.toLocaleDateString()} compared to the last 7-day average. This deviation is significant.`;
-                                    // Use a common date format for suggested command, e.g., YYYY-MM-DD or MM/DD/YYYY
+                                    // Use a common date format for suggested command, e.g.,
                                     const suggestedDate = latestDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
                                     // Check for consistent marketing spend if the column exists
@@ -1938,7 +1942,7 @@
                                 type: 'trend',
                                 icon: 'fas fa-chart-bar',
                                 title: `Top/Bottom ${numCol} by ${catCol} (Average)`,
-                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}** shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
+                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}</strong>" shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
                                 action: `show bar chart of ${numCol} by ${catCol} as average`
                             });
                         }
@@ -1981,7 +1985,7 @@
                             }
                         }
                     }
-                }
+                });
 
                 // 5. Categorical Distribution - Top N most/least frequent values for meaningful categorical columns
                 meaningfulCategoricalCols.forEach(catCol => {
@@ -2243,6 +2247,7 @@
                     const chatHistory = [];
                     chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                     const payload = {
+                        model: "gemini-pro",
                         contents: chatHistory,
                         generationConfig: {
                             responseMimeType: "application/json",
@@ -2267,16 +2272,15 @@
                                             "x_column": { "type": "STRING" },
                                             "y_column": { "type": "STRING" }
                                         },
-                                        additionalProperties: false // IMPORTANT: Set to false for stricter schema adherence
                                     }
                                 },
-                                required: ["intent", "parameters"]
+                                "required": ["intent", "parameters"]
                             }
                         }
                     };
 
-                    const apiKey = "AIzaSyDdsWinjKMX3up4VprwsqRaqj9yAqRlrjg"; // Canvas will automatically provide this.
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const apiKey = "AIzaSyDdsWinjKMX3up4VprwsqRaqj9yAqRlrjg";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
                         method: 'POST',
@@ -2302,6 +2306,11 @@
                             rawLLMText = rawLLMText.trim();
                         }
 
+                        // Check if the cleaned text is empty or too short to be valid JSON
+                        if (!rawLLMText || rawLLMText.length < 2) { // Minimal JSON is "{}"
+                            throw new Error("LLM returned empty or too short JSON string after cleaning.");
+                        }
+
                         console.log("Cleaned LLM Response Text (attempting to parse):", rawLLMText);
 
                         let nluOutputJson;
@@ -2310,7 +2319,7 @@
                         } catch (parseError) {
                             console.error("JSON Parse Error:", parseError);
                             console.error("Malformed JSON received from LLM:", rawLLMText);
-                            aiResponseText = `I received an invalid response from the AI. It couldn't be parsed. This might be due to an unexpected format from the NLU model. Please try again.`;
+                            aiResponseText = `I received an invalid response from the AI. The response was not in a parsable JSON format. Please try again or rephrase. (Error details: ${parseError.message})`;
                             appendMessage('AI', aiResponseText, 'ai');
                             return; // Exit function as we can't proceed with malformed JSON
                         }
@@ -2330,8 +2339,8 @@
                                 break;
                             case 'get_all_data':
                                 analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
-                                                    <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
-                                                    <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
+                                                  <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                                  <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
                                 aiResponseText = `Understood! Here's your data:`;
                                 break;
                             case 'get_column_data': {
@@ -2343,8 +2352,8 @@
                                 if (foundColumn) {
                                     const columnValues = rawData.map(row => row[foundColumn]);
                                     analysisContent = `<p class="text-gray-300 mt-2">Here are the **first 10 values** from the "<strong>${foundColumn}</strong>" column:</p>
-                                                        <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
-                                                        <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
+                                                      <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
+                                                      <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
                                     aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
                                 } else {
                                     aiResponseText = `I couldn't find a column matching "<strong>${params.column_name}</strong>". Please check your column name.`;
@@ -2407,7 +2416,7 @@
                             }
                             case 'show_schema':
                                 analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
-                                                    <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
+                                                  <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
                                 aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
                                 break;
                             case 'get_sum': {
@@ -2486,10 +2495,10 @@
                                     const quartiles = calculateQuartiles(foundColumn, rawData);
                                     if (quartiles.median !== null) {
                                         aiResponseText = `For the column "<strong>${foundColumn}</strong>":<br>
-                                            <strong>Q1 (25th percentile)</strong>: <strong>${quartiles.q1}</strong><br>
-                                            <strong>Median (50th percentile)</strong>: <strong>${quartiles.median}</strong><br>
-                                            <strong>Q3 (75th percentile)</strong>: <strong>${quartiles.q3}</strong><br>
-                                            <strong>IQR (Interquartile Range)</strong>: <strong>${quartiles.iqr}</strong>.`;
+                                                        **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
+                                                        **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
+                                                        **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
+                                                        **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
                                     } else {
                                         aiResponseText = `I couldn't calculate quartiles for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
                                     }
@@ -2579,7 +2588,6 @@
                                     aiResponseText = `To calculate average by category, I need both a numeric column and a categorical column. Example: 'average sales by region'.`;
                                     break;
                                 }
-                                // FIX: Changed from params.column_name to params.numeric_column
                                 const numericColumn = findNumericColumn(params.numeric_column);
                                 const categoricalColumn = findCategoricalColumn(params.categorical_column);
 
@@ -2650,8 +2658,8 @@
                                     const { outliers, lowerBound, upperBound } = findOutliers(foundColumn, rawData);
                                     if (outliers.length > 0) {
                                         aiResponseText = `I found **${outliers.length} potential outliers** in the column "<strong>${foundColumn}</strong>".<br>
-                                            These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
-                                            Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
+                                                        These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
+                                                        Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
                                     } else {
                                         aiResponseText = `No significant outliers were detected in the column "<strong>${foundColumn}</strong>" based on the IQR method.`;
                                     }
@@ -2727,8 +2735,8 @@
                                         }
                                     }
                                     analysisContent = `<p class="text-gray-300 mt-2">I found <strong>${filteredData.length} rows</strong> that match your condition where **${foundColumn} ${params.operator} ${params.value}**.</p>
-                                                        <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
-                                                        <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
+                                                      <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
+                                                      <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
                                     aiResponseText = `Filtering complete! I've processed your data based on the condition "${foundColumn} ${params.operator} ${params.value}". Here's the summary:`;
                                 } else {
                                     aiResponseText = `I couldn't filter data. Please ensure you provide a valid column, operator (e.g., '>', '='), and value.`;
@@ -2858,7 +2866,7 @@
                                     });
 
                                     let resultsHtml = `<p class="text-gray-300">Summary of <strong>${numericColumn}</strong> by <strong>${categoricalColumn}</strong>:</p>
-                                                        <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
+                                                      <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
                                     for (const category in groupedStats) {
                                         const stats = groupedStats[category];
                                         const avg = stats.count > 0 ? (stats.sum / stats.count).toFixed(2) : 'N/A';
@@ -3063,14 +3071,14 @@
                                     const regressionResults = performLinearRegression(xCol, yCol, rawData);
                                     if (regressionResults !== null) {
                                         aiResponseText = `**Simple Linear Regression Results** (${yCol} ~ ${xCol}):<br>
-                                            - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
-                                            - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
-                                            - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
+                                                        - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
+                                                        - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
+                                                        - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
                                     } else {
                                         aiResponseText = `I couldn't perform linear regression between "<strong>${yCol}</strong>" and "<strong>${xCol}</strong>" due to insufficient or invalid numeric data. Please ensure both columns contain at least two valid numeric entries.`;
                                     }
                                 } else {
-                                    aiResponseText = `To perform linear regression, I need two valid numeric columns (one for Y, one for X).`;
+                                    aiResponseText = `I need two valid numeric columns (one for Y, one for X).`;
                                 }
                                 break;
                             }
@@ -3091,12 +3099,13 @@
                                 break;
                         }
                     } else {
-                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected. Please try again or rephrase.`;
+                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected or empty. Please try again or rephrase.`;
                     }
                 } catch (error) {
                     hideLoadingIndicator(); // Hide loading indicator on error
                     console.error("Error during NLU processing or command execution:", error);
-                    aiResponseText = `An unexpected error occurred while trying to process your request: "${error.message}". This might be a temporary issue or an unexpected input. Please try again.`;
+                    // Provide a more user-friendly message for internal errors
+                    aiResponseText = `An unexpected internal error occurred: "${error.message}". This might be a temporary issue with the AI's response. Please try again.`;
                 }
                 // This general appendMessage is now only called for non-chart intents, or if there was an error.
                 if (aiResponseText || analysisContent) { // Only append if there's content to add
