@@ -36,12 +36,6 @@
             z-index: 0;
         }
 
-        .bubble {
-            background-color: rgba(66, 153, 225, 0.05); /* Lighter blue, very transparent */
-            border-radius: 50%;
-            position: absolute;
-            animation: bubble-flow 25s infinite ease-in-out alternate;
-        }
         .bubble:nth-child(1) { width: 80px; height: 80px; left: 15%; top: 10%; animation-duration: 22s; opacity: 0.05; }
         .bubble:nth-child(2) { width: 120px; height: 120px; left: 35%; top: 80%; animation-duration: 25s; opacity: 0.04; }
         .bubble:nth-child(3) { width: 90px; height: 90px; left: 70%; top: 15%; animation-duration: 19s; opacity: 0.06; }
@@ -282,6 +276,36 @@
         .collapsible-content.show {
             max-height: 500px; /* Adjust as needed for content */
         }
+
+        /* Voice recognition button styles (REMOVED) */
+        /*
+        .voice-button-gradient {
+            background: linear-gradient(90deg, #90cdf4, #63b3ed);
+            transition: all 0.3s ease-in-out;
+        }
+        .voice-button-gradient:hover {
+            background: linear-gradient(90deg, #63b3ed, #90cdf4);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 15px rgba(99, 179, 237, 0.4);
+        }
+        .voice-button-gradient:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 5px rgba(99, 179, 237, 0.2);
+        }
+        .voice-button-gradient.recording {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+        }
+        */
     </style>
 </head>
 <body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center h-screen w-screen">
@@ -302,13 +326,6 @@
             <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
             <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
             <p class="text-sm text-gray-500 mb-6 text-center">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
-
-            <!-- API Key Input Field -->
-            <div class="mb-4">
-                <label for="apiKeyInput" class="block text-sm font-medium text-gray-300 mb-2">Gemini API Key</label>
-                <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API Key..." class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-inner">
-                <p class="text-xs text-gray-400 mt-1">Needed for AI conversations. Your key stays in your browser.</p>
-            </div>
 
             <div class="mb-4 border-2 border-dashed border-blue-600 bg-gray-700 rounded-2xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
                 <label for="csvFileInput" class="cursor-pointer text-blue-300 hover:text-blue-100 font-bold text-base flex flex-col items-center justify-center">
@@ -364,7 +381,7 @@
                 <div class="flex items-start mb-4 fade-in-message">
                     <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
                     <div class="bg-blue-600 text-white p-4 rounded-3xl max-w-[80%] shadow-md transform hover:scale-[1.01] transition duration-200 ease-in-out">
-                        <p class="leading-relaxed">Hello! Welcome to CoDA. To begin our private, client-side analysis, please **enter your Gemini API Key in the Data Panel** and then **upload your CSV data**. I'm ready to collaborate!</p>
+                        <p class="leading-relaxed">Hello! Welcome to CoDA. Upload your CSV data to begin our private, client-side analysis. I'm ready to collaborate!</p>
                     </div>
                 </div>
             </div>
@@ -461,9 +478,6 @@
         const closeProactiveInsightsBtn = document.getElementById('closeProactiveInsightsBtn');
         const insightSearchInput = document.getElementById('insightSearchInput'); // Search input
         const filterButtons = document.querySelectorAll('.filter-btn'); // Filter buttons
-
-        // Reference to the API Key input field
-        const apiKeyInput = document.getElementById('apiKeyInput');
 
 
         let isHeaderShrunk = false; // New flag to track header state
@@ -1237,7 +1251,7 @@
         // New Feature: Rename column
         function renameColumn(oldName, newName) {
             const actualOldName = findColumnByName(oldName);
-            if (!actualOldName) {
+            if (!actualOldOldName) {
                 return { success: false, message: `Column "<strong>${oldName}</strong>" not found.` };
             }
             if (Object.keys(schema).includes(newName)) {
@@ -1540,10 +1554,13 @@
             });
 
             // 3. Top/Bottom Performer Identification for numeric values by categorical groups (now item 4)
-            const categoricalCols = Object.keys(schema).filter(col => col !== dateCol && col !== regionCol && schema[col] === 'string'); // Exclude date and region to avoid redundancy
+            const categoricalCols = Object.keys(schema).filter(col => schema[col] === 'string');
 
             numericCols.forEach(numCol => {
                 categoricalCols.forEach(catCol => {
+                    // Skip if the categorical column is the date column as that's handled by sales drop now
+                    if (catCol === dateCol) return;
+
                     const groupedData = {}; // Use a single object to hold sum and count
 
                     rawData.forEach(row => {
@@ -1633,6 +1650,9 @@
 
             // 5. Categorical Distribution - Top N most/least frequent values (now item 6)
             categoricalCols.forEach(catCol => {
+                // Skip if the categorical column is the date column or region column as that's handled by sales drop now
+                if (catCol === dateCol || catCol === regionCol) return;
+
                 const values = rawData.map(row => row[catCol]);
                 const valueCounts = {};
                 values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
@@ -1730,12 +1750,6 @@
         async function simulateAIResponse(query) {
             let aiResponseText = '';
             let analysisContent = '';
-
-            const userApiKey = apiKeyInput.value.trim();
-            if (!userApiKey) {
-                appendMessage('AI', "Please enter your Gemini API Key in the 'Data Panel' before asking questions. You can get one from Google Cloud's AI Studio.", 'ai');
-                return;
-            }
 
             if (rawData.length === 0) {
                 appendMessage('AI', "Please upload a CSV file first before asking questions. I'm ready when you are!", 'ai');
@@ -1908,8 +1922,7 @@
                     }
                 };
 
-                // Use the API key from the input field
-                const apiKey = userApiKey;
+                const apiKey = ""; // Canvas will automatically provide this.
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -2670,7 +2683,7 @@
             } catch (error) {
                 hideLoadingIndicator(); // Hide loading indicator on error
                 console.error("Error during NLU processing:", error);
-                aiResponseText = `An error occurred while trying to understand your request. This might be a temporary issue with the NLU service or an invalid API key. Please ensure your API key is correct and try again.`;
+                aiResponseText = `An error occurred while trying to understand your request. This might be a temporary issue with the NLU service or an invalid response format. Please try again.`;
             }
             // This general appendMessage is now only called for non-chart intents, or if there was an error.
             appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
