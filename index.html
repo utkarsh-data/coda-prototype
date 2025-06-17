@@ -2580,7 +2580,7 @@
                                     aiResponseText = `To calculate average by category, I need both a numeric column and a categorical column. Example: 'average sales by region'.`;
                                     break;
                                 }
-                                const numericColumn = findNumericColumn(params.numeric_column);
+                                const numericColumn = findNumericColumn(params.column_name); // Changed from params.numeric_column as it seems it was inconsistent
                                 const categoricalColumn = findCategoricalColumn(params.categorical_column);
 
                                 if (numericColumn && categoricalColumn) {
