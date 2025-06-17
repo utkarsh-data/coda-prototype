@@ -381,6 +381,16 @@
             background-color: #1a202c; /* Matches main app background more closely */
             border: 1px solid #374151; /* Softer border */
         }
+        /* Style for active filter buttons in insights overlay */
+        .filter-btn.active {
+            background-color: #4299e1; /* Active blue */
+            color: white;
+            box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+        }
+        .filter-btn:not(.active) {
+             background-color: #4a5568; /* Inactive grey */
+             color: #e2e8f0;
+        }
 
     </style>
 </head>
@@ -401,7 +411,7 @@
         <div id="data-panel" class="p-8 flex-col border-r bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar hidden md:w-0 md:hidden">
             <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
             <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
-            <p class="text-sm text-gray-500 mb-6 text-center">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
+            <p class="text-sm text-gray-500 mb-6 text-center" id="createdBy">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
             <!-- File Management Section -->
             <div class="mb-4 file-management-section">
@@ -519,7 +529,7 @@
         <div class="mb-6 flex flex-wrap items-center gap-4">
             <input type="text" id="insightSearchInput" placeholder="Search insights..." class="flex-grow p-3 border border-gray-600 bg-gray-700 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-inner max-w-full md:max-w-xs">
             <div class="flex flex-wrap gap-2">
-                <button class="filter-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-colors" data-filter="all">All</button>
+                <button class="filter-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-colors active" data-filter="all">All</button>
                 <button class="filter-btn bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-colors" data-filter="anomaly"><i class="fas fa-exclamation-triangle mr-2"></i>Anomaly</button>
                 <button class="filter-btn bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-colors" data-filter="trend"><i class="fas fa-chart-line mr-2"></i>Trend</button>
                 <button class="filter-btn bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-colors" data-filter="correlation"><i class="fas fa-link mr-2"></i>Correlation</button>
@@ -543,7 +553,10 @@
             if (chatInput && sendMessageBtn && proactiveInsightsOverlay) {
                 chatInput.value = command;
                 sendMessageBtn.click();
-                proactiveInsightsOverlay.classList.add('hidden'); // Close the insights overlay after submitting
+                // Check if the overlay is currently visible before trying to hide it
+                if (!proactiveInsightsOverlay.classList.contains('hidden')) {
+                    proactiveInsightsOverlay.classList.add('hidden'); // Close the insights overlay after submitting
+                }
             } else {
                 console.error("One or more essential chat elements not found when trying to type/submit command.");
             }
@@ -615,7 +628,10 @@
                     });
                 } else {
                     console.warn("Could not parse headers. Assuming single column or malformed CSV.");
-                    return [];
+                    // Fallback: if no matches, assume it's a single column and use the whole line as header
+                    headers.push(headerLine.trim());
+                    // If no headers could be parsed, returning empty data is safer.
+                    if (headers[0] === '') return [];
                 }
 
                 const data = [];
@@ -633,7 +649,7 @@
                     } else {
                         // If no matches, treat as single empty value or skip malformed line
                         console.warn(`Could not parse line ${i + 1}: ${currentLine}`);
-                        continue;
+                        continue; // Skip this malformed line
                     }
 
                     if (values.length === headers.length) { // Ensure row has correct number of columns
@@ -729,7 +745,7 @@
              * Finds the minimum and maximum values in a numeric column.
              * @param {string} columnName - The name of the column.
              * @param {Array<Object>} data - The dataset.
-             * @returns {{min: number|null, max: number|null}} Object with min and max, or null if no valid numbers.
+             * @returns {{min: number|null, max: number|null}} Object with min and max, or null if no valid numeric values.
              */
             function calculateColumnMinMax(columnName, data) {
                 const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
@@ -758,7 +774,7 @@
              */
             function calculateStandardDeviation(columnName, data) {
                 const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
-                if (numericValues.length < 2) return null;
+                if (numericValues.length < 2) return null; // Need at least two data points for sample std dev
                 const mean = calculateColumnAverage(columnName, data);
                 const sumOfSquares = numericValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0);
                 return Math.sqrt(sumOfSquares / (numericValues.length - 1)); // Sample standard deviation
@@ -905,7 +921,8 @@
                     const groupKey = row[groupByColumn];
                     const value = Number(row[aggregateColumn]);
 
-                    if (!isNaN(value)) {
+                    // Only include rows where the grouping key is not empty/null and the value is numeric
+                    if (groupKey !== undefined && groupKey !== null && groupKey !== '' && !isNaN(value)) {
                         if (!groupedData[groupKey]) {
                             groupedData[groupKey] = { sum: 0, count: 0 };
                         }
@@ -917,14 +934,17 @@
                 const labels = [];
                 const values = [];
 
-                for (const key in groupedData) {
+                // Sort labels alphabetically for consistent chart display
+                const sortedKeys = Object.keys(groupedData).sort();
+
+                sortedKeys.forEach(key => {
                     labels.push(key);
                     if (aggregateType === 'average') {
                         values.push(groupedData[key].sum / groupedData[key].count);
                     } else { // default to sum
                         values.push(groupedData[key].sum);
                     }
-                }
+                });
                 return { labels, data: values };
             }
 
@@ -1229,9 +1249,6 @@
                                 <td><code>show overall business overview</code></td>
                             </tr>
                             <tr>
-                                <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">New Feature: Data Export</td>
-                            </tr>
-                            <tr>
                                 <td>24</td>
                                 <td>Data Export</td>
                                 <td>Download modified dataset</td>
@@ -1378,6 +1395,9 @@
                         exactMatch = col; // Found exact case-insensitive match
                         break; // Prioritize exact match
                     }
+                    // Consider the provided name as part of the column name. This can be too broad.
+                    // A better approach might be to use a distance metric or a more sophisticated fuzzy search.
+                    // For now, this `includes` check is a simple partial match.
                     if (lowerCol.includes(lowerRawName)) {
                         partialMatch = col; // Found a partial match
                     }
@@ -1457,14 +1477,23 @@
              * @returns {{success: boolean, message: string}} Result of the operation.
              */
             function categorizeNumericColumn(columnName, numBins, newColName, data) {
+                if (typeof numBins !== 'number' || numBins <= 0 || !Number.isInteger(numBins)) {
+                    return { success: false, message: 'Invalid number of bins. Please provide a positive integer.' };
+                }
+
                 const numericValues = data.map(row => Number(row[columnName])).filter(n => !isNaN(n));
-                if (numericValues.length === 0 || numBins <= 0) {
-                    return { success: false, message: 'Invalid data or number of bins.' };
+                if (numericValues.length === 0) {
+                    return { success: false, message: `Column "${columnName}" contains no valid numeric values to categorize.` };
                 }
 
                 const minVal = Math.min(...numericValues);
                 const maxVal = Math.max(...numericValues);
                 const binSize = (maxVal - minVal) / numBins;
+
+                // Check if the new column name already exists (case-insensitive)
+                if (Object.keys(schema).some(c => c.toLowerCase() === newColName.toLowerCase())) {
+                    return { success: false, message: `A column named "<strong>${newColName}</strong>" already exists (case-insensitive). Please choose a different name for your new binned column.` };
+                }
 
                 // Handle case where all values are the same (binSize would be 0)
                 if (binSize === 0) {
@@ -1474,7 +1503,7 @@
                     }));
                     schema[newColName] = 'string';
                     displaySchema(schema);
-                    return { success: true, message: `All values in "${columnName}" are the same. Created a single bin for "${newColName}".` };
+                    return { success: true, message: `All values in "<strong>${columnName}</strong>" are the same. Created a single bin for "<strong>${newColName}</strong>".` };
                 }
 
                 rawData = rawData.map(row => {
@@ -1483,13 +1512,15 @@
                         return { ...row, [newColName]: 'N/A' }; // Assign 'N/A' for non-numeric or missing values
                     }
                     let binIndex = Math.floor((value - minVal) / binSize);
-                    // Ensure the maximum value correctly falls into the last bin
+                    // Ensure the maximum value correctly falls into the last bin by adjusting its index
                     if (binIndex >= numBins) {
                         binIndex = numBins - 1;
                     }
 
                     const binStart = minVal + binIndex * binSize;
-                    const binEnd = minVal + (binIndex + 1) * binSize;
+                    // For the very last bin, ensure it ends at the maxVal
+                    const binEnd = (binIndex === numBins - 1) ? maxVal : (minVal + (binIndex + 1) * binSize);
+
                     return {
                         ...row,
                         [newColName]: `${binStart.toFixed(2)} - ${binEnd.toFixed(2)}`
@@ -1668,6 +1699,20 @@
 
             // Event listener for the new "Show Proactive Insights" button
             showProactiveInsightsBtn.addEventListener('click', () => {
+                if (rawData.length === 0) {
+                    appendMessage('AI', 'Please upload a CSV file first to generate proactive insights!', 'ai');
+                    return;
+                }
+                // Ensure all filters are reset to "All" when opening insights
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('active', 'bg-blue-600', 'hover:bg-blue-700');
+                    btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                    if (btn.dataset.filter === 'all') {
+                        btn.classList.add('active', 'bg-blue-600', 'hover:bg-blue-700');
+                        btn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                    }
+                });
+                insightSearchInput.value = ''; // Clear search
                 generateProactiveInsights(); // Re-generate insights
                 renderProactiveInsights(); // Then render them with current filters (default 'all', no search)
                 proactiveInsightsOverlay.classList.remove('hidden'); // Show the overlay
@@ -1701,31 +1746,47 @@
             function parseDate(dateString) {
                 if (!dateString) return null;
                 try {
-                    // Attempt to parse standard ISO, "YYYY-MM-DD", "MM/DD/YYYY", etc.
-                    const d1 = new Date(dateString);
-
-                    // If d1 is invalid, try specific common non-standard formats
-                    if (isNaN(d1.getTime())) {
-                        // Example: "DD/MM/YYYY"
-                        let parts = dateString.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
-                        if (parts) {
-                            // Reorder to YYYY-MM-DD for reliable Date constructor
-                            const d = new Date(`${parts[3]}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`);
-                            return isNaN(d.getTime()) ? null : d;
-                        }
-                        // Example: "YYYY/MM/DD"
-                        parts = dateString.match(/^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})$/);
-                        if (parts) {
-                            const d = new Date(`${parts[1]}-${parts[2].padStart(2, '0')}-${parts[3].padStart(2, '0')}`);
-                            return isNaN(d.getTime()) ? null : d;
-                        }
+                    // Try to parse as Date object directly (handles ISO, some common formats)
+                    let d = new Date(dateString);
+                    if (!isNaN(d.getTime())) {
+                        return d;
                     }
-                    return isNaN(d1.getTime()) ? null : d1;
+
+                    // Try MM/DD/YYYY or M/D/YYYY
+                    let parts = dateString.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
+                    if (parts) {
+                        d = new Date(`${parts[3]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`);
+                        return isNaN(d.getTime()) ? null : d;
+                    }
+
+                    // Try DD/MM/YYYY or D/M/YYYY
+                    parts = dateString.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
+                    if (parts) { // Note: this regex is same as above, but the parsing order changes for European formats
+                        d = new Date(`${parts[3]}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`);
+                        return isNaN(d.getTime()) ? null : d;
+                    }
+
+                    // Try YYYY-MM-DD
+                    parts = dateString.match(/^(\d{4})[-](\d{1,2})[-](\d{1,2})$/);
+                    if (parts) {
+                        d = new Date(`${parts[1]}-${parts[2].padStart(2, '0')}-${parts[3].padStart(2, '0')}`);
+                        return isNaN(d.getTime()) ? null : d;
+                    }
+
+                    // Try YYYY/MM/DD
+                    parts = dateString.match(/^(\d{4})[/](\d{1,2})[/](\d{1,2})$/);
+                    if (parts) {
+                        d = new Date(`${parts[1]}-${parts[2].padStart(2, '0')}-${parts[3].padStart(2, '0')}`);
+                        return isNaN(d.getTime()) ? null : d;
+                    }
+
+                    return null; // Could not parse
                 } catch (e) {
                     console.warn(`Could not parse date string "${dateString}":`, e);
                     return null;
                 }
             }
+
 
             /**
              * Checks if a column name is likely a meaningful numeric metric (e.g., Sales, Profit).
@@ -1783,29 +1844,33 @@
 
                 if (dateCol && salesCol && regionCol) {
                     const uniqueDates = [...new Set(rawData.map(row => row[dateCol]))]
-                                        .map(parseDate)
-                                        .filter(d => d !== null)
-                                        .sort((a, b) => a.getTime() - b.getTime());
+                                            .map(parseDate)
+                                            .filter(d => d !== null)
+                                            .sort((a, b) => a.getTime() - b.getTime());
 
-                    // Need at least 8 days for 1 current + 7 historical for comparison
+                    // Need at least 8 distinct days for 1 current + 7 historical for comparison
                     if (uniqueDates.length >= 8) {
                         const latestDate = uniqueDates[uniqueDates.length - 1];
                         const eightDaysAgo = new Date(latestDate.getTime());
                         eightDaysAgo.setDate(latestDate.getDate() - 7);
+                        // Normalize `eightDaysAgo` to start of day for comparison purposes.
+                        eightDaysAgo.setHours(0, 0, 0, 0);
+
 
                         const regions = [...new Set(rawData.map(row => row[regionCol]))].filter(r => r);
 
                         regions.forEach(region => {
                             // Filter data relevant to the current region and valid dates
-                            const regionData = rawData.filter(row => {
-                                const rowDate = parseDate(row[dateCol]);
-                                return row[regionCol] === region && rowDate !== null;
-                            });
+                            const regionData = rawData.filter(row => row[regionCol] === region && parseDate(row[dateCol]) !== null);
 
                             // Calculate sales for the latest day in the loop
                             const currentDaySalesData = regionData.filter(row => {
                                 const rowDate = parseDate(row[dateCol]);
-                                return rowDate && rowDate.toDateString() === latestDate.toDateString(); // Compare full date strings
+                                // Compare only date parts (year, month, day)
+                                return rowDate && 
+                                       rowDate.getFullYear() === latestDate.getFullYear() &&
+                                       rowDate.getMonth() === latestDate.getMonth() &&
+                                       rowDate.getDate() === latestDate.getDate();
                             });
                             const currentDaySales = currentDaySalesData.reduce((sum, row) => sum + (Number(row[salesCol]) || 0), 0);
 
@@ -1823,14 +1888,16 @@
 
                                 if (salesDropPercentage > dropThreshold) {
                                     let message = `Sales in the **${region} region** are **down ${salesDropPercentage.toFixed(1)}%** on ${latestDate.toLocaleDateString()} compared to the last 7-day average. This deviation is significant.`;
-                                    // Use a common date format for suggested command, e.g., YYYY-MM-DD or MM/DD/YYYY
+                                    // Use a common date format for suggested command, e.g., YYYY-MM-DD
                                     const suggestedDate = latestDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
                                     // Check for consistent marketing spend if the column exists
                                     if (marketingSpendCol) {
                                         const currentDayMarketingSpend = currentDaySalesData.reduce((sum, row) => sum + (Number(row[marketingSpendCol]) || 0), 0);
-                                        const last7DaysMarketingSpend = last7DaysSalesData.length > 0 ? last7DaysSalesData.reduce((sum, row) => sum + (Number(row[marketingSpendCol]) || 0), 0) / last7DaysSalesData.length : 0;
-                                        const marketingSpendDeviation = last7DaysMarketingSpend > 0 ? Math.abs((currentDayMarketingSpend - last7DaysMarketingSpend) / last7DaysMarketingSpend) * 100 : Infinity;
+                                        const last7DaysMarketingSpendSum = last7DaysSalesData.reduce((sum, row) => sum + (Number(row[marketingSpendCol]) || 0), 0);
+                                        const last7DaysMarketingSpendAvg = last7DaysSalesData.length > 0 ? last7DaysMarketingSpendSum / last7DaysSalesData.length : 0;
+                                        
+                                        const marketingSpendDeviation = last7DaysMarketingSpendAvg > 0 ? Math.abs((currentDayMarketingSpend - last7DaysMarketingSpendAvg) / last7DaysMarketingSpendAvg) * 100 : Infinity;
                                         const marketingConsistencyThreshold = 10; // e.g., within 10% deviation
 
                                         if (marketingSpendDeviation <= marketingConsistencyThreshold) {
@@ -1942,7 +2009,7 @@
                                 type: 'trend',
                                 icon: 'fas fa-chart-bar',
                                 title: `Top/Bottom ${numCol} by ${catCol} (Average)`,
-                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}</strong>" shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
+                                message: `For **average ${numCol}**, "<strong>${topAvgCat[0]}</strong>" in **${catCol}** shows the highest average (${topAvgCat[1].toFixed(2)}), whereas "<strong>${bottomAvgCat[0]}</strong>" has the lowest (${bottomAvgCat[1].toFixed(2)}). This reveals efficiency or intensity per category.`,
                                 action: `show bar chart of ${numCol} by ${catCol} as average`
                             });
                         }
@@ -2052,10 +2119,11 @@
                 // Filter insights based on type and search term
                 let filteredInsights = lastProactiveInsights.filter(insight => {
                     const matchesFilter = filterType === 'all' || insight.type === filterType;
+                    const lowerSearchTerm = searchTerm.toLowerCase();
                     const matchesSearch = searchTerm === '' ||
-                                          insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                          insight.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                          insight.action.toLowerCase().includes(searchTerm.toLowerCase());
+                                          insight.title.toLowerCase().includes(lowerSearchTerm) ||
+                                          insight.message.toLowerCase().includes(lowerSearchTerm) ||
+                                          insight.action.toLowerCase().includes(lowerSearchTerm);
                     return matchesFilter && matchesSearch;
                 });
 
@@ -2132,6 +2200,8 @@
                         });
                         aiResponseText = `Great! I've successfully filled the ${pendingCleaningSuggestion.count} missing or invalid numeric values in the column "<strong>${colToClean}</strong>" with the calculated average of <strong>${average.toFixed(2)}</strong>. Your data has been updated locally and privately.`;
                         pendingCleaningSuggestion = null; // Clear the suggestion after execution
+                    } else {
+                         aiResponseText = `I understood your confirmation, but there's no active cleaning suggestion that I know how to process.`;
                     }
                     appendMessage('AI', aiResponseText, 'ai');
                     return;
@@ -2260,7 +2330,7 @@
                                             "column_name": { "type": "STRING" },
                                             "column_name_2": { "type": "STRING" },
                                             "operator": { "type": "STRING" },
-                                            "value": { "type": ["STRING", "NUMBER"] }, // Value can be string or number
+                                            "value": { "type": ["STRING", "NUMBER", "BOOLEAN"] }, // Value can be string, number, or boolean
                                             "aggregate_type": { "type": "STRING", "enum": ["sum", "average"] }, // Enforce enum for aggregate_type
                                             "chart_type": { "type": "STRING" }, // NLU will infer type
                                             "num_bins": { "type": "NUMBER" },
@@ -2306,11 +2376,6 @@
                             rawLLMText = rawLLMText.trim();
                         }
 
-                        // Check if the cleaned text is empty or too short to be valid JSON
-                        if (!rawLLMText || rawLLMText.length < 2) { // Minimal JSON is "{}"
-                            throw new Error("LLM returned empty or too short JSON string after cleaning.");
-                        }
-
                         console.log("Cleaned LLM Response Text (attempting to parse):", rawLLMText);
 
                         let nluOutputJson;
@@ -2319,7 +2384,7 @@
                         } catch (parseError) {
                             console.error("JSON Parse Error:", parseError);
                             console.error("Malformed JSON received from LLM:", rawLLMText);
-                            aiResponseText = `I received an invalid response from the AI. The response was not in a parsable JSON format. Please try again or rephrase. (Error details: ${parseError.message})`;
+                            aiResponseText = `I received an invalid response from the AI. It couldn't be parsed. This might be due to an unexpected format from the NLU model. Please try again.`;
                             appendMessage('AI', aiResponseText, 'ai');
                             return; // Exit function as we can't proceed with malformed JSON
                         }
@@ -2339,8 +2404,8 @@
                                 break;
                             case 'get_all_data':
                                 analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
-                                                  <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
-                                                  <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
+                                    <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                    <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
                                 aiResponseText = `Understood! Here's your data:`;
                                 break;
                             case 'get_column_data': {
@@ -2352,8 +2417,8 @@
                                 if (foundColumn) {
                                     const columnValues = rawData.map(row => row[foundColumn]);
                                     analysisContent = `<p class="text-gray-300 mt-2">Here are the **first 10 values** from the "<strong>${foundColumn}</strong>" column:</p>
-                                                      <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
-                                                      <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
+                                        <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
+                                        <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
                                     aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
                                 } else {
                                     aiResponseText = `I couldn't find a column matching "<strong>${params.column_name}</strong>". Please check your column name.`;
@@ -2369,8 +2434,8 @@
                                 let numRows = rawData.length;
                                 let numCols = Object.keys(schema).length;
                                 let descriptionNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have <strong>${numRows} rows</strong>, which means ${numRows} individual records, and <strong>${numCols} columns</strong>, representing ${numCols} different types of information.</p>
-                                                            <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
-                                                            <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
+                                                             <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
+                                                             <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
 
                                 for (const col in schema) {
                                     descriptionNarrative += `<li class="font-medium">${col}: (<span class="text-blue-400">${schema[col]}</span> type) `;
@@ -2382,7 +2447,7 @@
                                         if (stats && stats.count > 0) {
                                             descriptionNarrative += `This column contains numerical data, ranging from <strong>${stats.min.toFixed(2)}</strong> to <strong>${stats.max.toFixed(2)}</strong>, with an average value of approximately <strong>${stats.mean.toFixed(2)}</strong>.`;
                                             if (stats.median !== null) descriptionNarrative += ` The median is <strong>${stats.median.toFixed(2)}</strong>.`;
-                                            if (stats.stdDev !== null) descriptionNarrative += ` Standard deviation is <strong>${stats.stdDev.toFixed(2)}</strong>.`;
+                                            if (stats.stdDev !== null && !isNaN(stats.stdDev)) descriptionNarrative += ` Standard deviation is <strong>${stats.stdDev.toFixed(2)}</strong>.`;
                                             if (quartiles.q1 !== null) descriptionNarrative += ` Q1 is <strong>${quartiles.q1}</strong>, Q3 is <strong>${quartiles.q3}</strong>, and the IQR is <strong>${quartiles.iqr}</strong>.`;
                                             // Add simple correlation insights here as well for description
                                             const correlationWithOtherNumerics = [];
@@ -2416,7 +2481,7 @@
                             }
                             case 'show_schema':
                                 analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
-                                                  <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
+                                    <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
                                 aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
                                 break;
                             case 'get_sum': {
@@ -2475,10 +2540,10 @@
                                 const foundColumn = findNumericColumn(params.column_name);
                                 if (foundColumn) {
                                     const stdDev = calculateStandardDeviation(foundColumn, rawData);
-                                    if (stdDev !== null) {
+                                    if (stdDev !== null && !isNaN(stdDev)) { // Check for NaN explicitly
                                         aiResponseText = `The **standard deviation** for the column "<strong>${foundColumn}</strong>" is: <strong>${stdDev.toFixed(2)}</strong>.`;
                                     } else {
-                                        aiResponseText = `I couldn't calculate the standard deviation for "<strong>${foundColumn}</strong>" as it contains insufficient numeric data (at least 2 values are needed).`;
+                                        aiResponseText = `I couldn't calculate the standard deviation for "<strong>${foundColumn}</strong>" as it contains insufficient numeric data (at least 2 values are needed) or the calculation resulted in an invalid number.`;
                                     }
                                 } else {
                                     aiResponseText = `I couldn't find a numeric column matching "<strong>${params.column_name}</strong>" to calculate the standard deviation for. Please specify a valid numeric column.`;
@@ -2495,10 +2560,10 @@
                                     const quartiles = calculateQuartiles(foundColumn, rawData);
                                     if (quartiles.median !== null) {
                                         aiResponseText = `For the column "<strong>${foundColumn}</strong>":<br>
-                                                        **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
-                                                        **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
-                                                        **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
-                                                        **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
+                                            **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
+                                            **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
+                                            **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
+                                            **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
                                     } else {
                                         aiResponseText = `I couldn't calculate quartiles for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
                                     }
@@ -2515,7 +2580,7 @@
                                 const foundColumn = findColumnByName(params.column_name);
                                 if (foundColumn) {
                                     const values = rawData.map(row => row[foundColumn]);
-                                    const uniqueCount = new Set(values).size;
+                                    const uniqueCount = new Set(values.filter(v => v !== null && v !== undefined && v !== '')).size; // Filter out truly empty values
                                     aiResponseText = `The column "<strong>${foundColumn}</strong>" has **${uniqueCount} unique values**.`;
                                 } else {
                                     aiResponseText = `I couldn't find a column matching "<strong>${params.column_name}</strong>" to count unique values. Please specify a valid column name.`;
@@ -2529,7 +2594,11 @@
                                 }
                                 const foundColumn = findColumnByName(params.column_name);
                                 if (foundColumn) {
-                                    const values = rawData.map(row => row[foundColumn]);
+                                    const values = rawData.map(row => row[foundColumn]).filter(v => v !== undefined && v !== null && v !== ''); // Filter out empty values
+                                    if (values.length === 0) {
+                                        aiResponseText = `Column "<strong>${foundColumn}</strong>" contains no valid entries to show frequency.`;
+                                        break;
+                                    }
                                     const valueCounts = {};
                                     values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
                                     const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
@@ -2584,12 +2653,12 @@
                                 break;
                             }
                             case 'get_average_by_category': {
+                                // Fix: Use params.numeric_column as defined in the prompt
                                 if (!params.numeric_column || !params.categorical_column) {
                                     aiResponseText = `To calculate average by category, I need both a numeric column and a categorical column. Example: 'average sales by region'.`;
                                     break;
                                 }
-                                // Use the correct parameter names from the LLM's NLU output
-                                const numericColumn = findNumericColumn(params.numeric_column);
+                                const numericColumn = findNumericColumn(params.numeric_column); // Corrected parameter usage
                                 const categoricalColumn = findCategoricalColumn(params.categorical_column);
 
                                 if (numericColumn && categoricalColumn) {
@@ -2611,13 +2680,23 @@
                                     });
 
                                     let resultsHtml = `<ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
+                                    let hasData = false;
                                     for (const category in groupedAverages) {
-                                        const avg = (groupedAverages[category] / counts[category]).toFixed(2);
-                                        resultsHtml += `<li><strong>${category}</strong>: Average ${numericColumn} is <strong>${avg}</strong> (${counts[category]} entries)</li>`;
+                                        const stats = groupedAverages[category];
+                                        const count = counts[category];
+                                        if (count > 0) {
+                                            const avg = (stats / count).toFixed(2);
+                                            resultsHtml += `<li><strong>${category}</strong>: Average ${numericColumn} is <strong>${avg}</strong> (${count} entries)</li>`;
+                                            hasData = true;
+                                        }
                                     }
                                     resultsHtml += `</ul>`;
-                                    aiResponseText = `Here's the **average of "${numericColumn}" grouped by "${categoricalColumn}"**:`;
-                                    analysisContent = resultsHtml;
+                                    if (hasData) {
+                                        aiResponseText = `Here's the **average of "${numericColumn}" grouped by "${categoricalColumn}"**:`;
+                                        analysisContent = resultsHtml;
+                                    } else {
+                                        aiResponseText = `No valid data found to calculate the average of "<strong>${numericColumn}</strong>" grouped by "<strong>${categoricalColumn}</strong>".`;
+                                    }
                                 } else {
                                     aiResponseText = `I need both a valid numeric column and a valid categorical column to perform that aggregation. Please check your column names and types.`;
                                 }
@@ -2633,16 +2712,17 @@
 
                                 if (col1 && col2) {
                                     const correlation = calculateCorrelation(col1, col2, rawData);
-                                    if (correlation !== null) {
+                                    if (correlation !== null && !isNaN(correlation)) {
                                         let interpretation = '';
-                                        if (correlation >= 0.7) interpretation = 'a **strong positive correlation**';
-                                        else if (correlation >= 0.3) interpretation = 'a **moderate positive correlation**';
-                                        else if (correlation > -0.3 && correlation < 0.3) interpretation = 'a **very weak or no linear correlation**';
-                                        else if (correlation > -0.7) interpretation = 'a **moderate negative correlation**';
-                                        else interpretation = 'a **strong negative correlation**';
-                                        aiResponseText = `The **Pearson correlation coefficient** between "<strong>${col1}</strong>" and "<strong>${col2}</strong>" is: <strong>${correlation.toFixed(4)}</strong>. This indicates ${interpretation}.`;
+                                        let absCorrelation = Math.abs(correlation);
+                                        if (absCorrelation >= 0.7) interpretation = 'a **strong**';
+                                        else if (absCorrelation >= 0.3) interpretation = 'a **moderate**';
+                                        else interpretation = 'a **very weak or no linear**';
+
+                                        const direction = correlation > 0 ? 'positive correlation' : (correlation < 0 ? 'negative correlation' : 'correlation');
+                                        aiResponseText = `The **Pearson correlation coefficient** between "<strong>${col1}</strong>" and "<strong>${col2}</strong>" is: <strong>${correlation.toFixed(4)}</strong>. This indicates ${interpretation} ${direction}.`;
                                     } else {
-                                        aiResponseText = `I couldn't calculate the correlation between "<strong>${col1}</strong>" and "<strong>${col2}</strong>" due to insufficient or invalid numeric data.`;
+                                        aiResponseText = `I couldn't calculate the correlation between "<strong>${col1}</strong>" and "<strong>${col2}</strong>" due to insufficient or invalid numeric data (at least two valid data points are needed for both columns).`;
                                     }
                                 } else {
                                     aiResponseText = `I need two valid numeric columns. Please check your column names and types.`;
@@ -2659,8 +2739,8 @@
                                     const { outliers, lowerBound, upperBound } = findOutliers(foundColumn, rawData);
                                     if (outliers.length > 0) {
                                         aiResponseText = `I found **${outliers.length} potential outliers** in the column "<strong>${foundColumn}</strong>".<br>
-                                                        These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
-                                                        Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
+                                            These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
+                                            Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
                                     } else {
                                         aiResponseText = `No significant outliers were detected in the column "<strong>${foundColumn}</strong>" based on the IQR method.`;
                                     }
@@ -2695,11 +2775,10 @@
                                                 case '<=': return cellValue <= parsedValue;
                                                 case '=': return cellValue === parsedValue;
                                                 case '!=': return cellValue !== parsedValue;
-                                                default: return false;
+                                                default: return false; // Unsupported operator
                                             }
                                         });
                                     } else { // string or other types
-                                        // Attempt to parse date if column looks like a date column
                                         const isDateColumn = ['date', 'order date', 'transaction date', 'activity date', 'ship date'].some(keyword => foundColumn.toLowerCase().includes(keyword));
                                         if (isDateColumn) {
                                             const targetDate = parseDate(String(params.value));
@@ -2707,19 +2786,25 @@
                                                 aiResponseText = `The date value "${params.value}" for filtering column "${foundColumn}" is not in a recognizable format. Please use a common date format like YYYY-MM-DD or MM/DD/YYYY.`;
                                                 break;
                                             }
+                                            // Normalize target date to start of day for accurate comparison
+                                            targetDate.setHours(0,0,0,0);
+
                                             filteredData = rawData.filter(row => {
                                                 const rowDate = parseDate(row[foundColumn]);
                                                 if (!rowDate) return false;
-                                                // Compare dates only by day, month, and year (ignoring time)
-                                                const rowDateStr = rowDate.toDateString();
-                                                const targetDateStr = targetDate.toDateString();
+                                                // Normalize row date to start of day for accurate comparison
+                                                rowDate.setHours(0,0,0,0);
 
                                                 switch (params.operator) {
-                                                    case '=': return rowDateStr === targetDateStr;
-                                                    case '!=': return rowDateStr !== targetDateStr;
-                                                    // For date ranges, more complex logic (e.g., using getTime()) would be needed.
-                                                    // This basic filter only supports exact/inexact matches for dates.
-                                                    default: return false; // Other operators not supported for basic date string comparison
+                                                    case '=': return rowDate.getTime() === targetDate.getTime();
+                                                    case '!=': return rowDate.getTime() !== targetDate.getTime();
+                                                    case '>': return rowDate.getTime() > targetDate.getTime();
+                                                    case '<': return rowDate.getTime() < targetDate.getTime();
+                                                    case '>=': return rowDate.getTime() >= targetDate.getTime();
+                                                    case '<=': return rowDate.getTime() <= targetDate.getTime();
+                                                    default:
+                                                        aiResponseText = `Operator "${params.operator}" not fully supported for date filtering. Only '=', '!=', '>', '<', '>=', '<=' are available for dates.`;
+                                                        return false;
                                                 }
                                             });
                                         } else {
@@ -2730,15 +2815,20 @@
                                                 switch (params.operator) {
                                                     case '=': return cellValue === parsedValue;
                                                     case '!=': return cellValue !== parsedValue;
-                                                    default: return false;
+                                                    default: return false; // Unsupported operator for string
                                                 }
                                             });
                                         }
                                     }
-                                    analysisContent = `<p class="text-gray-300 mt-2">I found <strong>${filteredData.length} rows</strong> that match your condition where **${foundColumn} ${params.operator} ${params.value}**.</p>
-                                                      <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
-                                                      <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
-                                    aiResponseText = `Filtering complete! I've processed your data based on the condition "${foundColumn} ${params.operator} ${params.value}". Here's the summary:`;
+                                    if (filteredData.length > 0) {
+                                        analysisContent = `<p class="text-gray-300 mt-2">I found <strong>${filteredData.length} rows</strong> that match your condition where **${foundColumn} ${params.operator} ${params.value}**.</p>
+                                            <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
+                                            <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
+                                        aiResponseText = `Filtering complete! I've processed your data based on the condition "${foundColumn} ${params.operator} ${params.value}". Here's the summary:`;
+                                    } else {
+                                        aiResponseText = `No rows found that match your filter condition: **${foundColumn} ${params.operator} ${params.value}**.`;
+                                    }
+
                                 } else {
                                     aiResponseText = `I couldn't filter data. Please ensure you provide a valid column, operator (e.g., '>', '='), and value.`;
                                 }
@@ -2749,7 +2839,7 @@
                                     aiResponseText = `To add a calculated column, I need a new column name, two numeric columns to operate on, and an operator ('plus', 'minus', 'times', 'divided by'). Example: 'add column profit as revenue minus cost'.`;
                                     break;
                                 }
-                                const newColName = params.new_column_name.replace(/\s/g, '_'); // Replace spaces for new column name
+                                const newColName = params.new_column_name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, ''); // Sanitize new column name
                                 const col1 = findNumericColumn(params.column_name);
                                 const col2 = findNumericColumn(params.column_name_2);
                                 const operatorWord = params.operator;
@@ -2785,7 +2875,8 @@
                                             } else {
                                                 result = null; // Set to null or undefined if input is invalid
                                             }
-                                            return { ...row, [newColName]: result !== null ? result.toFixed(2) : '' }; // Store as fixed decimal string or empty
+                                            // Store as fixed decimal string or empty string if null
+                                            return { ...row, [newColName]: result !== null ? result.toFixed(2) : '' };
                                         });
                                         schema[newColName] = 'number'; // New column is numeric
                                         displaySchema(schema); // Update schema display
@@ -2805,13 +2896,7 @@
                                 }
                                 const numericColumn = findNumericColumn(params.column_name);
                                 const numBins = params.num_bins;
-                                const newColName = params.new_column_name;
-
-                                // Basic validation for numBins
-                                if (typeof numBins !== 'number' || numBins <= 0 || !Number.isInteger(numBins)) {
-                                    aiResponseText = `The number of bins must be a positive integer. Please provide a valid number.`;
-                                    break;
-                                }
+                                const newColName = params.new_column_name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, ''); // Sanitize new column name
 
                                 if (numericColumn) {
                                     const result = categorizeNumericColumn(numericColumn, numBins, newColName, rawData);
@@ -2836,7 +2921,7 @@
                                     break;
                                 }
                                 const oldName = params.old_column_name;
-                                const newName = params.new_column_name;
+                                const newName = params.new_column_name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, ''); // Sanitize new column name
                                 const result = renameColumn(oldName, newName);
                                 aiResponseText = result.message;
                                 break;
@@ -2867,20 +2952,29 @@
                                     });
 
                                     let resultsHtml = `<p class="text-gray-300">Summary of <strong>${numericColumn}</strong> by <strong>${categoricalColumn}</strong>:</p>
-                                                      <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
-                                    for (const category in groupedStats) {
+                                                         <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
+                                    let hasValidGroupedData = false;
+                                    const sortedCategories = Object.keys(groupedStats).sort(); // Sort categories for consistent output
+                                    for (const category of sortedCategories) {
                                         const stats = groupedStats[category];
-                                        const avg = stats.count > 0 ? (stats.sum / stats.count).toFixed(2) : 'N/A';
-                                        resultsHtml += `<li><strong>${category}</strong>: <br>
-                                                            &nbsp;&nbsp;Entries: ${stats.count}, <br>
-                                                            &nbsp;&nbsp;Average ${numericColumn}: ${avg}, <br>
-                                                            &nbsp;&nbsp;Min ${numericColumn}: ${stats.count > 0 ? stats.min.toFixed(2) : 'N/A'}, <br>
-                                                            &nbsp;&nbsp;Max ${numericColumn}: ${stats.count > 0 ? stats.max.toFixed(2) : 'N/A'}
-                                                        </li>`;
+                                        if (stats.count > 0) {
+                                            const avg = (stats.sum / stats.count).toFixed(2);
+                                            resultsHtml += `<li><strong>${category}</strong>: <br>
+                                                                 &nbsp;&nbsp;Entries: ${stats.count}, <br>
+                                                                 &nbsp;&nbsp;Average ${numericColumn}: ${avg}, <br>
+                                                                 &nbsp;&nbsp;Min ${numericColumn}: ${stats.min.toFixed(2)}, <br>
+                                                                 &nbsp;&nbsp;Max ${numericColumn}: ${stats.max.toFixed(2)}
+                                                             </li>`;
+                                            hasValidGroupedData = true;
+                                        }
                                     }
                                     resultsHtml += `</ul>`;
-                                    aiResponseText = `Here's a detailed summary:`;
-                                    analysisContent = resultsHtml;
+                                    if (hasValidGroupedData) {
+                                        aiResponseText = `Here's a detailed summary:`;
+                                        analysisContent = resultsHtml;
+                                    } else {
+                                        aiResponseText = `No valid data found to summarize "<strong>${numericColumn}</strong>" by "<strong>${categoricalColumn}</strong>". Please check if there are numeric values for aggregation and categories to group by.`;
+                                    }
                                 } else {
                                     aiResponseText = `To summarize, I need a valid numeric column and a valid categorical column. Please check your column names and types.`;
                                 }
@@ -2896,11 +2990,11 @@
                                         const stats = getDescriptiveStats(col, rawData);
                                         if (stats && stats.count > 0) {
                                             overviewText += `<li><strong>${col}</strong>:<br>
-                                                                &nbsp;&nbsp;Total Sum: ${stats.sum.toFixed(2)}<br>
-                                                                &nbsp;&nbsp;Average: ${stats.mean.toFixed(2)}<br>
-                                                                &nbsp;&nbsp;Min: ${stats.min.toFixed(2)}<br>
-                                                                &nbsp;&nbsp;Max: ${stats.max.toFixed(2)}
-                                                            </li>`;
+                                                                 &nbsp;&nbsp;Total Sum: ${stats.sum.toFixed(2)}<br>
+                                                                 &nbsp;&nbsp;Average: ${stats.mean.toFixed(2)}<br>
+                                                                 &nbsp;&nbsp;Min: ${stats.min.toFixed(2)}<br>
+                                                                 &nbsp;&nbsp;Max: ${stats.max.toFixed(2)}
+                                                             </li>`;
                                         } else {
                                             overviewText += `<li><strong>${col}</strong>: No valid numeric data.</li>`;
                                         }
@@ -2914,12 +3008,16 @@
                                 if (stringColumns.length > 0) {
                                     overviewText += `<h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Categorical Insights:</h5><ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
                                     stringColumns.forEach(col => {
-                                        const values = rawData.map(row => row[col]);
+                                        const values = rawData.map(row => row[col]).filter(v => v !== undefined && v !== null && v !== '');
                                         const uniqueCount = new Set(values).size;
                                         const valueCounts = {};
                                         values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
                                         const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
-                                        overviewText += `<li><strong>${col}</strong>: ${uniqueCount} unique values. Top 3: ${sortedCounts.slice(0,3).map(item => `${item[0]} (${item[1]} occurrences)`).join(', ')}.</li>`;
+                                        if (uniqueCount > 0) {
+                                            overviewText += `<li><strong>${col}</strong>: ${uniqueCount} unique values. Top 3: ${sortedCounts.slice(0,Math.min(3, sortedCounts.length)).map(item => `"${item[0]}" (${item[1]} occurrences)`).join(', ')}.</li>`;
+                                        } else {
+                                            overviewText += `<li><strong>${col}</strong>: No valid categorical data.</li>`;
+                                        }
                                     });
                                     overviewText += `</ul>`;
                                 } else {
@@ -2946,7 +3044,7 @@
                                                     categoricalColumn, `${aggregateType} of ${numericColumn}`);
                                         return; // Exit as chart is handled
                                     } else {
-                                        aiResponseText = `No valid data to create a bar chart for "${numericColumn}" by "${categoricalColumn}".`;
+                                        aiResponseText = `No valid data to create a bar chart for "${numericColumn}" by "${categoricalColumn}". Ensure the columns contain valid numeric and categorical entries.`;
                                     }
                                 } else {
                                     aiResponseText = `To create that bar chart, I need a valid numeric column and a valid categorical column. Please check your column names.`;
@@ -2963,18 +3061,31 @@
 
                                 if (xColumn && yColumn) {
                                     // Filter out rows where yColumn is not a valid number
-                                    const validDataPoints = rawData.filter(row => !isNaN(Number(row[yColumn])));
+                                    const validDataPoints = rawData.filter(row => row[xColumn] !== undefined && row[xColumn] !== null && row[xColumn] !== '' && !isNaN(Number(row[yColumn])));
                                     if (validDataPoints.length === 0) {
-                                        aiResponseText = `No valid numeric data in "${yColumn}" to create a line chart.`;
+                                        aiResponseText = `No valid numeric data in "${yColumn}" or valid X-axis data in "${xColumn}" to create a line chart.`;
                                         break;
                                     }
-                                    const labels = validDataPoints.map(row => row[xColumn]);
-                                    const data = validDataPoints.map(row => Number(row[yColumn]));
+                                    // Ensure data is sorted by X-axis for line charts, especially if X is a date
+                                    const sortedDataPoints = [...validDataPoints].sort((a, b) => {
+                                        if (schema[xColumn] === 'number') {
+                                            return Number(a[xColumn]) - Number(b[xColumn]);
+                                        }
+                                        // Try date parsing for sorting if it looks like a date
+                                        const dateA = parseDate(a[xColumn]);
+                                        const dateB = parseDate(b[xColumn]);
+                                        if (dateA && dateB) return dateA.getTime() - dateB.getTime();
+                                        // Fallback to string comparison if not number or date
+                                        return String(a[xColumn]).localeCompare(String(b[xColumn]));
+                                    });
+
+                                    const labels = sortedDataPoints.map(row => row[xColumn]);
+                                    const data = sortedDataPoints.map(row => Number(row[yColumn]));
 
                                     createChart('line', `${yColumn} over ${xColumn}`, labels, data, xColumn, yColumn);
                                     return; // Exit as chart is handled
                                 } else {
-                                    aiResponseText = `To create that line chart, I need a valid X-axis column and a valid numeric Y-axis column.`;
+                                    aiResponseText = `To create that line chart, I need a valid X-axis column (could be date/string/number) and a valid numeric Y-axis column.`;
                                 }
                                 break;
                             }
@@ -2999,8 +3110,8 @@
 
                                     createChart('scatter', `${yColumn} vs ${xColumn}`, [], scatterData, xColumn, yColumn, {
                                         scales: {
-                                            x: { type: 'linear', position: 'bottom', ticks: { color: '#a0aec0' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                                            y: { type: 'linear', ticks: { color: '#a0aec0' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                                            x: { type: 'linear', position: 'bottom', ticks: { color: '#a0aec0' }, grid: { color: 'rgba(255,255,255,0.1)' }, title: { display: true, text: xColumn, color: '#e2e8f0' } },
+                                            y: { type: 'linear', ticks: { color: '#a0aec0' }, grid: { color: 'rgba(255,255,255,0.1)' }, title: { display: true, text: yColumn, color: '#e2e8f0' } }
                                         },
                                         elements: { point: { radius: 3, backgroundColor: 'rgba(66, 153, 225, 0.8)' } } // Customize points
                                     });
@@ -3015,48 +3126,44 @@
                             case 'create_polar_area_chart': {
                                 const chartType = intent.replace('create_', '').replace('_chart', '').replace(/_/g, ' ');
                                 let labels, data, chartTitle;
+                                let numericColumn = null;
+                                let categoricalColumn = null;
+                                let aggregateType = 'sum'; // Default for aggregation
 
-                                // Prioritize aggregation if both numeric and categorical columns are provided
                                 if (params.numeric_column && params.categorical_column) {
-                                    const numericColumn = findNumericColumn(params.numeric_column);
-                                    const categoricalColumn = findCategoricalColumn(params.categorical_column);
-                                    const aggregateType = params.aggregate_type || 'sum';
+                                    numericColumn = findNumericColumn(params.numeric_column);
+                                    categoricalColumn = findCategoricalColumn(params.categorical_column);
+                                    aggregateType = params.aggregate_type || 'sum';
+                                } else if (params.column_name) {
+                                    categoricalColumn = findColumnByName(params.column_name);
+                                }
 
-                                    if (numericColumn && categoricalColumn) {
-                                        const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateType);
-                                        if (aggregated.labels.length > 0) {
-                                            labels = aggregated.labels;
-                                            data = aggregated.data;
-                                            chartTitle = `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`;
-                                        } else {
-                                            aiResponseText = `No valid data to create a ${chartType} chart for "${numericColumn}" by "${categoricalColumn}".`;
-                                            break;
-                                        }
+                                if (numericColumn && categoricalColumn) {
+                                    const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateType);
+                                    if (aggregated.labels.length > 0) {
+                                        labels = aggregated.labels;
+                                        data = aggregated.data;
+                                        chartTitle = `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`;
                                     } else {
-                                        aiResponseText = `For a ${chartType} chart with aggregation, I need a valid numeric column and a valid categorical column.`;
+                                        aiResponseText = `No valid data to create a ${chartType} chart for "${numericColumn}" by "${categoricalColumn}". Ensure the columns contain valid numeric and categorical entries.`;
                                         break;
                                     }
-                                } else if (params.column_name) { // Fallback to frequency if only one column name is given
-                                    const primaryColumn = findColumnByName(params.column_name);
-                                    if (primaryColumn) {
-                                        const values = rawData.map(row => row[primaryColumn]).filter(v => v !== undefined && v !== null && v !== ''); // Filter out empty
-                                        if (values.length === 0) {
-                                            aiResponseText = `No valid data in "${primaryColumn}" to create a ${chartType} chart.`;
-                                            break;
-                                        }
-                                        const valueCounts = {};
-                                        values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
-                                        labels = Object.keys(valueCounts);
-                                        data = Object.values(valueCounts);
-                                        chartTitle = `Frequency of ${primaryColumn}`;
-                                    } else {
-                                        aiResponseText = `I couldn't find the column matching "<strong>${params.column_name}</strong>" to create that chart.`;
+                                } else if (categoricalColumn) { // Only categorical column provided, show frequency
+                                    const values = rawData.map(row => row[categoricalColumn]).filter(v => v !== undefined && v !== null && v !== '');
+                                    if (values.length === 0) {
+                                        aiResponseText = `No valid data in "${categoricalColumn}" to create a ${chartType} chart.`;
                                         break;
                                     }
+                                    const valueCounts = {};
+                                    values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
+                                    labels = Object.keys(valueCounts);
+                                    data = Object.values(valueCounts);
+                                    chartTitle = `Frequency of ${categoricalColumn}`;
                                 } else {
-                                    aiResponseText = `To create a ${chartType} chart, please provide a column for frequency analysis, or a numeric column and a categorical column for aggregation.`;
+                                    aiResponseText = `To create a ${chartType} chart, please provide a categorical column for frequency analysis, or a numeric column and a categorical column for aggregation.`;
                                     break;
                                 }
+
                                 createChart(chartType.replace(' ', ''), chartTitle, labels, data);
                                 return; // Exit as chart is handled
                             }
@@ -3072,9 +3179,9 @@
                                     const regressionResults = performLinearRegression(xCol, yCol, rawData);
                                     if (regressionResults !== null) {
                                         aiResponseText = `**Simple Linear Regression Results** (${yCol} ~ ${xCol}):<br>
-                                                        - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
-                                                        - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
-                                                        - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
+                                            - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
+                                            - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
+                                            - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
                                     } else {
                                         aiResponseText = `I couldn't perform linear regression between "<strong>${yCol}</strong>" and "<strong>${xCol}</strong>" due to insufficient or invalid numeric data. Please ensure both columns contain at least two valid numeric entries.`;
                                     }
@@ -3096,17 +3203,16 @@
                                 return; // Don't append an AI message to chat, the overlay handles it
                             case 'unrecognized_command':
                             default:
-                                aiResponseText = `I'm sorry, I didn't understand that command. Please refer to the command list by typing 'show command guide' for examples, or try rephrasing your request.`;
+                                aiResponseText = `I'm sorry, I didn't understand that command. Please refer to the command list by typing 'show command guide' for examples, or try rephrasing your request. If you just uploaded data, ensure it's a valid CSV.`;
                                 break;
                         }
                     } else {
-                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected or empty. Please try again or rephrase.`;
+                        aiResponseText = `I encountered an issue processing your request through NLU. The response format was unexpected. This might be a temporary issue with the AI model or network. Please try again or rephrase.`;
                     }
                 } catch (error) {
                     hideLoadingIndicator(); // Hide loading indicator on error
                     console.error("Error during NLU processing or command execution:", error);
-                    // Provide a more user-friendly message for internal errors
-                    aiResponseText = `An unexpected internal error occurred: "${error.message}". This might be a temporary issue with the AI's response. Please try again.`;
+                    aiResponseText = `An unexpected error occurred while trying to process your request: "${error.message}". This might be a temporary issue or an unexpected input. Please try again.`;
                 }
                 // This general appendMessage is now only called for non-chart intents, or if there was an error.
                 if (aiResponseText || analysisContent) { // Only append if there's content to add
@@ -3134,6 +3240,7 @@
             // Handle sending messages when Enter key is pressed in the input field
             chatInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent default form submission if any
                     sendMessageBtn.click(); // Trigger the send button click
                 }
             });
@@ -3143,13 +3250,13 @@
                 button.addEventListener('click', () => {
                     // Remove 'active' styling from all filter buttons
                     filterButtons.forEach(btn => {
-                        btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        btn.classList.remove('active', 'bg-blue-600', 'hover:bg-blue-700');
                         btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
                     });
 
                     // Add 'active' styling to the clicked button
+                    button.classList.add('active', 'bg-blue-600', 'hover:bg-blue-700');
                     button.classList.remove('bg-gray-700', 'hover:bg-gray-600');
-                    button.classList.add('bg-blue-600', 'hover:bg-blue-700');
 
                     const filterType = button.dataset.filter; // Get the filter type from data-filter attribute
                     const searchTerm = insightSearchInput.value.trim();
@@ -3160,7 +3267,7 @@
             // Event listener for search input in proactive insights overlay
             insightSearchInput.addEventListener('input', () => {
                 // Determine the currently active filter button
-                const activeFilterButton = document.querySelector('.filter-btn.bg-blue-600');
+                const activeFilterButton = document.querySelector('.filter-btn.active'); // Use the 'active' class
                 const filterType = activeFilterButton ? activeFilterButton.dataset.filter : 'all'; // Default to 'all' if no filter active
                 const searchTerm = insightSearchInput.value.trim();
                 renderProactiveInsights(filterType, searchTerm); // Re-render insights with new search term
@@ -3185,9 +3292,13 @@
                 }
             });
 
-            // Ensure initial state is expanded as per the HTML
-            fileManagementContent.classList.add('show');
-            fileManagementChevron.classList.add('rotate-180');
+            // Ensure initial state is expanded as per the HTML (already in the HTML class list)
+            // fileManagementContent.classList.add('show'); // This is already in the HTML and handled by CSS initial state
+            // fileManagementChevron.classList.add('rotate-180'); // This is already in the HTML and handled by CSS initial state
+
+            // Set initial active filter button for proactive insights
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+
 
         });
     </script>
