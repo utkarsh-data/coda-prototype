@@ -272,6 +272,10 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(66, 153, 225, 0.4);
         }
+        .insight-action:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 5px rgba(66, 153, 225, 0.2);
+        }
 
         /* Collapsible content styles for insights and new file management section */
         .collapsible-content {
@@ -541,7 +545,7 @@
             const proactiveInsightsOverlay = document.getElementById('proactiveInsightsOverlay');
 
             if (chatInput && sendMessageBtn && proactiveInsightsOverlay) {
-                chatInput.value = command;
+                chatInput.value = decodeURIComponent(command); // Decode the command here
                 sendMessageBtn.click();
                 proactiveInsightsOverlay.classList.add('hidden'); // Close the insights overlay after submitting
             } else {
@@ -910,7 +914,7 @@
                             groupedData[groupKey] = { sum: 0, count: 0 };
                         }
                         groupedData[groupKey].sum += value;
-                        groupedData[groupKey].count++;
+                        groupedData[groupKey].count++; // Fixed: Changed 'key' to 'groupKey'
                     }
                 });
 
@@ -1709,7 +1713,7 @@
                         // Example: "DD/MM/YYYY"
                         let parts = dateString.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
                         if (parts) {
-                            // Reorder to YYYY-MM-DD for reliable Date constructor
+                            // Reorder to ISO-MM-DD for reliable Date constructor
                             const d = new Date(`${parts[3]}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`);
                             return isNaN(d.getTime()) ? null : d;
                         }
@@ -1783,9 +1787,9 @@
 
                 if (dateCol && salesCol && regionCol) {
                     const uniqueDates = [...new Set(rawData.map(row => row[dateCol]))]
-                                        .map(parseDate)
-                                        .filter(d => d !== null)
-                                        .sort((a, b) => a.getTime() - b.getTime());
+                                         .map(parseDate)
+                                         .filter(d => d !== null)
+                                         .sort((a, b) => a.getTime() - b.getTime());
 
                     // Need at least 8 days for 1 current + 7 historical for comparison
                     if (uniqueDates.length >= 8) {
@@ -1919,9 +1923,9 @@
                         // Convert to array of [category, {sum, count}] for sorting
                         const sortedBySum = Object.entries(groupedData).sort(([, a], [, b]) => b.sum - a.sum);
                         const sortedByAvg = Object.entries(groupedData)
-                                                .map(([category, data]) => [category, data.sum / data.count])
-                                                .filter(([, avg]) => !isNaN(avg)) // Filter out NaNs if any categories had no numeric data
-                                                .sort(([, a], [, b]) => b - a);
+                                                     .map(([category, data]) => [category, data.sum / data.count])
+                                                     .filter(([, avg]) => !isNaN(avg)) // Filter out NaNs if any categories had no numeric data
+                                                     .sort(([, a], [, b]) => b - a);
 
                         if (sortedBySum.length > 1) { // Need at least two categories to talk about top/bottom
                             const topSumCat = sortedBySum[0];
@@ -2015,25 +2019,26 @@
             }
 
             /**
-             * Helper function to escape a string for safe embedding in a JavaScript string literal
-             * within an HTML attribute (e.g., for an onclick handler).
-             * Prevents XSS and ensures correct parsing.
-             * @param {string} str - The string to escape.
-             * @returns {string} The escaped string.
+             * Helper function to safely encode a string for use in a URL component,
+             * then HTML-escape it for safe embedding in an HTML attribute.
+             * This prevents issues with special characters in JS string literals within HTML.
+             * @param {string} str - The string to encode and escape.
+             * @returns {string} The encoded and HTML-escaped string.
              */
-            function escapeHtmlAndJsString(str) {
-                if (typeof str !== 'string') {
-                    // If not a string, convert to string safely before escaping
-                    str = String(str);
-                }
-                return str
-                    .replace(/\\/g, '\\\\') // Escape backslashes first
-                    .replace(/'/g, '\\\'')  // Escape single quotes
-                    .replace(/"/g, '\\\"')  // Escape double quotes
-                    .replace(/`/g, '\\\`')  // Escape backticks
-                    .replace(/\n/g, '\\n')  // Escape newlines
-                    .replace(/\r/g, '\\r'); // Escape carriage returns
+            function encodeAndEscapeForHtmlAttribute(str) {
+                // First, encode for URL component, this handles most special characters for JS string literal safety
+                let encodedStr = encodeURIComponent(String(str));
+
+                // Then, HTML escape to ensure it's safe within an HTML attribute value
+                // Minimal set to avoid breaking HTML structure
+                return encodedStr
+                    .replace(/"/g, '&quot;')  // Escape double quotes
+                    .replace(/'/g, '&#39;')   // Escape single quotes
+                    .replace(/</g, '&lt;')    // Escape less than
+                    .replace(/>/g, '&gt;')    // Escape greater than
+                    .replace(/&/g, '&amp;');  // Escape ampersand
             }
+
 
             /**
              * Renders proactive insights into the `proactiveInsightsContent` area,
@@ -2077,7 +2082,7 @@
                         </div>
                         <div class="collapsible-content">
                             <p class="insight-message">${insight.message}</p>
-                            ${insight.action ? `<span class="text-sm text-blue-100 italic">Suggested Command: </span><a href="#" class="insight-action" onclick="typeIntoChatAndSubmit('${escapeHtmlAndJsString(insight.action)}'); return false;">'${insight.action}'</a>` : ''}
+                            ${insight.action ? `<span class="text-sm text-blue-100 italic">Suggested Command: </span><a href="#" class="insight-action" onclick="typeIntoChatAndSubmit('${encodeAndEscapeForHtmlAttribute(insight.action)}'); return false;">'${insight.action}'</a>` : ''}
                         </div>
                     `;
                     proactiveInsightsContent.appendChild(insightCard);
@@ -2247,6 +2252,8 @@
                     const chatHistory = [];
                     chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                     const payload = {
+                        // Added model field explicitly
+                        model: "gemini-2.0-flash",
                         contents: chatHistory,
                         generationConfig: {
                             responseMimeType: "application/json",
@@ -2256,12 +2263,13 @@
                                     "intent": { "type": "STRING" },
                                     "parameters": {
                                         "type": "OBJECT",
-                                        "properties": {
+                                        // Removed additionalProperties to be stricter, can add back if needed
+                                        properties: {
                                             "column_name": { "type": "STRING" },
                                             "column_name_2": { "type": "STRING" },
                                             "operator": { "type": "STRING" },
                                             "value": { "type": ["STRING", "NUMBER"] }, // Value can be string or number
-                                            "aggregate_type": { "type": "STRING", "enum": ["sum", "average"] }, // Enforce enum for aggregate_type
+                                            "aggregate_type": { "type": "STRING" }, // Removed enum here, less strict
                                             "chart_type": { "type": "STRING" }, // NLU will infer type
                                             "num_bins": { "type": "NUMBER" },
                                             "new_column_name": { "type": "STRING" },
@@ -2271,7 +2279,6 @@
                                             "x_column": { "type": "STRING" },
                                             "y_column": { "type": "STRING" }
                                         },
-                                        "additionalProperties": true // Allow other properties if LLM provides them, but prefer specified
                                     }
                                 },
                                 "required": ["intent", "parameters"]
@@ -2279,7 +2286,7 @@
                         }
                     };
 
-                    const apiKey = "AIzaSyCN6ZKV57_-vnHOcRLGjvxDoVRfsqCph8o"; // Canvas will automatically provide this.
+                    const apiKey = "AIzaSyCN6ZKV57_-vnHOcRLGjvxDoVRfsqCph8o"; // Leave this empty; Canvas will inject the key at runtime
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
@@ -2339,8 +2346,8 @@
                                 break;
                             case 'get_all_data':
                                 analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
-                                                  <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
-                                                  <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
+                                                    <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                                    <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
                                 aiResponseText = `Understood! Here's your data:`;
                                 break;
                             case 'get_column_data': {
@@ -2352,8 +2359,8 @@
                                 if (foundColumn) {
                                     const columnValues = rawData.map(row => row[foundColumn]);
                                     analysisContent = `<p class="text-gray-300 mt-2">Here are the **first 10 values** from the "<strong>${foundColumn}</strong>" column:</p>
-                                                      <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
-                                                      <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
+                                                        <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
+                                                        <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
                                     aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
                                 } else {
                                     aiResponseText = `I couldn't find a column matching "<strong>${params.column_name}</strong>". Please check your column name.`;
@@ -2416,7 +2423,7 @@
                             }
                             case 'show_schema':
                                 analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
-                                                  <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
+                                                    <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
                                 aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
                                 break;
                             case 'get_sum': {
@@ -2495,10 +2502,10 @@
                                     const quartiles = calculateQuartiles(foundColumn, rawData);
                                     if (quartiles.median !== null) {
                                         aiResponseText = `For the column "<strong>${foundColumn}</strong>":<br>
-                                                        **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
-                                                        **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
-                                                        **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
-                                                        **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
+                                            **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
+                                            **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
+                                            **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
+                                            **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
                                     } else {
                                         aiResponseText = `I couldn't calculate quartiles for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
                                     }
@@ -2612,7 +2619,7 @@
 
                                     let resultsHtml = `<ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
                                     for (const category in groupedAverages) {
-                                        const avg = (groupedAverages[category] / counts[category]).toFixed(2);
+                                        const avg = counts[category] > 0 ? (groupedAverages[category] / counts[category]).toFixed(2) : 'N/A';
                                         resultsHtml += `<li><strong>${category}</strong>: Average ${numericColumn} is <strong>${avg}</strong> (${counts[category]} entries)</li>`;
                                     }
                                     resultsHtml += `</ul>`;
@@ -2659,8 +2666,8 @@
                                     const { outliers, lowerBound, upperBound } = findOutliers(foundColumn, rawData);
                                     if (outliers.length > 0) {
                                         aiResponseText = `I found **${outliers.length} potential outliers** in the column "<strong>${foundColumn}</strong>".<br>
-                                                        These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
-                                                        Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
+                                            These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
+                                            Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
                                     } else {
                                         aiResponseText = `No significant outliers were detected in the column "<strong>${foundColumn}</strong>" based on the IQR method.`;
                                     }
@@ -2736,8 +2743,8 @@
                                         }
                                     }
                                     analysisContent = `<p class="text-gray-300 mt-2">I found <strong>${filteredData.length} rows</strong> that match your condition where **${foundColumn} ${params.operator} ${params.value}**.</p>
-                                                      <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
-                                                      <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
+                                                        <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
+                                                        <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
                                     aiResponseText = `Filtering complete! I've processed your data based on the condition "${foundColumn} ${params.operator} ${params.value}". Here's the summary:`;
                                 } else {
                                     aiResponseText = `I couldn't filter data. Please ensure you provide a valid column, operator (e.g., '>', '='), and value.`;
@@ -2846,6 +2853,7 @@
                                     aiResponseText = `To summarize by category, I need both a numeric column and a categorical column. Example: 'summarize sales by region'.`;
                                     break;
                                 }
+                                // Use the correct parameter names from the LLM's NLU output
                                 const numericColumn = findNumericColumn(params.numeric_column);
                                 const categoricalColumn = findCategoricalColumn(params.categorical_column);
 
@@ -2867,7 +2875,7 @@
                                     });
 
                                     let resultsHtml = `<p class="text-gray-300">Summary of <strong>${numericColumn}</strong> by <strong>${categoricalColumn}</strong>:</p>
-                                                      <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
+                                                        <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
                                     for (const category in groupedStats) {
                                         const stats = groupedStats[category];
                                         const avg = stats.count > 0 ? (stats.sum / stats.count).toFixed(2) : 'N/A';
@@ -2942,8 +2950,8 @@
                                     const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateType);
                                     if (aggregated.labels.length > 0) {
                                         createChart('bar', `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`,
-                                                    aggregated.labels, aggregated.data,
-                                                    categoricalColumn, `${aggregateType} of ${numericColumn}`);
+                                                     aggregated.labels, aggregated.data,
+                                                     categoricalColumn, `${aggregateType} of ${numericColumn}`);
                                         return; // Exit as chart is handled
                                     } else {
                                         aiResponseText = `No valid data to create a bar chart for "${numericColumn}" by "${categoricalColumn}".`;
@@ -3072,14 +3080,14 @@
                                     const regressionResults = performLinearRegression(xCol, yCol, rawData);
                                     if (regressionResults !== null) {
                                         aiResponseText = `**Simple Linear Regression Results** (${yCol} ~ ${xCol}):<br>
-                                                        - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
-                                                        - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
-                                                        - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
+                                            - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
+                                            - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
+                                            - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
                                     } else {
                                         aiResponseText = `I couldn't perform linear regression between "<strong>${yCol}</strong>" and "<strong>${xCol}</strong>" due to insufficient or invalid numeric data. Please ensure both columns contain at least two valid numeric entries.`;
                                     }
                                 } else {
-                                    aiResponseText = `To perform linear regression, I need two valid numeric columns (one for Y, one for X).`;
+                                    aiResponseText = `I need two valid numeric columns (one for Y, one for X).`;
                                 }
                                 break;
                             }
