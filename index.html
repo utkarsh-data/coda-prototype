@@ -1024,10 +1024,25 @@
                             <td><code>perform k-means clustering on [col1], [col2], ... into [k] clusters as [new_cluster_column]</code> (e.g., <code>perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment</code>)</td>
                         </tr>
                         <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Data Transformation & Reshaping</td>
                         </tr>
                         <tr>
                             <td>37</td>
+                            <td>Data Transformation</td>
+                            <td>Create Pivot Table</td>
+                            <td><code>create pivot table with [row_col] as rows, [column_col] as columns, [value_col] as values aggregated by [sum/average/count]</code> (e.g., <code>create pivot table with Region as rows, Product_Category as columns, Sales as values aggregated by sum</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>38</td>
+                            <td>Data Transformation</td>
+                            <td>Unpivot/Melt Data</td>
+                            <td><code>unpivot data keeping [id_col(s)] and melting [col1], [col2], ... into new variable [new_var_col] and value [new_val_col]</code> (e.g., <code>unpivot data keeping ID and melting Q1_Sales, Q2_Sales, Q3_Sales into new variable Quarter and value Sales_Amount</code>)</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
+                        </tr>
+                        <tr>
+                            <td>39</td>
                             <td>Automated Insights</td>
                             <td>Show Proactive Insights</td>
                             <td><code>show proactive insights</code> or <code>what insights do you have?</code></td>
@@ -1591,7 +1606,7 @@
                         }
                     }
                 }
-            }
+            };
 
             // 5. Categorical Distribution - Top N most/least frequent values (now item 6)
             categoricalCols.forEach(catCol => {
@@ -2070,6 +2085,154 @@
                 success: true,
                 message: `Successfully performed K-Means clustering with **${k} clusters** and added cluster assignments to the new column "<strong>${newColName}</strong>".`,
                 distribution: clusterDistribution
+            };
+        }
+
+        // --- New Feature: Data Pivoting (Pivot Table Creation) ---
+        /**
+         * Creates a pivot table from the raw data.
+         * @param {string} indexColName - The column to use for rows of the pivot table.
+         * @param {string} pivotColName - The column to use for new columns of the pivot table.
+         * @param {string} valueColName - The numeric column to aggregate.
+         * @param {string} aggregationType - 'sum', 'average', or 'count'.
+         * @param {Array<Object>} data - The raw data.
+         * @returns {string} An HTML string representing the pivot table.
+         */
+        function createPivotTable(indexColName, pivotColName, valueColName, aggregationType, data) {
+            const actualIndexCol = findColumnByName(indexColName);
+            const actualPivotCol = findColumnByName(pivotColName);
+            const actualValueCol = findNumericColumn(valueColName);
+
+            if (!actualIndexCol || !actualPivotCol || !actualValueCol) {
+                return { error: 'Invalid column names provided for pivot table. Ensure index, pivot, and value columns exist and value column is numeric.' };
+            }
+            if (!['sum', 'average', 'count'].includes(aggregationType)) {
+                return { error: 'Invalid aggregation type. Use "sum", "average", or "count".' };
+            }
+
+            const pivotData = {}; // Stores {rowIndex: {colName: {sum: X, count: Y}}}
+            const pivotColumnHeaders = new Set();
+
+            data.forEach(row => {
+                const rowIndex = row[actualIndexCol];
+                const pivotIndex = row[actualPivotCol];
+                const value = Number(row[actualValueCol]);
+
+                if (rowIndex !== undefined && pivotIndex !== undefined && !isNaN(value)) {
+                    if (!pivotData[rowIndex]) {
+                        pivotData[rowIndex] = {};
+                    }
+                    if (!pivotData[rowIndex][pivotIndex]) {
+                        pivotData[rowIndex][pivotIndex] = { sum: 0, count: 0 };
+                    }
+                    pivotData[rowIndex][pivotIndex].sum += value;
+                    pivotData[rowIndex][pivotIndex].count++;
+                    pivotColumnHeaders.add(pivotIndex);
+                }
+            });
+
+            const sortedRowHeaders = Object.keys(pivotData).sort();
+            const sortedPivotColumnHeaders = Array.from(pivotColumnHeaders).sort();
+
+            let tableHtml = `<table class="command-table text-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="bg-gray-700">${actualIndexCol} / ${actualPivotCol}</th>`;
+            sortedPivotColumnHeaders.forEach(header => {
+                tableHtml += `<th class="bg-gray-700">${header}</th>`;
+            });
+            tableHtml += `</tr></thead><tbody>`;
+
+            sortedRowHeaders.forEach(rowIndex => {
+                tableHtml += `<tr><td class="bg-gray-800 font-semibold">${rowIndex}</td>`;
+                sortedPivotColumnHeaders.forEach(colIndex => {
+                    const cellData = pivotData[rowIndex] && pivotData[rowIndex][colIndex];
+                    let displayValue = '';
+                    if (cellData) {
+                        if (aggregationType === 'sum') {
+                            displayValue = cellData.sum.toFixed(2);
+                        } else if (aggregationType === 'average') {
+                            displayValue = (cellData.sum / cellData.count).toFixed(2);
+                        } else if (aggregationType === 'count') {
+                            displayValue = cellData.count;
+                        }
+                    }
+                    tableHtml += `<td>${displayValue}</td>`;
+                });
+                tableHtml += `</tr>`;
+            });
+            tableHtml += `</tbody></table>`;
+
+            return { success: true, tableHtml: tableHtml };
+        }
+
+        // --- New Feature: Data Unpivoting (Melt) ---
+        /**
+         * Unpivots (melts) specified columns into new variable and value columns.
+         * Updates rawData and schema in place.
+         * @param {Array<string>} idColNames - Columns to keep as identifying variables.
+         * @param {Array<string>} colsToUnpivotNames - Columns to unpivot.
+         * @param {string} newVarColName - Name for the new column storing original column names.
+         * @param {string} newValColName - Name for the new column storing original values.
+         * @param {Array<Object>} data - The raw data (will be modified).
+         * @param {Object} currentSchema - The schema (will be modified).
+         * @returns {Object} Success status and message.
+         */
+        function unpivotData(idColNames, colsToUnpivotNames, newVarColName, newValColName, data, currentSchema) {
+            const actualIdCols = idColNames.map(col => findColumnByName(col)).filter(Boolean);
+            const actualColsToUnpivot = colsToUnpivotNames.map(col => findColumnByName(col)).filter(Boolean);
+
+            if (actualIdCols.length !== idColNames.length) {
+                return { success: false, message: `One or more ID columns not found: ${idColNames.filter(name => !findColumnByName(name)).join(', ')}.` };
+            }
+            if (actualColsToUnpivot.length !== colsToUnpivotNames.length) {
+                return { success: false, message: `One or more columns to unpivot not found: ${colsToUnpivotNames.filter(name => !findColumnByName(name)).join(', ')}.` };
+            }
+            if (Object.keys(currentSchema).includes(newVarColName) || Object.keys(currentSchema).includes(newValColName)) {
+                return { success: false, message: `New column names ("${newVarColName}" or "${newValColName}") already exist.` };
+            }
+            if (actualColsToUnpivot.length === 0) {
+                 return { success: false, message: 'No valid columns provided to unpivot.' };
+            }
+
+            const newRawData = [];
+            data.forEach(row => {
+                // Extract ID columns for the current row
+                const idValues = {};
+                actualIdCols.forEach(col => {
+                    idValues[col] = row[col];
+                });
+
+                // For each column to unpivot, create a new row
+                actualColsToUnpivot.forEach(unpivotCol => {
+                    const newRow = {
+                        ...idValues,
+                        [newVarColName]: unpivotCol, // The name of the original column
+                        [newValColName]: row[unpivotCol] // The value from the original column
+                    };
+                    newRawData.push(newRow);
+                });
+            });
+
+            // Update global rawData
+            rawData = newRawData;
+
+            // Update global schema
+            const newSchema = {};
+            actualIdCols.forEach(col => {
+                newSchema[col] = currentSchema[col];
+            });
+            newSchema[newVarColName] = 'string'; // The variable column will always be string
+            // Infer type for the new value column (could be number or string)
+            const isNewValNumeric = newRawData.every(row => row[newValColName] === '' || !isNaN(Number(row[newValColName])));
+            newSchema[newValColName] = isNewValNumeric ? 'number' : 'string';
+            
+            schema = newSchema;
+            displaySchema(schema); // Refresh schema display
+
+            return {
+                success: true,
+                message: `Successfully unpivoted data. Original columns "${actualColsToUnpivot.join(', ')}" are now in new columns "<strong>${newVarColName}</strong>" and "<strong>${newValColName}</strong>".`
             };
         }
 
@@ -2579,6 +2742,56 @@
                     aiResponseText = `I didn't understand the K-Means clustering command format. Example: 'perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment'.`;
                 }
             }
+
+            // --- New Command: Data Pivoting ---
+            else if (lowerQuery.startsWith('create pivot table with ') && lowerQuery.includes(' as rows, ') && lowerQuery.includes(' as columns, ') && lowerQuery.includes(' as values aggregated by ')) {
+                const regex = /create pivot table with\s+(.+)\s+as rows,\s+(.+)\s+as columns,\s+(.+)\s+as values aggregated by\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 5) {
+                    const indexCol = match[1].trim();
+                    const pivotCol = match[2].trim();
+                    const valueCol = match[3].trim();
+                    const aggType = match[4].trim();
+
+                    const pivotResult = createPivotTable(indexCol, pivotCol, valueCol, aggType, rawData);
+                    if (pivotResult.error) {
+                        aiResponseText = `Error creating pivot table: ${pivotResult.error}`;
+                    } else {
+                        aiResponseText = `Here's your **pivot table** for ${valueCol} aggregated by ${aggType}:`;
+                        analysisContent = `<div class="mt-4 overflow-x-auto">${pivotResult.tableHtml}</div>
+                                            <p class="mt-4 text-sm text-gray-400">This pivot table provides a summarized view of your data, transformed entirely client-side.</p>`;
+                    }
+                } else {
+                    aiResponseText = `I didn't understand the pivot table command format. Example: 'create pivot table with Region as rows, Product_Category as columns, Sales as values aggregated by sum'.`;
+                }
+            }
+            // --- New Command: Data Unpivoting (Melt) ---
+            else if (lowerQuery.startsWith('unpivot data keeping ') && lowerQuery.includes(' and melting ') && lowerQuery.includes(' into new variable ') && lowerQuery.includes(' and value ')) {
+                const regex = /unpivot data keeping\s+(.+)\s+and melting\s+([^,]+(?:,\s*[^,]+)*)\s+into new variable\s+(.+)\s+and value\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 5) {
+                    const idColsString = match[1].trim();
+                    const colsToUnpivotString = match[2].trim();
+                    const newVarCol = match[3].trim();
+                    const newValCol = match[4].trim();
+
+                    const idCols = idColsString.split(',').map(col => col.trim());
+                    const colsToUnpivot = colsToUnpivotString.split(',').map(col => col.trim());
+
+                    const unpivotResult = unpivotData(idCols, colsToUnpivot, newVarCol, newValCol, rawData, schema);
+                    if (unpivotResult.success) {
+                        aiResponseText = unpivotResult.message;
+                        analysisContent = `<p class="text-gray-300 mt-2">Your data has been unpivoted successfully. Here's a preview of the **first 10 rows** of the transformed dataset:</p>
+                                            <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                            <p class="text-sm text-gray-400 mt-2">The schema has also been updated to reflect these changes.</p>`;
+                    } else {
+                        aiResponseText = `Error unpivoting data: ${unpivotResult.message}`;
+                    }
+                } else {
+                    aiResponseText = `I didn't understand the unpivot data command format. Example: 'unpivot data keeping ID and melting Q1_Sales, Q2_Sales, Q3_Sales into new variable Quarter and value Sales_Amount'.`;
+                }
+            }
+
 
             // Automated Insights
             else if (lowerQuery.includes('show proactive insights') || lowerQuery.includes('what insights do you have?')) {
