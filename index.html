@@ -392,8 +392,8 @@
         <!-- Right Pane: Conversational Interface & Results - Now takes full width on larger screens by default -->
         <div id="chat-panel" class="w-full flex flex-col bg-gray-900 rounded-3xl">
             <div id="headerContainer" class="px-8 pt-6 pb-2 transition-all duration-500 ease-in-out"> <!-- Condensed padding for header content -->
-                <h2 class="text-4xl font-extrabold text-blue-400 mb-1 text-center tracking-tight" id="mainTitle">CoDA <span class="text-blue-600">AI</span></h2>
-                <p class="text-md text-gray-400 mb-1 text-center italic" id="subTitle">Your Private, Conversational Data Analyst</p>
+                <h2 class="text-4xl font-extrabold text-blue-400 mb-1 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
+                <p class="text-md text-gray-400 mb-1 text-center italic">Your Private, Conversational Data Analyst</p>
                 <p class="text-sm text-gray-500 mb-4 text-center" id="createdBy">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
                 <!-- Toggle Buttons for Data Panel and Command Guide - Positioned together and left-aligned -->
@@ -1819,11 +1819,9 @@
                         xColumn: { "type": "STRING" },   // For charts
                         yColumn: { "type": "STRING" }    // For charts, regression
                     },
-                    additionalProperties: true // Allow LLM to return other properties if needed
                 }
             },
             required: ["command"],
-            additionalProperties: false
         };
 
         // LLM endpoint configuration
@@ -1892,8 +1890,7 @@ If the user asks for a chart, always try to infer both X and Y columns, and if a
 Prioritize using existing column names accurately. If a column is numeric, use numeric operations; if string, use categorical operations.
 When performing calculations, ensure the columns are numeric.
 When creating new columns, use 'plus', 'minus', 'times', or 'divided by'.
-When filtering, use '>', '<', '>=', '<=', '=', '!='.
-`;
+When filtering, use '>', '<', '>=', '<=', '=', '!='.`; // Correctly closed template literal
 
                 let chatHistory = [
                     { role: "system", parts: [{ text: systemInstruction }] },
