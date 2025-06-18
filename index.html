@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -893,103 +892,121 @@
                             <td><code>find outliers in [numeric column]</code> (e.g., <code>find outliers in Sales</code>)</td>
                         </tr>
                         <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Hypothesis Testing</td>
+                        </tr>
+                        <tr>
                             <td>17</td>
+                            <td>Hypothesis Testing</td>
+                            <td>Perform T-test</td>
+                            <td><code>perform t-test on [numeric_col] for [categorical_col] where [group1_value] vs [group2_value]</code> (e.g., <code>perform t-test on Sales for Region where East vs West</code>)</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Time Series Analysis</td>
+                        </tr>
+                        <tr>
+                            <td>18</td>
+                            <td>Time Series Analysis</td>
+                            <td>Calculate Moving Average</td>
+                            <td><code>calculate moving average of [numeric_col] with window [window_size] as [new_col_name]</code> (e.g., <code>calculate moving average of Stock_Price with window 5 as MA_5_Days</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>19</td>
                             <td>Data Manipulation</td>
                             <td>Filter data</td>
                             <td><code>filter data where [column] [operator] [value]</code> (e.g., <code>sales > 1000</code> or <code>city = "London"</code>)</td>
                         </tr>
                         <tr>
-                            <td>18</td>
+                            <td>20</td>
                             <td>Data Manipulation</td>
                             <td>Add a new calculated column</td>
                             <td><code>add column [new_name] as [col1] [operator] [col2]</code> (Operators: 'plus', 'minus', 'times', 'divided by'. E.g., <code>add column profit as revenue minus cost</code>)</td>
                         </tr>
                         <tr>
-                            <td>19</td>
+                            <td>21</td>
                             <td>Data Manipulation</td>
                             <td>Categorize numeric data into bins</td>
                             <td><code>categorize [numeric_col] into [num_bins] bins as [new_col_name]</code> (e.g., <code>categorize Age into 5 bins as Age_Group</code>)</td>
                         </tr>
                         <tr>
-                            <td>20</td>
+                            <td>22</td>
                             <td>Data Manipulation</td>
                             <td>Remove duplicate rows</td>
                             <td><code>remove duplicate rows</code></td>
                         </tr>
                         <tr>
-                            <td>21</td>
+                            <td>23</td>
                             <td>Data Manipulation</td>
                             <td>Rename column</td>
                             <td><code>rename column [old_name] to [new_name]</code> (e.g., <code>rename column Product_ID to SKU</code>)</td>
                         </tr>
                         <tr>
-                            <td>22</td>
+                            <td>24</td>
                             <td>Business Intelligence</td>
                             <td>Summarize numeric by categorical</td>
                             <td><code>summarize [numeric_col] by [categorical_col]</code> (e.g., <code>summarize Sales by Region</code>)</td>
                         </tr>
                         <tr>
-                            <td>23</td>
+                            <td>25</td>
                             <td>Business Intelligence</td>
                             <td>Show overall business overview</td>
                             <td><code>show overall business overview</code></td>
                         </tr>
                         <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">New Feature: Data Export</td>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Data Export</td>
                         </tr>
                         <tr>
-                            <td>24</td>
+                            <td>26</td>
                             <td>Data Export</td>
                             <td>Download modified dataset</td>
                             <td>Click the "Download Modified CSV" button</td>
                         </tr>
                         <tr>
-                            <td>25</td>
+                            <td>27</td>
                             <td>Charting & Visualization</td>
                             <td>Show Bar Chart</td>
                             <td><code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)</td>
                         </tr>
                         <tr>
-                            <td>26</td>
+                            <td>28</td>
                             <td>Charting & Visualization</td>
                             <td>Show Line Chart</td>
                             <td><code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)</td>
                         </tr>
                         <tr>
-                            <td>27</td>
+                            <td>29</td>
                             <td>Charting & Visualization</td>
                             <td>Show Scatter Plot</td>
                             <td><code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)</td>
                         </tr>
                         <tr>
-                            <td>28</td>
+                            <td>30</td>
                             <td>Charting & Visualization</td>
                             <td>Show Pie Chart</td>
                             <td><code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>29</td>
+                            <td>31</td>
                             <td>Charting & Visualization</td>
                             <td>Show Doughnut Chart</td>
                             <td><code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>30</td>
+                            <td>32</td>
                             <td>Charting & Visualization</td>
                             <td>Show Polar Area Chart</td>
                             <td><code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
                         </tr>
                         <tr>
-                            <td>31</td>
+                            <td>33</td>
                             <td>Modeling</td>
                             <td>Perform Simple Linear Regression</td>
                             <td><code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)</td>
                         </tr>
                         <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">New Feature: Proactive Insights</td>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
                         </tr>
                         <tr>
-                            <td>32</td>
+                            <td>34</td>
                             <td>Automated Insights</td>
                             <td>Show Proactive Insights</td>
                             <td><code>show proactive insights</code> or <code>what insights do you have?</code></td>
@@ -1321,18 +1338,6 @@
             toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book mr-2';
         });
 
-        // Event listener for the new "Show Proactive Insights" button
-        showProactiveInsightsBtn.addEventListener('click', () => {
-            generateProactiveInsights(); // This now populates lastProactiveInsights
-            renderProactiveInsights(); // Then render them with current filters
-            proactiveInsightsOverlay.classList.remove('hidden'); // Show the overlay
-        });
-
-        // Event listener for the close button INSIDE the proactive insights overlay
-        closeProactiveInsightsBtn.addEventListener('click', () => {
-            proactiveInsightsOverlay.classList.add('hidden'); // Hide the overlay
-        });
-
         /**
          * Helper function to parse dates. Handles common formats.
          * @param {string} dateString
@@ -1384,9 +1389,9 @@
             if (dateCol && salesCol && regionCol) {
                 // Get all unique dates and sort them to find the latest
                 const uniqueDates = [...new Set(rawData.map(row => row[dateCol]))]
-                                    .map(parseDate)
-                                    .filter(d => d !== null)
-                                    .sort((a, b) => a.getTime() - b.getTime());
+                                        .map(parseDate)
+                                        .filter(d => d !== null)
+                                        .sort((a, b) => a.getTime() - b.getTime());
 
                 if (uniqueDates.length >= 8) { // Need at least 8 days for 1 current + 7 historical
                     const latestDate = uniqueDates[uniqueDates.length - 1];
@@ -1401,8 +1406,8 @@
                         const currentDaySalesData = regionData.filter(row => {
                             const date = parseDate(row[dateCol]);
                             return date && date.getDate() === latestDate.getDate() &&
-                                   date.getMonth() === latestDate.getMonth() &&
-                                   date.getFullYear() === latestDate.getFullYear();
+                                       date.getMonth() === latestDate.getMonth() &&
+                                       date.getFullYear() === latestDate.getFullYear();
                         });
                         const currentDaySales = getSumFromSubset(salesCol, currentDaySalesData);
 
@@ -1604,9 +1609,9 @@
             let filteredInsights = lastProactiveInsights.filter(insight => {
                 const matchesFilter = filterType === 'all' || insight.type === filterType;
                 const matchesSearch = searchTerm === '' ||
-                                      insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                      insight.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                      insight.action.toLowerCase().includes(searchTerm.toLowerCase());
+                                            insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            insight.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            insight.action.toLowerCase().includes(searchTerm.toLowerCase());
                 return matchesFilter && matchesSearch;
             });
 
@@ -1656,6 +1661,113 @@
             });
         }
 
+        // --- New Feature: Hypothesis Testing (T-test) ---
+        /**
+         * Performs a Welch's t-test to compare means of two independent groups.
+         * @param {string} numericColName - The name of the numeric column.
+         * @param {string} categoricalColName - The name of the categorical column defining groups.
+         * @param {string} group1Value - The value in the categorical column for group 1.
+         * @param {string} group2Value - The value in the categorical column for group 2.
+         * @param {Array<Object>} data - The dataset.
+         * @returns {Object} An object containing t-statistic, degrees of freedom, and interpretation.
+         */
+        function performTTest(numericColName, categoricalColName, group1Value, group2Value, data) {
+            const group1Data = data.filter(row => row[categoricalColName] === group1Value).map(row => Number(row[numericColName])).filter(n => !isNaN(n));
+            const group2Data = data.filter(row => row[categoricalColName] === group2Value).map(row => Number(row[numericColName])).filter(n => !isNaN(n));
+
+            if (group1Data.length < 2 || group2Data.length < 2) {
+                return { error: 'Not enough data points for both groups (minimum 2 per group required).' };
+            }
+
+            const n1 = group1Data.length;
+            const n2 = group2Data.length;
+            const mean1 = group1Data.reduce((a, b) => a + b, 0) / n1;
+            const mean2 = group2Data.reduce((a, b) => a + b, 0) / n2;
+
+            const variance1 = group1Data.reduce((sum, val) => sum + Math.pow(val - mean1, 2), 0) / (n1 - 1);
+            const variance2 = group2Data.reduce((sum, val) => sum + Math.pow(val - mean2, 2), 0) / (n2 - 1);
+
+            const numerator = mean1 - mean2;
+            const denominator = Math.sqrt((variance1 / n1) + (variance2 / n2));
+
+            if (denominator === 0) {
+                return { error: 'Denominator is zero, likely due to zero variance in one or both groups. Cannot perform t-test.' };
+            }
+
+            const tStatistic = numerator / denominator;
+
+            // Welch-Satterthwaite equation for degrees of freedom
+            const dfNumerator = Math.pow((variance1 / n1) + (variance2 / n2), 2);
+            const dfDenominator = (Math.pow(variance1 / n1, 2) / (n1 - 1)) + (Math.pow(variance2 / n2, 2) / (n2 - 1));
+            const degreesOfFreedom = dfDenominator === 0 ? Math.min(n1, n2) - 1 : dfNumerator / dfDenominator; // Fallback if dfDenominator is zero
+
+            let interpretation = '';
+            // Simplified interpretation for t-statistic (very rough guide without p-value table)
+            if (Math.abs(tStatistic) > 2) { // Common threshold for significance at alpha=0.05 for large df
+                interpretation = `This suggests a statistically **significant difference** between the means of "${group1Value}" and "${group2Value}" for "${numericColName}".`;
+            } else {
+                interpretation = `There is **no strong evidence of a statistically significant difference** between the means of "${group1Value}" and "${group2Value}" for "${numericColName}".`;
+            }
+
+            return {
+                tStatistic: tStatistic.toFixed(3),
+                degreesOfFreedom: degreesOfFreedom.toFixed(2),
+                interpretation: interpretation,
+                group1Mean: mean1.toFixed(2),
+                group2Mean: mean2.toFixed(2),
+                group1Count: n1,
+                group2Count: n2
+            };
+        }
+
+        // --- New Feature: Time Series Analysis (Moving Average) ---
+        /**
+         * Calculates a simple moving average for a numeric column and adds it as a new column.
+         * Assumes data might not be pre-sorted by date/time, so it processes based on row index.
+         * For true time series, data should be sorted by a date column first.
+         * @param {string} numericColName - The name of the numeric column.
+         * @param {number} windowSize - The number of periods to include in the moving average.
+         * @param {string} newColName - The name of the new column for moving average.
+         * @param {Array<Object>} data - The dataset.
+         * @returns {Object} Success status and message.
+         */
+        function calculateMovingAverage(numericColName, windowSize, newColName, data) {
+            if (windowSize <= 0) {
+                return { success: false, message: 'Window size must be a positive number.' };
+            }
+            if (!findNumericColumn(numericColName)) {
+                return { success: false, message: `Numeric column "${numericColName}" not found or is not numeric.` };
+            }
+            if (Object.keys(schema).includes(newColName)) {
+                return { success: false, message: `Column "${newColName}" already exists.` };
+            }
+
+            const updatedData = data.map((row, index, arr) => {
+                const newRow = { ...row };
+                let sum = 0;
+                let count = 0;
+
+                // Calculate average over the window
+                // This implements a 'trailing' moving average (current point + previous windowSize-1 points)
+                for (let i = Math.max(0, index - windowSize + 1); i <= index; i++) {
+                    const value = Number(arr[i][numericColName]);
+                    if (!isNaN(value)) {
+                        sum += value;
+                        count++;
+                    }
+                }
+                newRow[newColName] = count > 0 ? (sum / count).toFixed(2) : ''; // Store as string with 2 decimal places
+
+                return newRow;
+            });
+
+            rawData = updatedData;
+            schema[newColName] = 'number'; // The new column is numeric
+            displaySchema(schema);
+
+            return { success: true, message: `Successfully calculated **${windowSize}-period moving average** for "<strong>${numericColName}</strong>" and added it as a new column "<strong>${newColName}</strong>".` };
+        }
+
 
         // Helper function to simulate typing into chat and submitting
         function typeIntoChatAndSubmit(command) {
@@ -1699,8 +1811,8 @@
             // General Overview
             if (lowerQuery.includes('show all data') || lowerQuery.includes('display everything') || lowerQuery.includes('what\'s in the dataset')) {
                 analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
-                                  <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
-                                  <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
+                                    <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                    <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
                 aiResponseText = `Understood! Here's your data:`;
             } else if (lowerQuery.startsWith('show ') && lowerQuery.includes(' column')) {
                 const colNameMatch = query.match(/show\s+(.+)\s+column/i);
@@ -1709,8 +1821,8 @@
                 if (foundColumn) {
                     const columnValues = rawData.map(row => row[foundColumn]);
                     analysisContent = `<p class="text-gray-300 mt-2">Here are the **first 10 values** from the "<strong>${foundColumn}</strong>" column:</p>
-                                      <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
-                                      <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
+                                        <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
+                                        <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
                     aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
                 } else {
                     aiResponseText = `I couldn't find the column "<strong>${colName}</strong>". Please check your column name.`;
@@ -1722,8 +1834,8 @@
                 let numRows = rawData.length;
                 let numCols = Object.keys(schema).length;
                 let descriptionNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have <strong>${numRows} rows</strong>, which means ${numRows} individual records, and <strong>${numCols} columns</strong>, representing ${numCols} different types of information.</p>
-                                            <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
-                                            <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
+                                             <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
+                                             <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
 
                 for (const col in schema) {
                     descriptionNarrative += `<li class="font-medium">${col}: (<span class="text-blue-400">${schema[col]}</span> type) `;
@@ -1771,7 +1883,7 @@
                 aiResponseText = `Certainly! Here's a comprehensive overview and description of your dataset, crafted to give you quick insights. This analysis was performed entirely client-side, ensuring your data's privacy.`;
             } else if (lowerQuery.includes('show schema')) {
                 analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
-                                  <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
+                                    <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
                 aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
             }
 
@@ -1829,10 +1941,10 @@
                     const quartiles = calculateQuartiles(foundColumn, rawData);
                     if (quartiles.median !== null) {
                         aiResponseText = `For the column "<strong>${foundColumn}</strong>":<br>
-                                        **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
-                                        **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
-                                        **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
-                                        **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
+                                            **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
+                                            **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
+                                            **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
+                                            **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
                     } else {
                         aiResponseText = `I couldn't calculate quartiles for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
                     }
@@ -1969,8 +2081,8 @@
                     const { outliers, lowerBound, upperBound } = findOutliers(foundColumn, rawData);
                     if (outliers.length > 0) {
                         aiResponseText = `I found **${outliers.length} potential outliers** in the column "<strong>${foundColumn}</strong>".<br>
-                                        These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
-                                        Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
+                                            These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
+                                            Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
                     } else {
                         aiResponseText = `No significant outliers were detected in the column "<strong>${foundColumn}</strong>" based on the IQR method.`;
                     }
@@ -1978,6 +2090,62 @@
                     aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to find outliers. Please specify a valid numeric column.`;
                 }
             }
+
+            // --- New Command: Hypothesis Testing (T-test) ---
+            else if (lowerQuery.startsWith('perform t-test on ') && lowerQuery.includes(' for ') && lowerQuery.includes(' where ') && lowerQuery.includes(' vs ')) {
+                const regex = /perform t-test on\s+(.+)\s+for\s+(.+)\s+where\s+(.+)\s+vs\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 5) {
+                    const numericColName = match[1].trim();
+                    const categoricalColName = match[2].trim();
+                    const group1Value = match[3].trim();
+                    const group2Value = match[4].trim();
+
+                    const numericCol = findNumericColumn(numericColName);
+                    const categoricalCol = findCategoricalColumn(categoricalColName);
+
+                    if (numericCol && categoricalCol) {
+                        const tTestResult = performTTest(numericCol, categoricalCol, group1Value, group2Value, rawData);
+                        if (tTestResult.error) {
+                            aiResponseText = `Error performing T-test: ${tTestResult.error}`;
+                        } else {
+                            aiResponseText = `**T-Test Results** for **${numericCol}** between "${group1Value}" and "${group2Value}" in **${categoricalCol}**:<br>
+                                            - Mean for "${group1Value}": <strong>${tTestResult.group1Mean}</strong> (n=${tTestResult.group1Count})<br>
+                                            - Mean for "${group2Value}": <strong>${tTestResult.group2Mean}</strong> (n=${tTestResult.group2Count})<br>
+                                            - Calculated T-Statistic: <strong>${tTestResult.tStatistic}</strong><br>
+                                            - Degrees of Freedom: <strong>${tTestResult.degreesOfFreedom}</strong><br>
+                                            - **Interpretation**: ${tTestResult.interpretation}`;
+                        }
+                    } else {
+                        aiResponseText = `To perform a T-test, I need a valid numeric column and a valid categorical column to define the groups. Please check your column names.`;
+                    }
+                } else {
+                    aiResponseText = `I didn't understand the T-test command format. Example: 'perform t-test on Sales for Region where East vs West'.`;
+                }
+            }
+
+            // --- New Command: Time Series Analysis (Moving Average) ---
+            else if (lowerQuery.startsWith('calculate moving average of ') && lowerQuery.includes(' with window ') && lowerQuery.includes(' as ')) {
+                const regex = /calculate moving average of\s+(.+)\s+with window\s+(\d+)\s+as\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 4) {
+                    const numericColName = match[1].trim();
+                    const windowSize = parseInt(match[2].trim());
+                    const newColName = match[3].trim().replace(/\s/g, '_');
+
+                    const numericCol = findNumericColumn(numericColName);
+
+                    if (numericCol) {
+                        const result = calculateMovingAverage(numericCol, windowSize, newColName, rawData);
+                        aiResponseText = result.message;
+                    } else {
+                        aiResponseText = `I couldn't find a numeric column named "<strong>${numericColName}</strong>" to calculate moving average. Please specify a valid numeric column.`;
+                    }
+                } else {
+                    aiResponseText = `I didn't understand the moving average command format. Example: 'calculate moving average of Stock_Price with window 5 as MA_5_Days'.`;
+                }
+            }
+
 
             // Data Manipulation
             else if (lowerQuery.startsWith('filter data where ')) {
@@ -2025,8 +2193,8 @@
                             });
                         }
                         analysisContent = `<p class="text-gray-300 mt-2">I found <strong>${filteredData.length} rows</strong> that match your condition where **${foundColumn} ${operator} "${value}"**.</p>
-                                          <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
-                                          <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
+                                            <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
+                                            <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
                         aiResponseText = `Filtering complete! I've processed your data based on the condition "${foundColumn} ${operator} "${value}"". Here's the summary:`;
                     } else {
                         aiResponseText = `I couldn't filter data. Please ensure you provide a valid column.`;
@@ -2150,16 +2318,16 @@
                         });
 
                         let resultsHtml = `<p class="text-gray-300">Summary of <strong>${numericColumn}</strong> by <strong>${categoricalColumn}</strong>:</p>
-                                          <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
+                                             <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
                         for (const category in groupedStats) {
                             const stats = groupedStats[category];
                             const avg = (stats.sum / stats.count).toFixed(2);
                             resultsHtml += `<li><strong>${category}</strong>: <br>
-                                                &nbsp;&nbsp;Entries: ${stats.count}, <br>
-                                                &nbsp;&nbsp;Average ${numericColumn}: ${avg}, <br>
-                                                &nbsp;&nbsp;Min ${numericColumn}: ${stats.min.toFixed(2)}, <br>
-                                                &nbsp;&nbsp;Max ${numericColumn}: ${stats.max.toFixed(2)}
-                                            </li>`;
+                                                    &nbsp;&nbsp;Entries: ${stats.count}, <br>
+                                                    &nbsp;&nbsp;Average ${numericColumn}: ${avg}, <br>
+                                                    &nbsp;&nbsp;Min ${numericColumn}: ${stats.min.toFixed(2)}, <br>
+                                                    &nbsp;&nbsp;Max ${numericColumn}: ${stats.max.toFixed(2)}
+                                                </li>`;
                         }
                         resultsHtml += `</ul>`;
                         aiResponseText = `Here's a detailed summary:`;
@@ -2180,11 +2348,11 @@
                         const stats = getDescriptiveStats(col, rawData);
                         if (stats) {
                             overviewText += `<li><strong>${col}</strong>:<br>
-                                                &nbsp;&nbsp;Total Sum: ${stats.sum.toFixed(2)}<br>
-                                                &nbsp;&nbsp;Average: ${stats.mean.toFixed(2)}<br>
-                                                &nbsp;&nbsp;Min: ${stats.min.toFixed(2)}<br>
-                                                &nbsp;&nbsp;Max: ${stats.max.toFixed(2)}
-                                            </li>`;
+                                                    &nbsp;&nbsp;Total Sum: ${stats.sum.toFixed(2)}<br>
+                                                    &nbsp;&nbsp;Average: ${stats.mean.toFixed(2)}<br>
+                                                    &nbsp;&nbsp;Min: ${stats.min.toFixed(2)}<br>
+                                                    &nbsp;&nbsp;Max: ${stats.max.toFixed(2)}
+                                                </li>`;
                         }
                     });
                     overviewText += `</ul>`;
@@ -2222,8 +2390,8 @@
                     if (numericColumn && categoricalColumn) {
                         const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateType);
                         createChart('bar', `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`,
-                                    aggregated.labels, aggregated.data,
-                                    categoricalColumn, `${aggregateType} of ${numericColumn}`);
+                                     aggregated.labels, aggregated.data,
+                                     categoricalColumn, `${aggregateType} of ${numericColumn}`);
                         return;
                     } else {
                         aiResponseText = `To create that bar chart, I need a valid numeric column and a valid categorical column. Please check your column names.`;
@@ -2287,7 +2455,7 @@
                 }
             } else if (lowerQuery.startsWith('show pie chart of ') || lowerQuery.startsWith('show doughnut chart of ') || lowerQuery.startsWith('show polar area chart of ')) {
                 let chartType;
-                let colNameMatch, numericColMatch, categoricalColMatch, aggregateTypeMatch;
+                let colNameMatch;
 
                 if (lowerQuery.startsWith('show pie chart of ')) {
                     chartType = 'pie';
@@ -2356,9 +2524,9 @@
                         const regressionResults = performLinearRegression(xCol, yCol, rawData);
                         if (regressionResults !== null) {
                             aiResponseText = `**Simple Linear Regression Results** (${yCol} ~ ${xCol}):<br>
-                                            - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
-                                            - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
-                                            - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
+                                                - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
+                                                - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
+                                                - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
                         } else {
                             aiResponseText = `I couldn't perform linear regression between "<strong>${yCol}</strong>" and "<strong>${xCol}</strong>" due to insufficient or invalid numeric data.`;
                         }
@@ -2372,6 +2540,10 @@
 
             // Automated Insights
             else if (lowerQuery.includes('show proactive insights') || lowerQuery.includes('what insights do you have?')) {
+                if (rawData.length === 0) {
+                    appendMessage('AI', 'Please upload a CSV file before I can generate proactive insights. I need data to analyze!', 'ai');
+                    return;
+                }
                 generateProactiveInsights(); // Re-generate insights (they are stored in lastProactiveInsights)
                 renderProactiveInsights(); // Render them with current filters (default to all, no search)
                 proactiveInsightsOverlay.classList.remove('hidden'); // Show the overlay
