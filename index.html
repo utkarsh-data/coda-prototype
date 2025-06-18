@@ -390,6 +390,7 @@
         let pendingCleaningSuggestion = null; // Stores details of a pending cleaning action
         let myChart = null; // Holds the Chart.js instance for dynamic updates
         let lastProactiveInsights = []; // Store last generated insights as an array of objects
+        let hasSalesDropAlertBeenShown = false; // NEW: Flag to prevent repetitive sales drop alerts
 
         const chatArea = document.getElementById('chatArea');
         const chatInput = document.getElementById('chatInput');
@@ -1016,6 +1017,9 @@
                         uploadStatus.textContent = `Successfully loaded ${rawData.length} rows.`;
                         uploadStatus.className = 'mt-1 text-xs font-semibold text-green-500';
 
+                        // Reset the flag for sales drop alert when new data is loaded
+                        hasSalesDropAlertBeenShown = false; // NEW
+
                         // Proactively check for data cleaning needs
                         // This function will append a message if a suggestion is found
                         checkAndSuggestDataCleaning(rawData, schema);
@@ -1432,7 +1436,11 @@
                                 }
                                 messageToUser += `<br>_You can find more details and suggested actions in "Proactive Insights"._`;
 
-                                appendMessage('AI', messageToUser, 'ai'); // This is the new direct alert in chat
+                                // NEW: Only append the alert message if it hasn't been shown yet for this dataset
+                                if (!hasSalesDropAlertBeenShown) {
+                                    appendMessage('AI', messageToUser, 'ai');
+                                    hasSalesDropAlertBeenShown = true; // Set the flag to true
+                                }
 
                                 insights.push({
                                     type: 'anomaly',
