@@ -581,7 +581,7 @@
         }
 
         // Helper to perform simple linear regression
-        function performLinearRegression(xCol, yCol, data) {
+        function performSimpleLinearRegression(xCol, yCol, data) { // Renamed for clarity vs. multiple regression
             const validData = data.filter(row => !isNaN(Number(row[xCol])) && !isNaN(Number(row[yCol])));
             if (validData.length < 2) return null; // Need at least two points for regression
 
@@ -1003,10 +1003,31 @@
                             <td><code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)</td>
                         </tr>
                         <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Advanced Modeling & Unsupervised Learning</td>
                         </tr>
                         <tr>
                             <td>34</td>
+                            <td>Advanced Modeling</td>
+                            <td>Perform Multiple Linear Regression</td>
+                            <td><code>perform multiple regression with Y as [dep_var] and X as [indep_var1], [indep_var2], ...</code> (e.g., <code>perform multiple regression with Y as Sales and X as Advertising, Price</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>35</td>
+                            <td>Advanced Modeling</td>
+                            <td>Perform Polynomial Regression</td>
+                            <td><code>perform polynomial regression with Y as [dep_var] and X as [indep_var] with degree [degree]</code> (e.g., <code>perform polynomial regression with Y as Sales and X as Advertising with degree 2</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>36</td>
+                            <td>Unsupervised Learning</td>
+                            <td>Perform K-Means Clustering</td>
+                            <td><code>perform k-means clustering on [col1], [col2], ... into [k] clusters as [new_cluster_column]</code> (e.g., <code>perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment</code>)</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
+                        </tr>
+                        <tr>
+                            <td>37</td>
                             <td>Automated Insights</td>
                             <td>Show Proactive Insights</td>
                             <td><code>show proactive insights</code> or <code>what insights do you have?</code></td>
@@ -1627,7 +1648,7 @@
                 // The 'Suggested Action' part should now correctly parse HTML from the message.
                 insightCard.innerHTML = `
                     <div class="insight-header cursor-pointer" data-insight-index="${index}">
-                        <i class="${insight.icon}"></i>
+                        <i class="mr-2 ${insight.icon}"></i>
                         <h4>${insight.title}</h4>
                         <i class="fas fa-chevron-down ml-auto transition-transform"></i>
                     </div>
@@ -1766,6 +1787,290 @@
             displaySchema(schema);
 
             return { success: true, message: `Successfully calculated **${windowSize}-period moving average** for "<strong>${numericColName}</strong>" and added it as a new column "<strong>${newColName}</strong>".` };
+        }
+
+        // --- New Feature: Multiple Linear Regression (Gradient Descent) ---
+        /**
+         * Performs Multiple Linear Regression using Gradient Descent.
+         * @param {string} dependentCol - Name of the dependent variable column.
+         * @param {Array<string>} independentCols - Array of independent variable column names.
+         * @param {Array<Object>} data - The dataset.
+         * @param {number} learningRate - Learning rate for gradient descent.
+         * @param {number} iterations - Number of iterations for gradient descent.
+         * @returns {Object} Coefficients (intercept and slopes) and R-squared.
+         */
+        function calculateMultipleLinearRegression(dependentCol, independentCols, data, learningRate = 0.01, iterations = 5000) {
+            // Filter out rows with non-numeric values in relevant columns
+            const relevantCols = [dependentCol, ...independentCols];
+            const filteredData = data.filter(row =>
+                relevantCols.every(col => !isNaN(Number(row[col])) && row[col] !== null && row[col] !== undefined && row[col] !== '')
+            );
+
+            if (filteredData.length < independentCols.length + 1) { // Need at least (num_features + 1) data points
+                return { error: 'Not enough valid data points for regression. Need at least as many points as independent variables plus one for the intercept.' };
+            }
+
+            const N = filteredData.length;
+            const numFeatures = independentCols.length;
+
+            // Initialize coefficients (including intercept) to zeros or small random values
+            let coefficients = Array(numFeatures + 1).fill(0); // [intercept, beta1, beta2, ...]
+
+            // Gradient Descent
+            for (let iter = 0; iter < iterations; iter++) {
+                let gradients = Array(numFeatures + 1).fill(0);
+
+                for (let i = 0; i < N; i++) {
+                    const x_i = [1]; // Start with 1 for the intercept term
+                    independentCols.forEach(col => x_i.push(Number(filteredData[i][col])));
+
+                    const y_i = Number(filteredData[i][dependentCol]);
+
+                    // Calculate prediction (y_hat)
+                    let y_hat = 0;
+                    for (let j = 0; j <= numFeatures; j++) {
+                        y_hat += coefficients[j] * x_i[j];
+                    }
+
+                    const error = y_i - y_hat;
+
+                    // Update gradients
+                    for (let j = 0; j <= numFeatures; j++) {
+                        gradients[j] += (error * x_i[j]);
+                    }
+                }
+
+                // Update coefficients
+                for (let j = 0; j <= numFeatures; j++) {
+                    coefficients[j] += learningRate * (gradients[j] / N);
+                }
+            }
+
+            // Calculate R-squared
+            let totalSumOfSquares = 0;
+            let residualSumOfSquares = 0;
+            const meanY = calculateColumnAverage(dependentCol, filteredData);
+
+            for (let i = 0; i < N; i++) {
+                const x_i = [1];
+                independentCols.forEach(col => x_i.push(Number(filteredData[i][col])));
+                const y_i = Number(filteredData[i][dependentCol]);
+
+                let y_hat = 0;
+                for (let j = 0; j <= numFeatures; j++) {
+                    y_hat += coefficients[j] * x_i[j];
+                }
+
+                totalSumOfSquares += Math.pow(y_i - meanY, 2);
+                residualSumOfSquares += Math.pow(y_i - y_hat, 2);
+            }
+
+            const rSquared = totalSumOfSquares === 0 ? 0 : (1 - (residualSumOfSquares / totalSumOfSquares));
+
+            let result = {
+                intercept: coefficients[0].toFixed(4),
+                rSquared: rSquared.toFixed(4),
+                slopes: {}
+            };
+            independentCols.forEach((col, index) => {
+                result.slopes[col] = coefficients[index + 1].toFixed(4);
+            });
+
+            return result;
+        }
+
+        // --- Helper for Polynomial Features ---
+        /**
+         * Generates polynomial features for a given numeric value up to a specified degree.
+         * @param {number} value - The numeric value.
+         * @param {number} degree - The maximum polynomial degree.
+         * @returns {Array<number>} An array of [value, value^2, ..., value^degree].
+         */
+        function generatePolynomialFeatures(value, degree) {
+            const features = [];
+            for (let i = 1; i <= degree; i++) {
+                features.push(Math.pow(value, i));
+            }
+            return features;
+        }
+
+        // --- K-Means Clustering Helper Functions ---
+        /**
+         * Calculates the Euclidean distance between two points.
+         * @param {Array<number>} p1 - First point.
+         * @param {Array<number>} p2 - Second point.
+         * @returns {number} Euclidean distance.
+         */
+        function euclideanDistance(p1, p2) {
+            let sum = 0;
+            for (let i = 0; i < p1.length; i++) {
+                sum += Math.pow(p1[i] - p2[i], 2);
+            }
+            return Math.sqrt(sum);
+        }
+
+        /**
+         * Initializes K centroids randomly from the data points.
+         * @param {Array<Array<number>>} dataPoints - Array of data points (each point is an array of feature values).
+         * @param {number} k - Number of clusters.
+         * @returns {Array<Array<number>>} Initial centroids.
+         */
+        function initializeCentroids(dataPoints, k) {
+            const centroids = [];
+            const dataLength = dataPoints.length;
+            // Ensure k is not greater than data points count
+            const numCentroidsToPick = Math.min(k, dataLength);
+            const indices = new Set();
+            while (indices.size < numCentroidsToPick) {
+                const randomIndex = Math.floor(Math.random() * dataLength);
+                if (!indices.has(randomIndex)) {
+                    indices.add(randomIndex);
+                    centroids.push([...dataPoints[randomIndex]]); // Copy the point
+                }
+            }
+            return centroids;
+        }
+
+        /**
+         * Assigns each data point to the closest centroid.
+         * @param {Array<Array<number>>} dataPoints - Array of data points.
+         * @param {Array<Array<number>>} centroids - Current centroids.
+         * @returns {Array<number>} Array of cluster assignments (index of closest centroid for each data point).
+         */
+        function assignDataToClusters(dataPoints, centroids) {
+            const assignments = [];
+            for (const point of dataPoints) {
+                let minDistance = Infinity;
+                let clusterId = -1;
+                for (let i = 0; i < centroids.length; i++) {
+                    const dist = euclideanDistance(point, centroids[i]);
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        clusterId = i;
+                    }
+                }
+                assignments.push(clusterId);
+            }
+            return assignments;
+        }
+
+        /**
+         * Recalculates centroids based on the mean of points in each cluster.
+         * @param {Array<Array<number>>} dataPoints - Array of data points.
+         * @param {Array<number>} assignments - Cluster assignments for each data point.
+         * @param {number} k - Number of clusters.
+         * @param {number} numFeatures - Number of features in each data point.
+         * @returns {Array<Array<number>>} New centroids.
+         */
+        function recalculateCentroids(dataPoints, assignments, k, numFeatures) {
+            const newCentroids = Array(k).fill(0).map(() => Array(numFeatures).fill(0));
+            const counts = Array(k).fill(0);
+
+            for (let i = 0; i < dataPoints.length; i++) {
+                const clusterId = assignments[i];
+                if (clusterId !== -1) { // Only if assigned to a cluster
+                    for (let j = 0; j < numFeatures; j++) {
+                        newCentroids[clusterId][j] += dataPoints[i][j];
+                    }
+                    counts[clusterId]++;
+                }
+            }
+
+            for (let i = 0; i < k; i++) {
+                if (counts[i] > 0) {
+                    for (let j = 0; j < numFeatures; j++) {
+                        newCentroids[i][j] /= counts[i];
+                    }
+                } else {
+                    // Handle empty cluster: re-initialize random point or a point furthest from other centroids
+                    // For simplicity in a prototype, we'll re-initialize it to a random data point
+                    newCentroids[i] = dataPoints[Math.floor(Math.random() * dataPoints.length)];
+                }
+            }
+            return newCentroids;
+        }
+
+        /**
+         * Performs K-Means clustering on specified numeric columns.
+         * Adds a new column to rawData with the assigned cluster ID.
+         * @param {Array<string>} featureCols - Names of numeric columns to use for clustering.
+         * @param {number} k - Number of clusters.
+         * @param {string} newColName - Name of the new column to store cluster IDs.
+         * @param {Array<Object>} data - The dataset (rawData).
+         * @param {number} maxIterations - Maximum iterations for convergence.
+         * @param {number} tolerance - Minimum change in centroids to continue iterating.
+         * @returns {Object} Success status, message, and cluster distribution.
+         */
+        function performKMeansClustering(featureCols, k, newColName, data, maxIterations = 100, tolerance = 0.001) {
+            // Validate columns and data
+            const validFeatureCols = featureCols.filter(col => findNumericColumn(col));
+            if (validFeatureCols.length === 0) {
+                return { success: false, message: 'No valid numeric columns provided for clustering.' };
+            }
+            if (k <= 0) {
+                return { success: false, message: 'Number of clusters (k) must be a positive integer.' };
+            }
+            if (Object.keys(schema).includes(newColName)) {
+                return { success: false, message: `Column "${newColName}" already exists. Please choose a different name.` };
+            }
+
+            const dataPoints = data.map(row => validFeatureCols.map(col => Number(row[col]))).filter(point => !point.some(isNaN));
+
+            if (dataPoints.length < k) {
+                return { success: false, message: `Not enough valid data points (${dataPoints.length}) to form ${k} clusters. You need at least k data points.` };
+            }
+
+            const numFeatures = validFeatureCols.length;
+            let centroids = initializeCentroids(dataPoints, k);
+            let assignments = [];
+            let previousCentroids = [];
+
+            for (let iter = 0; iter < maxIterations; iter++) {
+                assignments = assignDataToClusters(dataPoints, centroids);
+                previousCentroids = [...centroids.map(c => [...c])]; // Deep copy
+                centroids = recalculateCentroids(dataPoints, assignments, k, numFeatures);
+
+                // Check for convergence
+                let converged = true;
+                for (let i = 0; i < k; i++) {
+                    if (euclideanDistance(centroids[i], previousCentroids[i]) > tolerance) {
+                        converged = false;
+                        break;
+                    }
+                }
+                if (converged) break;
+            }
+
+            // Add cluster assignments to the rawData
+            let dataPointIndex = 0;
+            rawData = rawData.map(row => {
+                const numericValues = validFeatureCols.map(col => Number(row[col]));
+                if (!numericValues.some(isNaN)) {
+                    // This row was included in dataPoints for clustering
+                    const assignedCluster = assignments[dataPointIndex];
+                    dataPointIndex++; // Increment only for valid rows
+                    return { ...row, [newColName]: `Cluster ${assignedCluster}` };
+                } else {
+                    // This row was skipped, assign a default
+                    return { ...row, [newColName]: 'N/A_Cluster' };
+                }
+            });
+
+            schema[newColName] = 'string'; // Cluster IDs are categorical strings
+            displaySchema(schema);
+
+            // Calculate cluster distribution
+            const clusterDistribution = {};
+            rawData.forEach(row => {
+                const cluster = row[newColName];
+                clusterDistribution[cluster] = (clusterDistribution[cluster] || 0) + 1;
+            });
+
+            return {
+                success: true,
+                message: `Successfully performed K-Means clustering with **${k} clusters** and added cluster assignments to the new column "<strong>${newColName}</strong>".`,
+                distribution: clusterDistribution
+            };
         }
 
 
@@ -2146,395 +2451,132 @@
                 }
             }
 
-
-            // Data Manipulation
-            else if (lowerQuery.startsWith('filter data where ')) {
-                const regex = /filter data where\s+([^=\s<>!]+)\s*([<>=!]+)\s*(.+)/i;
+            // --- New Command: Multiple Linear Regression ---
+            else if (lowerQuery.startsWith('perform multiple regression with y as ') && lowerQuery.includes(' and x as ')) {
+                const regex = /perform multiple regression with y as\s+(.+)\s+and x as\s+(.+)/i;
                 const match = query.match(regex);
-                if (match && match.length === 4) {
-                    const colName = match[1].trim();
-                    const operator = match[2].trim();
-                    const value = match[3].trim().replace(/^['"]|['"]$/g, ''); // Remove leading/trailing quotes
+                if (match && match.length === 3) {
+                    const dependentColName = match[1].trim();
+                    const independentColsString = match[2].trim();
+                    const independentColNames = independentColsString.split(',').map(col => col.trim());
 
-                    const foundColumn = findColumnByName(colName);
-                    if (foundColumn) {
-                        let filteredData = [];
-                        let parsedValue;
+                    const dependentCol = findNumericColumn(dependentColName);
+                    const independentCols = independentColNames.map(col => findNumericColumn(col)).filter(Boolean); // Filter out nulls
 
-                        if (schema[foundColumn] === 'number') {
-                            parsedValue = Number(value);
-                            if (isNaN(parsedValue)) {
-                                aiResponseText = `It looks like the value "${value}" for numeric column "${foundColumn}" isn't a valid number. Please provide a numeric value for filtering.`;
-                                appendMessage('AI', aiResponseText, 'ai');
-                                return;
-                            }
-                            filteredData = rawData.filter(row => {
-                                const cellValue = Number(row[foundColumn]);
-                                if (isNaN(cellValue)) return false;
-                                switch (operator) {
-                                    case '>': return cellValue > parsedValue;
-                                    case '<': return cellValue < parsedValue;
-                                    case '>=': return cellValue >= parsedValue;
-                                    case '<=': return cellValue <= parsedValue;
-                                    case '=': return cellValue === parsedValue;
-                                    case '!=': return cellValue !== parsedValue;
-                                    default: return false;
-                                }
-                            });
-                        } else { // string or other types
-                            parsedValue = value.toLowerCase();
-                            filteredData = rawData.filter(row => {
-                                const cellValue = (row[foundColumn] || '').toLowerCase();
-                                switch (operator) {
-                                    case '=': return cellValue === parsedValue;
-                                    case '!=': return cellValue !== parsedValue;
-                                    default: return false;
-                                }
-                            });
-                        }
-                        analysisContent = `<p class="text-gray-300 mt-2">I found <strong>${filteredData.length} rows</strong> that match your condition where **${foundColumn} ${operator} "${value}"**.</p>
-                                            <p class="text-sm text-gray-400 mt-2">Here's a preview of the first 5 matching entries (remember, all processing is client-side!):</p>
-                                            <div class="code-block mt-2">${filteredData.slice(0, 5).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
-                        aiResponseText = `Filtering complete! I've processed your data based on the condition "${foundColumn} ${operator} "${value}"". Here's the summary:`;
+                    if (!dependentCol) {
+                        aiResponseText = `Dependent variable "<strong>${dependentColName}</strong>" not found or is not numeric.`;
+                    } else if (independentCols.length !== independentColNames.length) {
+                        aiResponseText = `One or more independent variables (${independentColNames.filter(name => !findNumericColumn(name)).join(', ')}) not found or are not numeric.`;
+                    } else if (independentCols.length === 0) {
+                        aiResponseText = `Please provide at least one independent variable for multiple regression.`;
                     } else {
-                        aiResponseText = `I couldn't filter data. Please ensure you provide a valid column.`;
+                        const regressionResult = calculateMultipleLinearRegression(dependentCol, independentCols, rawData);
+                        if (regressionResult.error) {
+                            aiResponseText = `Error performing multiple linear regression: ${regressionResult.error}`;
+                        } else {
+                            let slopesHtml = '';
+                            for (const col in regressionResult.slopes) {
+                                slopesHtml += `<li><strong>${col}</strong>: ${regressionResult.slopes[col]}</li>`;
+                            }
+                            aiResponseText = `**Multiple Linear Regression Results** (Y: ${dependentCol}):<br>
+                                            - **Intercept**: <strong>${regressionResult.intercept}</strong><br>
+                                            - **Slopes**: <ul>${slopesHtml}</ul>
+                                            - **R-squared**: <strong>${regressionResult.rSquared}</strong><br>
+                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${dependentCol}".`;
+                        }
                     }
                 } else {
-                    aiResponseText = `I didn't understand the filter command. Example: 'filter data where sales > 1000' or 'filter data where city = "London"'.`;
+                    aiResponseText = `I didn't understand the multiple regression command format. Example: 'perform multiple regression with Y as Sales and X as Advertising, Price'.`;
                 }
-            } else if (lowerQuery.startsWith('add column ') && lowerQuery.includes(' as ') && (lowerQuery.includes(' plus ') || lowerQuery.includes(' minus ') || lowerQuery.includes(' times ') || lowerQuery.includes(' divided by '))) {
-                const regex = /add column\s+(.+)\s+as\s+([^ ]+)\s+(plus|minus|times|divided by)\s+(.+)/i;
+            }
+
+            // --- New Command: Polynomial Regression ---
+            else if (lowerQuery.startsWith('perform polynomial regression with y as ') && lowerQuery.includes(' and x as ') && lowerQuery.includes(' with degree ')) {
+                const regex = /perform polynomial regression with y as\s+(.+)\s+and x as\s+(.+)\s+with degree\s+(\d+)/i;
                 const match = query.match(regex);
-                if (match && match.length === 5) {
-                    const newColName = match[1].trim().replace(/\s/g, '_'); // Replace spaces for valid column name
-                    const col1Name = match[2].trim();
-                    const operatorWord = match[3].trim();
-                    const col2Name = match[4].trim();
+                if (match && match.length === 4) {
+                    const dependentColName = match[1].trim();
+                    const independentColName = match[2].trim();
+                    const degree = parseInt(match[3].trim());
 
-                    const col1 = findNumericColumn(col1Name);
-                    const col2 = findNumericColumn(col2Name);
+                    const dependentCol = findNumericColumn(dependentColName);
+                    const independentCol = findNumericColumn(independentColName);
 
-                    if (col1 && col2) {
-                        let operatorSymbol = '';
-                        switch (operatorWord.toLowerCase()) {
-                            case 'plus': operatorSymbol = '+'; break;
-                            case 'minus': operatorSymbol = '-'; break;
-                            case 'times': operatorSymbol = '*'; break;
-                            case 'divided by': operatorSymbol = '/'; break;
-                            default: operatorSymbol = '';
-                        }
+                    if (!dependentCol) {
+                        aiResponseText = `Dependent variable "<strong>${dependentColName}</strong>" not found or is not numeric.`;
+                    } else if (!independentCol) {
+                        aiResponseText = `Independent variable "<strong>${independentColName}</strong>" not found or is not numeric.`;
+                    } else if (degree < 2 || degree > 5) { // Limit degree to avoid overfitting and computational burden
+                        aiResponseText = `Polynomial degree must be between 2 and 5 for practical analysis.`;
+                    } else {
+                        // Create temporary columns for polynomial features
+                        const tempIndependentCols = [];
+                        const tempRawData = JSON.parse(JSON.stringify(rawData)); // Deep copy to avoid modifying original rawData directly
 
-                        if (operatorSymbol) {
-                            rawData = rawData.map(row => {
-                                const val1 = Number(row[col1]);
-                                const val2 = Number(row[col2]);
-                                let result;
-
-                                if (!isNaN(val1) && !isNaN(val2) && val1 !== null && val2 !== null) {
-                                    if (operatorSymbol === '+') result = val1 + val2;
-                                    else if (operatorSymbol === '-') result = val1 - val2;
-                                    else if (operatorSymbol === '*') result = val1 * val2;
-                                    else if (operatorSymbol === '/') result = val2 !== 0 ? val1 / val2 : 0;
+                        for (let i = 1; i <= degree; i++) {
+                            const newPolyColName = `${independentCol}_poly_${i}`;
+                            tempIndependentCols.push(newPolyColName);
+                            tempRawData.forEach(row => {
+                                const originalValue = Number(row[independentCol]);
+                                if (!isNaN(originalValue)) {
+                                    row[newPolyColName] = Math.pow(originalValue, i);
                                 } else {
-                                    result = '';
+                                    row[newPolyColName] = NaN; // Mark as NaN if original is not a number
                                 }
-                                return { ...row, [newColName]: result !== '' ? result.toFixed(2) : '' };
                             });
-                            schema[newColName] = 'number';
-                            displaySchema(schema);
-                            aiResponseText = `I've successfully added a new column named "<strong>${newColName}</strong>" to your dataset. It calculates "${col1} ${operatorWord} ${col2}". Your schema has been updated!`;
-                        } else {
-                            aiResponseText = `I couldn't understand the operator "${operatorWord}". Please use 'plus', 'minus', 'times', or 'divided by'.`;
                         }
-                    } else {
-                        aiResponseText = `To add a calculated column, I need two valid numeric columns. Please check your column names and types.`;
+
+                        const regressionResult = calculateMultipleLinearRegression(dependentCol, tempIndependentCols, tempRawData);
+
+                        if (regressionResult.error) {
+                            aiResponseText = `Error performing polynomial regression: ${regressionResult.error}`;
+                        } else {
+                            let slopesHtml = '';
+                            for (const col of tempIndependentCols) { // Use tempIndependentCols to iterate through generated columns
+                                slopesHtml += `<li><strong>${col}</strong>: ${regressionResult.slopes[col]}</li>`;
+                            }
+                            aiResponseText = `**Polynomial Regression Results** (Y: ${dependentCol}, X: ${independentCol}, Degree: ${degree}):<br>
+                                            - **Intercept**: <strong>${regressionResult.intercept}</strong><br>
+                                            - **Coefficients for polynomial terms**: <ul>${slopesHtml}</ul>
+                                            - **R-squared**: <strong>${regressionResult.rSquared}</strong><br>
+                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${dependentCol}" using polynomial terms of "${independentCol}".`;
+                        }
                     }
                 } else {
-                    aiResponseText = `I didn't understand the 'add column' command format. Example: 'add column profit as revenue minus cost'.`;
+                    aiResponseText = `I didn't understand the polynomial regression command format. Example: 'perform polynomial regression with Y as Sales and X as Advertising with degree 2'.`;
                 }
-            } else if (lowerQuery.startsWith('categorize ') && lowerQuery.includes(' into ') && lowerQuery.includes(' bins as ')) {
-                const regex = /categorize\s+(.+)\s+into\s+(\d+)\s+bins as\s+(.+)/i;
+            }
+
+            // --- New Command: K-Means Clustering ---
+            else if (lowerQuery.startsWith('perform k-means clustering on ') && lowerQuery.includes(' into ') && lowerQuery.includes(' clusters as ')) {
+                const regex = /perform k-means clustering on\s+([^,]+(?:,\s*[^,]+)*)\s+into\s+(\d+)\s+clusters as\s+(.+)/i;
                 const match = query.match(regex);
                 if (match && match.length === 4) {
-                    const numericColName = match[1].trim();
-                    const numBins = parseInt(match[2].trim());
-                    const newColName = match[3].trim();
+                    const featureColsString = match[1].trim();
+                    const k = parseInt(match[2].trim());
+                    const newColName = match[3].trim().replace(/\s/g, '_');
 
-                    const numericColumn = findNumericColumn(numericColName);
+                    const requestedFeatureCols = featureColsString.split(',').map(col => col.trim());
+                    const validFeatureCols = requestedFeatureCols.filter(name => findNumericColumn(name));
 
-                    if (numericColumn) {
-                        const result = categorizeNumericColumn(numericColumn, numBins, newColName, rawData);
-                        aiResponseText = result.message;
+                    if (validFeatureCols.length !== requestedFeatureCols.length) {
+                        aiResponseText = `One or more specified columns for clustering (${requestedFeatureCols.filter(name => !findNumericColumn(name)).join(', ')}) are not found or not numeric.`;
                     } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${numericColName}</strong>" to categorize. Please specify a valid numeric column.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the 'categorize' command format. Example: 'categorize age into 5 bins as Age_Group'.`;
-                }
-            } else if (lowerQuery.includes('remove duplicate rows')) {
-                const result = removeDuplicateRows(rawData);
-                if (result.success) {
-                    aiResponseText = `Successfully removed <strong>${result.removedCount} duplicate row(s)</strong> from your dataset. Total rows now: <strong>${rawData.length}</strong>.`;
-                } else {
-                    aiResponseText = `An error occurred while trying to remove duplicate rows.`;
-                }
-            } else if (lowerQuery.startsWith('rename column ') && lowerQuery.includes(' to ')) {
-                const regex = /rename column\s+(.+)\s+to\s+(.+)/i;
-                const match = query.match(regex);
-                if (match && match.length === 3) {
-                    const oldName = match[1].trim();
-                    const newName = match[2].trim();
-                    const result = renameColumn(oldName, newName);
-                    aiResponseText = result.message;
-                } else {
-                    aiResponseText = `I didn't understand the 'rename column' command format. Example: 'rename column Product_ID to SKU'.`;
-                }
-            }
-
-            // Business Intelligence
-            else if (lowerQuery.startsWith('summarize ') && lowerQuery.includes(' by ')) {
-                const parts = query.match(/summarize\s+(.+)\s+by\s+(.+)/i);
-                if (parts && parts.length === 3) {
-                    const numericColName = parts[1].trim();
-                    const categoricalColName = parts[2].trim();
-                    const numericColumn = findNumericColumn(numericColName);
-                    const categoricalColumn = findCategoricalColumn(categoricalColName);
-
-                    if (numericColumn && categoricalColumn) {
-                        const groupedStats = {};
-                        rawData.forEach(row => {
-                            const category = row[categoricalColumn];
-                            const value = Number(row[numericColumn]);
-
-                            if (!isNaN(value)) {
-                                if (!groupedStats[category]) {
-                                    groupedStats[category] = { sum: 0, count: 0, min: Infinity, max: -Infinity };
-                                }
-                                groupedStats[category].sum += value;
-                                groupedStats[category].count++;
-                                if (value < groupedStats[category].min) groupedStats[category].min = value;
-                                if (value > groupedStats[category].max) groupedStats[category].max = value;
+                        const clusteringResult = performKMeansClustering(validFeatureCols, k, newColName, rawData);
+                        if (clusteringResult.success) {
+                            let distributionHtml = '<ul>';
+                            for (const cluster in clusteringResult.distribution) {
+                                distributionHtml += `<li>${cluster}: <strong>${clusteringResult.distribution[cluster]} data points</strong></li>`;
                             }
-                        });
-
-                        let resultsHtml = `<p class="text-gray-300">Summary of <strong>${numericColumn}</strong> by <strong>${categoricalColumn}</strong>:</p>
-                                             <ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
-                        for (const category in groupedStats) {
-                            const stats = groupedStats[category];
-                            const avg = (stats.sum / stats.count).toFixed(2);
-                            resultsHtml += `<li><strong>${category}</strong>: <br>
-                                                    &nbsp;&nbsp;Entries: ${stats.count}, <br>
-                                                    &nbsp;&nbsp;Average ${numericColumn}: ${avg}, <br>
-                                                    &nbsp;&nbsp;Min ${numericColumn}: ${stats.min.toFixed(2)}, <br>
-                                                    &nbsp;&nbsp;Max ${numericColumn}: ${stats.max.toFixed(2)}
-                                                </li>`;
-                        }
-                        resultsHtml += `</ul>`;
-                        aiResponseText = `Here's a detailed summary:`;
-                        analysisContent = resultsHtml;
-                    } else {
-                        aiResponseText = `To summarize, I need a valid numeric column and a valid categorical column. Please check your column names and types.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the 'summarize by' command format. Example: 'summarize sales by region'.`;
-                }
-            } else if (lowerQuery.includes('show overall business overview') || lowerQuery.includes('business summary')) {
-                let overviewText = `<p class="text-gray-300 leading-relaxed mb-3">Here's a high-level overview of your dataset's key business metrics:</p>`;
-                
-                const numericColumns = Object.keys(schema).filter(col => schema[col] === 'number');
-                if (numericColumns.length > 0) {
-                    overviewText += `<h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Key Numeric Metrics:</h5><ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
-                    numericColumns.forEach(col => {
-                        const stats = getDescriptiveStats(col, rawData);
-                        if (stats) {
-                            overviewText += `<li><strong>${col}</strong>:<br>
-                                                    &nbsp;&nbsp;Total Sum: ${stats.sum.toFixed(2)}<br>
-                                                    &nbsp;&nbsp;Average: ${stats.mean.toFixed(2)}<br>
-                                                    &nbsp;&nbsp;Min: ${stats.min.toFixed(2)}<br>
-                                                    &nbsp;&nbsp;Max: ${stats.max.toFixed(2)}
-                                                </li>`;
-                        }
-                    });
-                    overviewText += `</ul>`;
-                }
-
-                const stringColumns = Object.keys(schema).filter(col => schema[col] === 'string');
-                if (stringColumns.length > 0) {
-                    overviewText += `<h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Categorical Insights:</h5><ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
-                    stringColumns.forEach(col => {
-                        const values = rawData.map(row => row[col]);
-                        const uniqueCount = new Set(values).size;
-                        const valueCounts = {};
-                        values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
-                        const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
-                        overviewText += `<li><strong>${col}</strong>: ${uniqueCount} unique values. Top 3: ${sortedCounts.slice(0,3).map(item => `${item[0]} (${item[1]} occurrences)`).join(', ')}.</li>`;
-                    });
-                    overviewText += `</ul>`;
-                }
-                analysisContent = overviewText;
-                aiResponseText = `Here's your overall business overview:`;
-            }
-
-            // Charting & Visualization
-            else if (lowerQuery.startsWith('show bar chart of ') && lowerQuery.includes(' by ')) {
-                const regex = /show bar chart of\s+(.+)\s+by\s+(.+?)(?:\s+as\s+(sum|average))?$/i;
-                const match = query.match(regex);
-                if (match && match.length >= 3) {
-                    const numericColName = match[1].trim();
-                    const categoricalColName = match[2].trim();
-                    const aggregateType = match[3] ? match[3].toLowerCase() : 'sum'; // Default to sum
-
-                    const numericColumn = findNumericColumn(numericColName);
-                    const categoricalColumn = findCategoricalColumn(categoricalColName);
-
-                    if (numericColumn && categoricalColumn) {
-                        const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateType);
-                        createChart('bar', `${aggregateType === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`,
-                                     aggregated.labels, aggregated.data,
-                                     categoricalColumn, `${aggregateType} of ${numericColumn}`);
-                        return;
-                    } else {
-                        aiResponseText = `To create that bar chart, I need a valid numeric column and a valid categorical column. Please check your column names.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the bar chart command format. Example: 'show bar chart of sales by region as average'.`;
-                }
-            } else if (lowerQuery.startsWith('show line chart with x as ') && lowerQuery.includes(' and y as ')) {
-                const regex = /show line chart with x as\s+(.+)\s+and y as\s+(.+)/i;
-                const match = query.match(regex);
-                if (match && match.length === 3) {
-                    const xColName = match[1].trim();
-                    const yColName = match[2].trim();
-                    const xColumn = findColumnByName(xColName);
-                    const yColumn = findNumericColumn(yColName);
-
-                    if (xColumn && yColumn) {
-                        const labels = rawData.map(row => row[xColumn]);
-                        const data = rawData.map(row => Number(row[yColumn])).filter(n => !isNaN(n));
-                        if (labels.length !== data.length) {
-                            const validPairs = rawData.filter(row => !isNaN(Number(row[yColumn])));
-                            const newLabels = validPairs.map(row => row[xColumn]);
-                            createChart('line', `${yColumn} over ${xColumn}`, newLabels, data, xColumn, yColumn);
+                            distributionHtml += '</ul>';
+                            aiResponseText = `${clusteringResult.message}<br><br>
+                                            **Cluster Distribution**:<br>${distributionHtml}`;
                         } else {
-                            createChart('line', `${yColumn} over ${xColumn}`, labels, data, xColumn, yColumn);
-                        }
-                        return;
-                    } else {
-                        aiResponseText = `To create that line chart, I need a valid X-axis column and a valid numeric Y-axis column.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the line chart command format. Example: 'show line chart with X as Date and Y as Stock Price'.`;
-                }
-            } else if (lowerQuery.startsWith('show scatter plot with x as ') && lowerQuery.includes(' and y as ')) {
-                const regex = /show scatter plot with x as\s+(.+)\s+and y as\s+(.+)/i;
-                const match = query.match(regex);
-                if (match && match.length === 3) {
-                    const xColName = match[1].trim();
-                    const yColName = match[2].trim();
-                    const xColumn = findNumericColumn(xColName);
-                    const yColumn = findNumericColumn(yColName);
-
-                    if (xColumn && yColumn) {
-                        const scatterData = rawData.map(row => ({
-                            x: Number(row[xColumn]),
-                            y: Number(row[yColumn])
-                        })).filter(point => !isNaN(point.x) && !isNaN(point.y));
-
-                        createChart('scatter', `${yColumn} vs ${xColumn}`, [], scatterData, xColumn, yColumn, {
-                            scales: {
-                                x: { type: 'linear', position: 'bottom' },
-                                y: { type: 'linear' }
-                            }
-                        });
-                        return;
-                    } else {
-                        aiResponseText = `I need two valid numeric columns to create a scatter plot.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the scatter plot command format. Example: 'show scatter plot with X as Age and Y as Income'.`;
-                }
-            } else if (lowerQuery.startsWith('show pie chart of ') || lowerQuery.startsWith('show doughnut chart of ') || lowerQuery.startsWith('show polar area chart of ')) {
-                let chartType;
-                let colNameMatch;
-
-                if (lowerQuery.startsWith('show pie chart of ')) {
-                    chartType = 'pie';
-                    colNameMatch = query.match(/show pie chart of\s+(.+?)(?:\s+by\s+(.+?)(?:\s+as\s+(sum|average))?)?$/i);
-                } else if (lowerQuery.startsWith('show doughnut chart of ')) {
-                    chartType = 'doughnut';
-                    colNameMatch = query.match(/show doughnut chart of\s+(.+?)(?:\s+by\s+(.+?)(?:\s+as\s+(sum|average))?)?$/i);
-                } else if (lowerQuery.startsWith('show polar area chart of ')) {
-                    chartType = 'polarArea';
-                    colNameMatch = query.match(/show polar area chart of\s+(.+?)(?:\s+by\s+(.+?)(?:\s+as\s+(sum|average))?)?$/i);
-                }
-
-                if (colNameMatch && colNameMatch.length >= 2) {
-                    const primaryColCandidate = colNameMatch[1].trim();
-                    const byPartCandidate = colNameMatch[2] ? colNameMatch[2].trim() : null;
-                    const aggregateTypeCandidate = colNameMatch[3] ? colNameMatch[3].toLowerCase() : 'sum';
-
-                    let labels, data, chartTitle;
-
-                    if (byPartCandidate) { // Aggregated chart
-                        const numericColumn = findNumericColumn(primaryColCandidate);
-                        const categoricalColumn = findCategoricalColumn(byPartCandidate);
-                        if (numericColumn && categoricalColumn) {
-                            const aggregated = groupByAndAggregate(rawData, categoricalColumn, numericColumn, aggregateTypeCandidate);
-                            labels = aggregated.labels;
-                            data = aggregated.data;
-                            chartTitle = `${aggregateTypeCandidate === 'average' ? 'Average' : 'Sum'} of ${numericColumn} by ${categoricalColumn}`;
-                        } else {
-                            aiResponseText = `For a ${chartType} chart with aggregation, I need a valid numeric column and a valid categorical column.`;
-                            appendMessage('AI', aiResponseText, 'ai');
-                            return;
-                        }
-                    } else { // Simple frequency chart
-                        const primaryColumn = findColumnByName(primaryColCandidate);
-                        if (primaryColumn) {
-                            const values = rawData.map(row => row[primaryColumn]);
-                            const valueCounts = {};
-                            values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
-                            labels = Object.keys(valueCounts);
-                            data = Object.values(valueCounts);
-                            chartTitle = `Frequency of ${primaryColumn}`;
-                        } else {
-                            aiResponseText = `I couldn't find the column "<strong>${primaryColCandidate}</strong>" to create that chart.`;
-                            appendMessage('AI', aiResponseText, 'ai');
-                            return;
+                            aiResponseText = `Error performing K-Means clustering: ${clusteringResult.message}`;
                         }
                     }
-                    createChart(chartType, chartTitle, labels, data);
-                    return; // Exit to prevent duplicate message
                 } else {
-                    aiResponseText = `I didn't understand the chart command format. Please refer to the command guide.`;
-                }
-            }
-
-            // Modeling
-            else if (lowerQuery.startsWith('perform regression with y as ') && lowerQuery.includes(' and x as ')) {
-                const regex = /perform regression with y as\s+(.+)\s+and x as\s+(.+)/i;
-                const match = query.match(regex);
-                if (match && match.length === 3) {
-                    const yColName = match[1].trim();
-                    const xColName = match[2].trim();
-                    const yCol = findNumericColumn(yColName);
-                    const xCol = findNumericColumn(xColName);
-
-                    if (xCol && yCol) {
-                        const regressionResults = performLinearRegression(xCol, yCol, rawData);
-                        if (regressionResults !== null) {
-                            aiResponseText = `**Simple Linear Regression Results** (${yCol} ~ ${xCol}):<br>
-                                                - **Slope (Coefficient for ${xCol})**: <strong>${regressionResults.slope}</strong><br>
-                                                - **Y-intercept**: <strong>${regressionResults.intercept}</strong><br>
-                                                - **R-squared**: <strong>${regressionResults.rSquared}</strong> (This indicates how much of the variation in ${yCol} can be explained by ${xCol}. A value closer to 1 is better).`;
-                        } else {
-                            aiResponseText = `I couldn't perform linear regression between "<strong>${yCol}</strong>" and "<strong>${xCol}</strong>" due to insufficient or invalid numeric data.`;
-                        }
-                    } else {
-                        aiResponseText = `To perform linear regression, I need two valid numeric columns (one for Y, one for X).`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the regression command format. Example: 'perform regression with Y as Sales and X as Advertising'.`;
+                    aiResponseText = `I didn't understand the K-Means clustering command format. Example: 'perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment'.`;
                 }
             }
 
@@ -2587,6 +2629,22 @@
             if (event.key === 'Enter') {
                 sendMessageBtn.click();
             }
+        });
+
+        // Event listener for the "Show Proactive Insights" button in the Data Panel
+        showProactiveInsightsBtn.addEventListener('click', () => {
+            if (rawData.length === 0) {
+                appendMessage('AI', 'Please upload a CSV file before I can generate proactive insights. I need data to analyze!', 'ai');
+                return;
+            }
+            generateProactiveInsights(); // Ensure insights are fresh
+            renderProactiveInsights(); // Render the insights into the overlay
+            proactiveInsightsOverlay.classList.remove('hidden'); // Show the overlay
+        });
+
+        // Event listener for the "Close Insights" button
+        closeProactiveInsightsBtn.addEventListener('click', () => {
+            proactiveInsightsOverlay.classList.add('hidden'); // Hide the overlay
         });
 
         // Event listeners for filter buttons
