@@ -1662,7 +1662,7 @@
                             }
                         }
                     }
-                }
+                });
             }
 
             // 5. Categorical Distribution - Top N most/least frequent values
@@ -1890,7 +1890,7 @@ If the user asks for a chart, always try to infer both X and Y columns, and if a
 Prioritize using existing column names accurately. If a column is numeric, use numeric operations; if string, use categorical operations.
 When performing calculations, ensure the columns are numeric.
 When creating new columns, use 'plus', 'minus', 'times', or 'divided by'.
-When filtering, use '>', '<', '>=', '<=', '=', '!='.`; // Correctly closed template literal
+When filtering, use '>', '<', '>=', '<=', '=', '!='.`;
 
                 let chatHistory = [
                     { role: "system", parts: [{ text: systemInstruction }] },
