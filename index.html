@@ -1861,10 +1861,44 @@
             // --- End Cleaning Confirmation ---
 
             // --- LLM Call Logic ---
+            let thinkingMessageDiv; // Declare outside try-catch to be accessible by finally
             try {
+                // Add a thinking message
+                thinkingMessageDiv = document.createElement('div');
+                thinkingMessageDiv.className = 'flex items-start mb-4 fade-in-message';
+                thinkingMessageDiv.innerHTML = `
+                    <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
+                    <div class="bg-gray-700 text-gray-200 p-4 rounded-3xl max-w-[80%] shadow-md">
+                        <p class="leading-relaxed">...Thinking...</p>
+                    </div>
+                `;
+                chatArea.appendChild(thinkingMessageDiv);
+                chatArea.scrollTop = chatArea.scrollHeight;
+
                 // Prepare chat history for the LLM. For simplicity, we'll only send the current query.
                 // In a full chatbot, you'd maintain a history.
-                let chatHistory = [{ role: "user", parts: [{ text: `User query about the dataset: "${query}"` }] }];
+                // Adding a system instruction to guide the LLM's structured response.
+                const systemInstruction = `You are CoDA, a Cognitive Data Assistant. Your primary function is to help users analyze CSV data locally.
+Your responses MUST be a JSON object conforming to the following schema:
+${JSON.stringify(llmResponseSchema, null, 2)}
+
+Based on the user's query and the available data operations, determine the most appropriate 'command' and its 'parameters'.
+If you cannot understand the user's intent or it does not map to any available command, respond with:
+{ "command": "unrecognized_command" }
+
+Available columns in the dataset are: ${Object.keys(schema).join(', ') || 'N/A'}.
+Available column types are: ${JSON.stringify(schema)}.
+If the user asks for a chart, always try to infer both X and Y columns, and if aggregation is implied, specify 'sum' or 'average'.
+Prioritize using existing column names accurately. If a column is numeric, use numeric operations; if string, use categorical operations.
+When performing calculations, ensure the columns are numeric.
+When creating new columns, use 'plus', 'minus', 'times', or 'divided by'.
+When filtering, use '>', '<', '>=', '<=', '=', '!='.
+`;
+
+                let chatHistory = [
+                    { role: "system", parts: [{ text: systemInstruction }] },
+                    { role: "user", parts: [{ text: query }] }
+                ];
 
                 const payload = {
                     contents: chatHistory,
@@ -1887,7 +1921,19 @@
                     body: JSON.stringify(payload)
                 });
 
+                // Check for HTTP errors (e.g., 400, 401, 500)
+                if (!response.ok) {
+                    const errorData = await response.json(); // Try to get error details
+                    console.error("LLM API Error:", response.status, response.statusText, errorData);
+                    throw new Error(`LLM API returned an error: ${response.status} ${response.statusText}. Details: ${JSON.stringify(errorData.error.message || errorData)}`);
+                }
+
                 const result = await response.json();
+                
+                // Remove thinking message
+                if (thinkingMessageDiv) {
+                    thinkingMessageDiv.remove();
+                }
 
                 if (result.candidates && result.candidates.length > 0 &&
                     result.candidates[0].content && result.candidates[0].content.parts &&
@@ -1897,8 +1943,9 @@
                     let parsedCommand;
                     try {
                         parsedCommand = JSON.parse(jsonString);
+                        console.log("Parsed LLM Command:", parsedCommand); // Log parsed command for debugging
                     } catch (e) {
-                        console.error("Failed to parse LLM JSON response:", e);
+                        console.error("Failed to parse LLM JSON response. Raw response was:", jsonString, "Error:", e);
                         aiResponseText = "I received a response, but couldn't understand its format. Could you please rephrase?";
                         appendMessage('AI', aiResponseText, 'ai');
                         return;
@@ -2494,8 +2541,13 @@
 
             } catch (error) {
                 console.error("Error calling LLM:", error);
-                aiResponseText = "I'm having trouble connecting to the AI. Please try again later or check your network connection.";
+                aiResponseText = `I'm having trouble processing your request. There might be a network issue or a problem with the API key. Please try again later. Error: ${error.message}`;
                 appendMessage('AI', aiResponseText, 'ai');
+            } finally {
+                // Ensure thinking message is removed even if an error occurs
+                if (thinkingMessageDiv) {
+                    thinkingMessageDiv.remove();
+                }
             }
         }
 
