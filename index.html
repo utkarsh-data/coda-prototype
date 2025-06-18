@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1024,10 +1025,25 @@
                             <td><code>perform k-means clustering on [col1], [col2], ... into [k] clusters as [new_cluster_column]</code> (e.g., <code>perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment</code>)</td>
                         </tr>
                         <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Data Transformation & Reshaping</td>
                         </tr>
                         <tr>
                             <td>37</td>
+                            <td>Data Transformation</td>
+                            <td>Create Pivot Table</td>
+                            <td><code>create pivot table with [row_col] as rows, [column_col] as columns, [value_col] as values aggregated by [sum/average/count]</code> (e.g., <code>create pivot table with Region as rows, Product_Category as columns, Sales as values aggregated by sum</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>38</td>
+                            <td>Data Transformation</td>
+                            <td>Unpivot/Melt Data</td>
+                            <td><code>unpivot data keeping [id_col(s)] and melting [col1], [col2], ... into new variable [new_var_col] and value [new_val_col]</code> (e.g., <code>unpivot data keeping ID and melting Q1_Sales, Q2_Sales, Q3_Sales into new variable Quarter and value Sales_Amount</code>)</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
+                        </tr>
+                        <tr>
+                            <td>39</td>
                             <td>Automated Insights</td>
                             <td>Show Proactive Insights</td>
                             <td><code>show proactive insights</code> or <code>what insights do you have?</code></td>
@@ -1405,7 +1421,7 @@
             const dateCol = findColumnByName('Date') || findColumnByName('Order Date') || findColumnByName('Transaction Date');
             const salesCol = findNumericColumn('Sales') || findNumericColumn('Revenue') || findNumericColumn('Amount');
             const regionCol = findCategoricalColumn('Region') || findCategoricalColumn('Area') || findCategoricalColumn('Territory');
-            const marketingSpendCol = findNumericColumn('Marketing_Spend') || findNumericColumn('Ad_Spend') || findColumnByName('Campaign_Cost'); // Fixed typo
+            const marketingSpendCol = findNumericColumn('Marketing_Spend') || findNumericColumn('Ad_Spend') || findNumericColumn('Campaign_Cost');
 
             if (dateCol && salesCol && regionCol) {
                 // Get all unique dates and sort them to find the latest
@@ -1450,9 +1466,7 @@
                                 if (marketingSpendCol) {
                                     const currentDayMarketingSpend = getSumFromSubset(marketingSpendCol, currentDaySalesData);
                                     const last7DaysMarketingSpend = last7DaysSalesData.length > 0 ? getSumFromSubset(marketingSpendCol, last7DaysSalesData) / last7DaysSalesData.length : 0;
-                                    // Calculate deviation percentage
-                                    const marketingSpendDeviation = last7DaysMarketingSpend > 0 ? Math.abs((currentDayMarketingSpend - last7DaysMarketingSpend) / last7DaysMarketingSpend) * 100 : (currentDayMarketingSpend > 0 ? 100 : 0);
-
+                                    const marketingSpendDeviation = last7DaysMarketingSpend > 0 ? Math.abs((currentDayMarketingSpend - last7DaysMarketingSpend) / last7DaysMarketingSpend) * 100 : Infinity;
                                     const marketingConsistencyThreshold = 10; // e.g., within 10% deviation
 
                                     if (marketingSpendDeviation <= marketingConsistencyThreshold) {
@@ -1593,7 +1607,7 @@
                         }
                     }
                 }
-            }
+            };
 
             // 5. Categorical Distribution - Top N most/least frequent values (now item 6)
             categoricalCols.forEach(catCol => {
@@ -2075,6 +2089,154 @@
             };
         }
 
+        // --- New Feature: Data Pivoting (Pivot Table Creation) ---
+        /**
+         * Creates a pivot table from the raw data.
+         * @param {string} indexColName - The column to use for rows of the pivot table.
+         * @param {string} pivotColName - The column to use for new columns of the pivot table.
+         * @param {string} valueColName - The numeric column to aggregate.
+         * @param {string} aggregationType - 'sum', 'average', or 'count'.
+         * @param {Array<Object>} data - The raw data.
+         * @returns {string} An HTML string representing the pivot table.
+         */
+        function createPivotTable(indexColName, pivotColName, valueColName, aggregationType, data) {
+            const actualIndexCol = findColumnByName(indexColName);
+            const actualPivotCol = findColumnByName(pivotColName);
+            const actualValueCol = findNumericColumn(valueColName);
+
+            if (!actualIndexCol || !actualPivotCol || !actualValueCol) {
+                return { error: 'Invalid column names provided for pivot table. Ensure index, pivot, and value columns exist and value column is numeric.' };
+            }
+            if (!['sum', 'average', 'count'].includes(aggregationType)) {
+                return { error: 'Invalid aggregation type. Use "sum", "average", or "count".' };
+            }
+
+            const pivotData = {}; // Stores {rowIndex: {colName: {sum: X, count: Y}}}
+            const pivotColumnHeaders = new Set();
+
+            data.forEach(row => {
+                const rowIndex = row[actualIndexCol];
+                const pivotIndex = row[actualPivotCol];
+                const value = Number(row[actualValueCol]);
+
+                if (rowIndex !== undefined && pivotIndex !== undefined && !isNaN(value)) {
+                    if (!pivotData[rowIndex]) {
+                        pivotData[rowIndex] = {};
+                    }
+                    if (!pivotData[rowIndex][pivotIndex]) {
+                        pivotData[rowIndex][pivotIndex] = { sum: 0, count: 0 };
+                    }
+                    pivotData[rowIndex][pivotIndex].sum += value;
+                    pivotData[rowIndex][pivotIndex].count++;
+                    pivotColumnHeaders.add(pivotIndex);
+                }
+            });
+
+            const sortedRowHeaders = Object.keys(pivotData).sort();
+            const sortedPivotColumnHeaders = Array.from(pivotColumnHeaders).sort();
+
+            let tableHtml = `<table class="command-table text-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="bg-gray-700">${actualIndexCol} / ${actualPivotCol}</th>`;
+            sortedPivotColumnHeaders.forEach(header => {
+                tableHtml += `<th class="bg-gray-700">${header}</th>`;
+            });
+            tableHtml += `</tr></thead><tbody>`;
+
+            sortedRowHeaders.forEach(rowIndex => {
+                tableHtml += `<tr><td class="bg-gray-800 font-semibold">${rowIndex}</td>`;
+                sortedPivotColumnHeaders.forEach(colIndex => {
+                    const cellData = pivotData[rowIndex] && pivotData[rowIndex][colIndex];
+                    let displayValue = '';
+                    if (cellData) {
+                        if (aggregationType === 'sum') {
+                            displayValue = cellData.sum.toFixed(2);
+                        } else if (aggregationType === 'average') {
+                            displayValue = (cellData.sum / cellData.count).toFixed(2);
+                        } else if (aggregationType === 'count') {
+                            displayValue = cellData.count;
+                        }
+                    }
+                    tableHtml += `<td>${displayValue}</td>`;
+                });
+                tableHtml += `</tr>`;
+            });
+            tableHtml += `</tbody></table>`;
+
+            return { success: true, tableHtml: tableHtml };
+        }
+
+        // --- New Feature: Data Unpivoting (Melt) ---
+        /**
+         * Unpivots (melts) specified columns into new variable and value columns.
+         * Updates rawData and schema in place.
+         * @param {Array<string>} idColNames - Columns to keep as identifying variables.
+         * @param {Array<string>} colsToUnpivotNames - Columns to unpivot.
+         * @param {string} newVarColName - Name for the new column storing original column names.
+         * @param {string} newValColName - Name for the new column storing original values.
+         * @param {Array<Object>} data - The raw data (will be modified).
+         * @param {Object} currentSchema - The schema (will be modified).
+         * @returns {Object} Success status and message.
+         */
+        function unpivotData(idColNames, colsToUnpivotNames, newVarColName, newValColName, data, currentSchema) {
+            const actualIdCols = idColNames.map(col => findColumnByName(col)).filter(Boolean);
+            const actualColsToUnpivot = colsToUnpivotNames.map(col => findColumnByName(col)).filter(Boolean);
+
+            if (actualIdCols.length !== idColNames.length) {
+                return { success: false, message: `One or more ID columns not found: ${idColNames.filter(name => !findColumnByName(name)).join(', ')}.` };
+            }
+            if (actualColsToUnpivot.length !== colsToUnpivotNames.length) {
+                return { success: false, message: `One or more columns to unpivot not found: ${colsToUnpivotNames.filter(name => !findColumnByName(name)).join(', ')}.` };
+            }
+            if (Object.keys(currentSchema).includes(newVarColName) || Object.keys(currentSchema).includes(newValColName)) {
+                return { success: false, message: `New column names ("${newVarColName}" or "${newValColName}") already exist.` };
+            }
+            if (actualColsToUnpivot.length === 0) {
+                 return { success: false, message: 'No valid columns provided to unpivot.' };
+            }
+
+            const newRawData = [];
+            data.forEach(row => {
+                // Extract ID columns for the current row
+                const idValues = {};
+                actualIdCols.forEach(col => {
+                    idValues[col] = row[col];
+                });
+
+                // For each column to unpivot, create a new row
+                actualColsToUnpivot.forEach(unpivotCol => {
+                    const newRow = {
+                        ...idValues,
+                        [newVarColName]: unpivotCol, // The name of the original column
+                        [newValColName]: row[unpivotCol] // The value from the original column
+                    };
+                    newRawData.push(newRow);
+                });
+            });
+
+            // Update global rawData
+            rawData = newRawData;
+
+            // Update global schema
+            const newSchema = {};
+            actualIdCols.forEach(col => {
+                newSchema[col] = currentSchema[col];
+            });
+            newSchema[newVarColName] = 'string'; // The variable column will always be string
+            // Infer type for the new value column (could be number or string)
+            const isNewValNumeric = newRawData.every(row => row[newValColName] === '' || !isNaN(Number(row[newValColName])));
+            newSchema[newValColName] = isNewValNumeric ? 'number' : 'string';
+            
+            schema = newSchema;
+            displaySchema(schema); // Refresh schema display
+
+            return {
+                success: true,
+                message: `Successfully unpivoted data. Original columns "${actualColsToUnpivot.join(', ')}" are now in new columns "<strong>${newVarColName}</strong>" and "<strong>${newValColName}</strong>".`
+            };
+        }
+
 
         // Helper function to simulate typing into chat and submitting
         function typeIntoChatAndSubmit(command) {
@@ -2084,220 +2246,251 @@
         }
 
 
-        // IMPORTANT: The simulateAIResponse function is now MODIFIED to call your AWS API Gateway + Lambda backend.
-        // It will send the user's query and the current data schema to the Lambda function.
-        // The Lambda function will then call Amazon Bedrock to interpret the intent.
-        // Finally, this function will parse the LLM's JSON response and execute the corresponding local CoDA function.
-        async function simulateAIResponse(query) { // Make it async
-            // Placeholder for the AI response in chat
-            const loadingMessageDiv = document.createElement('div');
-            loadingMessageDiv.className = 'flex items-start mb-4 fade-in-message';
-            loadingMessageDiv.innerHTML = `
-                <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">AI</div>
-                <div class="bg-gray-700 text-gray-200 p-4 rounded-3xl max-w-[80%] shadow-md">
-                    <p class="leading-relaxed"><i class="fas fa-spinner fa-spin mr-2"></i> Thinking...</p>
-                </div>
-            `;
-            chatArea.appendChild(loadingMessageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom to show loading
+        // Simulate AI response based on direct command matching (NLU removed)
+        function simulateAIResponse(query) {
+            let aiResponseText = '';
+            let analysisContent = '';
+            const lowerQuery = query.toLowerCase();
 
-            // Check for data before calling LLM for most commands
-            if (rawData.length === 0 && !query.toLowerCase().includes('command guide') && !query.toLowerCase().includes('proactive insights') && !query.toLowerCase().includes('hello') && !query.toLowerCase().includes('hi')) {
-                loadingMessageDiv.remove(); // Remove loading message
+            if (rawData.length === 0 && !lowerQuery.includes('command guide')) {
                 appendMessage('AI', "Please upload a CSV file first before asking questions. I'm ready when you are!", 'ai');
                 return;
             }
 
-            // Handle local cleaning confirmation (this part can remain as a direct local check)
-            if (pendingCleaningSuggestion && (query.toLowerCase() === 'yes' || query.toLowerCase().includes('confirm') || query.toLowerCase().includes('go ahead'))) {
-                loadingMessageDiv.remove(); // Remove loading message
+            // Handle cleaning confirmation
+            if (pendingCleaningSuggestion && (lowerQuery === 'yes' || lowerQuery.includes('confirm') || lowerQuery.includes('go ahead'))) {
                 const colToClean = pendingCleaningSuggestion.column;
                 if (pendingCleaningSuggestion.action === 'fill_average') {
                     const average = calculateColumnAverage(colToClean, rawData);
                     rawData = rawData.map(row => {
                         if (row[colToClean] === '' || isNaN(Number(row[colToClean])) || row[colToClean] === null || row[colToClean] === undefined) {
-                            row[colToClean] = average.toFixed(2);
+                            row[colToClean] = average.toFixed(2); // Fill with average, keeping two decimal places
                         }
                         return row;
                     });
-                    appendMessage('AI', `Great! I've successfully filled the ${pendingCleaningSuggestion.count} missing values in the column "<strong>${colToClean}</strong>" with the calculated average of <strong>${average.toFixed(2)}</strong>. Your data has been updated locally and privately.`, 'ai');
-                    pendingCleaningSuggestion = null;
+                    aiResponseText = `Great! I've successfully filled the ${pendingCleaningSuggestion.count} missing values in the column "<strong>${colToClean}</strong>" with the calculated average of <strong>${average.toFixed(2)}</strong>. Your data has been updated locally and privately.`;
+                    pendingCleaningSuggestion = null; // Clear the suggestion after execution
                 }
+                appendMessage('AI', aiResponseText, 'ai');
                 return;
             }
 
+            // --- Command Parsing Logic (Manual instead of NLU) ---
 
-            // !!! IMPORTANT: Replace 'YOUR_API_GATEWAY_INVOKE_URL' with the actual Invoke URL you got from API Gateway (e.g., https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/analyze)
-            const API_GATEWAY_ENDPOINT = 'https://ds9rdf6325.execute-api.us-east-1.amazonaws.com/prod';
-
-            let llmResponse = { function: 'NO_ACTION_NEEDED', parameters: { reason: 'Could not communicate with AI backend.' } };
-
-            try {
-                const response = await fetch(API_GATEWAY_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    // Send the user query AND the current data schema to the Lambda function
-                    body: JSON.stringify({ query: query, schema: schema }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+            // General Overview
+            if (lowerQuery.includes('show all data') || lowerQuery.includes('display everything') || lowerQuery.includes('what\'s in the dataset')) {
+                analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
+                                    <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                    <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
+                aiResponseText = `Understood! Here's your data:`;
+            } else if (lowerQuery.startsWith('show ') && lowerQuery.includes(' column')) {
+                const colNameMatch = query.match(/show\s+(.+)\s+column/i);
+                const colName = colNameMatch ? colNameMatch[1].trim() : null;
+                const foundColumn = findColumnByName(colName);
+                if (foundColumn) {
+                    const columnValues = rawData.map(row => row[foundColumn]);
+                    analysisContent = `<p class="text-gray-300 mt-2">Here are the **first 10 values** from the "<strong>${foundColumn}</strong>" column:</p>
+                                        <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
+                                        <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
+                    aiResponseText = `Absolutely! Here's the data for column "${foundColumn}", retrieved instantly from your local dataset.`;
+                } else {
+                    aiResponseText = `I couldn't find the column "<strong>${colName}</strong>". Please check your column name.`;
                 }
+            } else if (lowerQuery.includes('count rows') || lowerQuery.includes('number of records')) {
+                const numRows = rawData.length;
+                aiResponseText = `Your dataset currently contains **${numRows} rows** (records).`;
+            } else if (lowerQuery.includes('describe my dataset') || lowerQuery.includes('overview of data')) {
+                let numRows = rawData.length;
+                let numCols = Object.keys(schema).length;
+                let descriptionNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have <strong>${numRows} rows</strong>, which means ${numRows} individual records, and <strong>${numCols} columns</strong>, representing ${numCols} different types of information.</p>
+                                             <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
+                                             <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
 
-                llmResponse = await response.json(); // This will be the JSON from your Lambda
-                console.log("LLM Response from Lambda:", llmResponse);
+                for (const col in schema) {
+                    descriptionNarrative += `<li class="font-medium">${col}: (<span class="text-blue-400">${schema[col]}</span> type) `;
+                    const values = rawData.map(row => row[col]);
 
-            } catch (error) {
-                console.error("Error fetching from API Gateway:", error);
-                loadingMessageDiv.remove(); // Remove loading message
-                appendMessage('AI', `I'm sorry, I encountered an error communicating with my AI brain. Please try again. (Error: ${error.message})`, 'ai');
-                return; // Stop execution if API call fails
-            }
+                    if (schema[col] === 'number') {
+                        const numericValues = values.map(Number).filter(n => !isNaN(n));
+                        const { min: minVal, max: maxVal } = calculateColumnMinMax(col, rawData);
+                        const avgVal = calculateColumnAverage(col, rawData);
+                        const medianVal = calculateMedian(col, rawData);
+                        const stdDevVal = calculateStandardDeviation(col, rawData);
+                        const quartiles = calculateQuartiles(col, rawData);
 
-            // Remove loading message after receiving response
-            loadingMessageDiv.remove();
-
-            // --- Interpret the LLM's response to call CoDA's functions ---
-            let aiResponseText = '';
-            let analysisContent = '';
-
-            const func = llmResponse.function;
-            const params = llmResponse.parameters;
-
-            // Mapping LLM's understood intent to CoDA's local functions
-            switch (func) {
-                case 'SUM_COLUMN':
-                    const sumCol = findNumericColumn(params.column);
-                    if (sumCol) {
-                        const sum = calculateColumnSum(sumCol, rawData);
-                        analysisContent = `<p class="text-xl text-blue-400 font-bold mt-2">The sum of "${sumCol}" is: ${sum.toFixed(2)}</p>`;
-                        aiResponseText = `Alright, I've calculated the **total sum** for the column "<strong>${sumCol}</strong>". Here's the result:`;
-                    } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to calculate the sum for. Please specify a valid numeric column.`;
-                    }
-                    break;
-                case 'AVERAGE_COLUMN':
-                    const avgCol = findNumericColumn(params.column);
-                    if (avgCol) {
-                        const average = calculateColumnAverage(avgCol, rawData);
-                        analysisContent = `<p class="text-xl text-blue-400 font-bold mt-2">The average of "${avgCol}" is: ${average.toFixed(2)}</p>`;
-                        aiResponseText = `Understood! Here's the **average value** for the "<strong>${avgCol}</strong>" column:`;
-                    } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to calculate the average for. Please specify a valid numeric column.`;
-                    }
-                    break;
-                case 'MEDIAN_COLUMN':
-                    const medianCol = findNumericColumn(params.column);
-                    if (medianCol) {
-                        const median = calculateMedian(medianCol, rawData);
-                        if (median !== null) {
-                            aiResponseText = `The **median** for the column "<strong>${medianCol}</strong>" is: <strong>${median.toFixed(2)}</strong>.`;
+                        if (numericValues.length > 0) {
+                            descriptionNarrative += `This column contains numerical data, ranging from <strong>${minVal}</strong> to <strong>${maxVal}</strong>, with an average value of approximately <strong>${avgVal.toFixed(2)}</strong>.`;
+                            if (medianVal !== null) descriptionNarrative += ` The median is <strong>${medianVal.toFixed(2)}</strong>.`;
+                            if (stdDevVal !== null) descriptionNarrative += ` Standard deviation is <strong>${stdDevVal.toFixed(2)}</strong>.`;
+                            if (quartiles.q1 !== null) descriptionNarrative += ` Q1 is <strong>${quartiles.q1}</strong>, Q3 is <strong>${quartiles.q3}</strong>, and the IQR is <strong>${quartiles.iqr}</strong>.`;
+                            const correlationWithOtherNumerics = [];
+                            for (const otherCol in schema) {
+                                if (otherCol !== col && schema[otherCol] === 'number') {
+                                    const corr = calculateCorrelation(col, otherCol, rawData);
+                                    if (corr !== null && !isNaN(corr)) {
+                                        correlationWithOtherNumerics.push(`${otherCol}: ${corr.toFixed(2)}`);
+                                    }
+                                }
+                            }
+                            if (correlationWithOtherNumerics.length > 0) {
+                                descriptionNarrative += ` It shows correlations with other numeric columns: ${correlationWithOtherNumerics.join(', ')}.`;
+                            }
                         } else {
-                            aiResponseText = `I couldn't calculate the median for "<strong>${medianCol}</strong>" as it contains no valid numeric data.`;
+                            descriptionNarrative += `This numeric column currently has no valid numerical entries.`;
                         }
-                    } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to calculate the median for. Please specify a valid numeric column.`;
-                    }
-                    break;
-                case 'STANDARD_DEVIATION_COLUMN':
-                    const stdDevCol = findNumericColumn(params.column);
-                    if (stdDevCol) {
-                        const stdDev = calculateStandardDeviation(stdDevCol, rawData);
-                        if (stdDev !== null) {
-                            aiResponseText = `The **standard deviation** for the column "<strong>${stdDevCol}</strong>" is: <strong>${stdDev.toFixed(2)}</strong>.`;
-                        } else {
-                            aiResponseText = `I couldn't calculate the standard deviation for "<strong>${stdDevCol}</strong>" as it contains insufficient numeric data (at least 2 values are needed).`;
-                        }
-                    } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to calculate the standard deviation for. Please specify a valid numeric column.`;
-                    }
-                    break;
-                case 'QUARTILES_COLUMN':
-                    const quartilesCol = findNumericColumn(params.column);
-                    if (quartilesCol) {
-                        const quartiles = calculateQuartiles(quartilesCol, rawData);
-                        if (quartiles.median !== null) {
-                            aiResponseText = `For the column "<strong>${quartilesCol}</strong>":<br>
-                                                **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
-                                                **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
-                                                **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
-                                                **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
-                        } else {
-                            aiResponseText = `I couldn't calculate quartiles for "<strong>${quartilesCol}</strong>" as it contains no valid numeric data.`;
-                        }
-                    } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to calculate quartiles for. Please specify a valid numeric column.`;
-                    }
-                    break;
-                case 'COUNT_UNIQUE':
-                    const countUniqueCol = findColumnByName(params.column);
-                    if (countUniqueCol) {
-                        const values = rawData.map(row => row[countUniqueCol]);
-                        const uniqueCount = new Set(values).size;
-                        aiResponseText = `The column "<strong>${countUniqueCol}</strong>" has **${uniqueCount} unique values**.`;
-                    } else {
-                        aiResponseText = `I couldn't find the column "<strong>${params.column}</strong>" to count unique values. Please specify a valid column name.`;
-                    }
-                    break;
-                case 'SHOW_FREQUENCY':
-                    const freqCol = findColumnByName(params.column);
-                    if (freqCol) {
-                        const values = rawData.map(row => row[freqCol]);
+                    } else { // string type
+                        const uniqueValues = [...new Set(values)];
                         const valueCounts = {};
                         values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
                         const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
+                        descriptionNarrative += `This column holds text information. I found <strong>${uniqueValues.length} unique values</strong>. The most frequent entries are: ${sortedCounts.slice(0, 5).map(item => `"${item[0]}" appearing ${item[1]} times`).join(', ')}.`;
+                    }
+                    descriptionNarrative += `</li>`;
+                }
+                descriptionNarrative += `</ul>`;
+                analysisContent = descriptionNarrative;
+                aiResponseText = `Certainly! Here's a comprehensive overview and description of your dataset, crafted to give you quick insights. This analysis was performed entirely client-side, ensuring your data's privacy.`;
+            } else if (lowerQuery.includes('show schema')) {
+                analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
+                                    <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
+                aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
+            }
 
-                        let frequencyList = `<ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
-                        sortedCounts.slice(0, 5).forEach(([value, count]) => {
-                            const percentage = ((count / values.length) * 100).toFixed(1);
-                            frequencyList += `<li>"<strong>${value}</strong>": ${count} occurrences (${percentage}%)</li>`;
-                        });
-                        frequencyList += `</ul>`;
-                        aiResponseText = `Here's the **frequency distribution** for "<strong>${freqCol}</strong>", showing the top 5 most common values:`;
-                        analysisContent = frequencyList;
+            // Statistical Analysis
+            else if (lowerQuery.startsWith('sum ')) {
+                const colName = query.substring(4).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const sum = calculateColumnSum(foundColumn, rawData);
+                    analysisContent = `<p class="text-xl text-blue-400 font-bold mt-2">The sum of "${foundColumn}" is: ${sum.toFixed(2)}</p>`;
+                    aiResponseText = `Alright, I've calculated the **total sum** for the column "<strong>${foundColumn}</strong>". Here's the result:`;
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to calculate the sum for. Please specify a valid numeric column.`;
+                }
+            } else if (lowerQuery.startsWith('average ') || lowerQuery.startsWith('avg ')) {
+                const colName = lowerQuery.startsWith('average ') ? query.substring(8).trim() : query.substring(4).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const average = calculateColumnAverage(foundColumn, rawData);
+                    analysisContent = `<p class="text-xl text-blue-400 font-bold mt-2">The average of "${foundColumn}" is: ${average.toFixed(2)}</p>`;
+                    aiResponseText = `Understood! Here's the **average value** for the "<strong>${foundColumn}</strong>" column:`;
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to calculate the average for. Please specify a valid numeric column.`;
+                }
+            } else if (lowerQuery.startsWith('median ')) {
+                const colName = query.substring(7).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const median = calculateMedian(foundColumn, rawData);
+                    if (median !== null) {
+                        aiResponseText = `The **median** for the column "<strong>${foundColumn}</strong>" is: <strong>${median.toFixed(2)}</strong>.`;
                     } else {
-                        aiResponseText = `I couldn't find the column "<strong>${params.column}</strong>" to show its frequency. Please specify a valid column name.`;
+                        aiResponseText = `I couldn't calculate the median for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
                     }
-                    break;
-                case 'MIN_COLUMN':
-                    const minCol = findNumericColumn(params.column);
-                    if (minCol) {
-                        const { min } = calculateColumnMinMax(minCol, rawData);
-                        if (min !== null) {
-                            aiResponseText = `For the numeric column "<strong>${minCol}</strong>":<br>The **minimum value** is: <strong>${min}</strong>.`;
-                        } else {
-                            aiResponseText = `There are no valid numeric entries in "<strong>${minCol}</strong>" to calculate the minimum.`;
-                        }
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to calculate the median for. Please specify a valid numeric column.`;
+                }
+            } else if (lowerQuery.startsWith('standard deviation ') || lowerQuery.startsWith('std dev ')) {
+                const colName = lowerQuery.startsWith('standard deviation ') ? query.substring(19).trim() : query.substring(8).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const stdDev = calculateStandardDeviation(foundColumn, rawData);
+                    if (stdDev !== null) {
+                        aiResponseText = `The **standard deviation** for the column "<strong>${foundColumn}</strong>" is: <strong>${stdDev.toFixed(2)}</strong>.`;
                     } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to calculate the minimum for. Please specify a valid numeric column.`;
+                        aiResponseText = `I couldn't calculate the standard deviation for "<strong>${foundColumn}</strong>" as it contains insufficient numeric data (at least 2 values are needed).`;
                     }
-                    break;
-                case 'MAX_COLUMN':
-                    const maxCol = findNumericColumn(params.column);
-                    if (maxCol) {
-                        const { max } = calculateColumnMinMax(maxCol, rawData);
-                        if (max !== null) {
-                            aiResponseText = `For the numeric column "<strong>${maxCol}</strong>":<br>The **maximum value** is: <strong>${max}</strong>.`;
-                        } else {
-                            aiResponseText = `There are no valid numeric entries in "<strong>${maxCol}</strong>" to calculate the maximum.`;
-                        }
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to calculate the standard deviation for. Please specify a valid numeric column.`;
+                }
+            } else if (lowerQuery.startsWith('quartiles ')) {
+                const colName = query.substring(10).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const quartiles = calculateQuartiles(foundColumn, rawData);
+                    if (quartiles.median !== null) {
+                        aiResponseText = `For the column "<strong>${foundColumn}</strong>":<br>
+                                            **Q1 (25th percentile)**: <strong>${quartiles.q1}</strong><br>
+                                            **Median (50th percentile)**: <strong>${quartiles.median}</strong><br>
+                                            **Q3 (75th percentile)**: <strong>${quartiles.q3}</strong><br>
+                                            **IQR (Interquartile Range)**: <strong>${quartiles.iqr}</strong>.`;
                     } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to calculate the maximum for. Please specify a valid numeric column.`;
+                        aiResponseText = `I couldn't calculate quartiles for "<strong>${foundColumn}</strong>" as it contains no valid numeric data.`;
                     }
-                    break;
-                case 'AVERAGE_BY_CATEGORY':
-                    const avgByCatNumericCol = findNumericColumn(params.numeric_column);
-                    const avgByCatCategoricalCol = findCategoricalColumn(params.categorical_column);
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to calculate quartiles for. Please specify a valid numeric column.`;
+                }
+            } else if (lowerQuery.startsWith('count unique ')) {
+                const colName = query.substring(13).trim();
+                const foundColumn = findColumnByName(colName);
+                if (foundColumn) {
+                    const values = rawData.map(row => row[foundColumn]);
+                    const uniqueCount = new Set(values).size;
+                    aiResponseText = `The column "<strong>${foundColumn}</strong>" has **${uniqueCount} unique values**.`;
+                } else {
+                    aiResponseText = `I couldn't find the column "<strong>${colName}</strong>" to count unique values. Please specify a valid column name.`;
+                }
+            } else if (lowerQuery.startsWith('show frequency of ') || lowerQuery.startsWith('top values in ')) {
+                const colName = lowerQuery.startsWith('show frequency of ') ? query.substring(18).trim() : query.substring(14).trim();
+                const foundColumn = findColumnByName(colName);
+                if (foundColumn) {
+                    const values = rawData.map(row => row[foundColumn]);
+                    const valueCounts = {};
+                    values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
+                    const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
 
-                    if (avgByCatNumericCol && avgByCatCategoricalCol) {
+                    let frequencyList = `<ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
+                    sortedCounts.slice(0, 5).forEach(([value, count]) => {
+                        const percentage = ((count / values.length) * 100).toFixed(1);
+                        frequencyList += `<li>"<strong>${value}</strong>": ${count} occurrences (${percentage}%)</li>`;
+                    });
+                    frequencyList += `</ul>`;
+                    aiResponseText = `Here's the **frequency distribution** for "<strong>${foundColumn}</strong>", showing the top 5 most common values:`;
+                    analysisContent = frequencyList;
+                } else {
+                    aiResponseText = `I couldn't find the column "<strong>${colName}</strong>" to show its frequency. Please specify a valid column name.`;
+                }
+            } else if (lowerQuery.startsWith('min ')) {
+                const colName = query.substring(4).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const { min } = calculateColumnMinMax(foundColumn, rawData);
+                    if (min !== null) {
+                        aiResponseText = `For the numeric column "<strong>${foundColumn}</strong>":<br>The **minimum value** is: <strong>${min}</strong>.`;
+                    } else {
+                        aiResponseText = `There are no valid numeric entries in "<strong>${foundColumn}</strong>" to calculate the minimum.`;
+                    }
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to calculate the minimum for. Please specify a valid numeric column.`;
+                }
+            } else if (lowerQuery.startsWith('max ')) {
+                const colName = query.substring(4).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const { max } = calculateColumnMinMax(foundColumn, rawData);
+                    if (max !== null) {
+                        aiResponseText = `For the numeric column "<strong>${foundColumn}</strong>":<br>The **maximum value** is: <strong>${max}</strong>.`;
+                    } else {
+                        aiResponseText = `There are no valid numeric entries in "<strong>${foundColumn}</strong>" to calculate the maximum.`;
+                    }
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to calculate the maximum for. Please specify a valid numeric column.`;
+                }
+            } else if (lowerQuery.startsWith('average ') && lowerQuery.includes(' by ')) {
+                const parts = query.match(/average\s+(.+)\s+by\s+(.+)/i);
+                if (parts && parts.length === 3) {
+                    const numericColName = parts[1].trim();
+                    const categoricalColName = parts[2].trim();
+                    const numericColumn = findNumericColumn(numericColName);
+                    const categoricalColumn = findCategoricalColumn(categoricalColName);
+
+                    if (numericColumn && categoricalColumn) {
                         const groupedAverages = {};
                         const counts = {};
 
                         rawData.forEach(row => {
-                            const category = row[avgByCatCategoricalCol];
-                            const numericValue = Number(row[avgByCatNumericCol]);
+                            const category = row[categoricalColumn];
+                            const numericValue = Number(row[numericColumn]);
 
                             if (!isNaN(numericValue)) {
                                 if (!groupedAverages[category]) {
@@ -2312,21 +2505,27 @@
                         let resultsHtml = `<ul class="list-disc list-inside text-gray-300 ml-4 mt-2 space-y-1">`;
                         for (const category in groupedAverages) {
                             const avg = (groupedAverages[category] / counts[category]).toFixed(2);
-                            resultsHtml += `<li><strong>${category}</strong>: Average ${avgByCatNumericCol} is <strong>${avg}</strong> (${counts[category]} entries)</li>`;
+                            resultsHtml += `<li><strong>${category}</strong>: Average ${numericColumn} is <strong>${avg}</strong> (${counts[category]} entries)</li>`;
                         }
                         resultsHtml += `</ul>`;
-                        aiResponseText = `Here's the **average of "${avgByCatNumericCol}" grouped by "${avgByCatCategoricalCol}"**:`;
+                        aiResponseText = `Here's the **average of "${numericColumn}" grouped by "${categoricalColumn}"**:`;
                         analysisContent = resultsHtml;
                     } else {
                         aiResponseText = `I need both a valid numeric column and a valid categorical column to perform that aggregation. Please check your column names and types.`;
                     }
-                    break;
-                case 'CORRELATION':
-                    const corrCol1 = findNumericColumn(params.column1);
-                    const corrCol2 = findNumericColumn(params.column2);
+                } else {
+                    aiResponseText = `I didn't understand the format for 'average by category'. Example: 'average sales by region'.`;
+                }
+            } else if (lowerQuery.startsWith('show correlation between ')) {
+                const parts = query.match(/show correlation between\s+(.+)\s+and\s+(.+)/i);
+                if (parts && parts.length === 3) {
+                    const col1Name = parts[1].trim();
+                    const col2Name = parts[2].trim();
+                    const col1 = findNumericColumn(col1Name);
+                    const col2 = findNumericColumn(col2Name);
 
-                    if (corrCol1 && corrCol2) {
-                        const correlation = calculateCorrelation(corrCol1, corrCol2, rawData);
+                    if (col1 && col2) {
+                        const correlation = calculateCorrelation(col1, col2, rawData);
                         if (correlation !== null) {
                             let interpretation = '';
                             if (correlation >= 0.7) interpretation = 'a **strong positive correlation**';
@@ -2334,94 +2533,108 @@
                             else if (correlation > -0.3 && correlation < 0.3) interpretation = 'a **very weak or no linear correlation**';
                             else if (correlation > -0.7) interpretation = 'a **moderate negative correlation**';
                             else interpretation = 'a **strong negative correlation**';
-                            aiResponseText = `The **Pearson correlation coefficient** between "<strong>${corrCol1}</strong>" and "<strong>${corrCol2}</strong>" is: <strong>${correlation.toFixed(4)}</strong>. This indicates ${interpretation}.`;
+                            aiResponseText = `The **Pearson correlation coefficient** between "<strong>${col1}</strong>" and "<strong>${col2}</strong>" is: <strong>${correlation.toFixed(4)}</strong>. This indicates ${interpretation}.`;
                         } else {
-                            aiResponseText = `I couldn't calculate the correlation between "<strong>${corrCol1}</strong>" and "<strong>${corrCol2}</strong>" due to insufficient or invalid numeric data.`;
+                            aiResponseText = `I couldn't calculate the correlation between "<strong>${col1}</strong>" and "<strong>${col2}</strong>" due to insufficient or invalid numeric data.`;
                         }
                     } else {
                         aiResponseText = `I need two valid numeric columns. Please check your column names and types.`;
                     }
-                    break;
-                case 'FIND_OUTLIERS':
-                    const outlierCol = findNumericColumn(params.column);
-                    if (outlierCol) {
-                        const { outliers, lowerBound, upperBound } = findOutliers(outlierCol, rawData);
-                        if (outliers.length > 0) {
-                            aiResponseText = `I found **${outliers.length} potential outliers** in the column "<strong>${outlierCol}</strong>".<br>
-                                                These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
-                                                Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
-                        } else {
-                            aiResponseText = `No significant outliers were detected in the column "<strong>${outlierCol}</strong>" based on the IQR method.`;
-                        }
+                } else {
+                    aiResponseText = `I didn't understand the format for 'correlation'. Example: 'show correlation between Age and Income'.`;
+                }
+            } else if (lowerQuery.startsWith('find outliers in ')) {
+                const colName = query.substring(17).trim();
+                const foundColumn = findNumericColumn(colName);
+                if (foundColumn) {
+                    const { outliers, lowerBound, upperBound } = findOutliers(foundColumn, rawData);
+                    if (outliers.length > 0) {
+                        aiResponseText = `I found **${outliers.length} potential outliers** in the column "<strong>${foundColumn}</strong>".<br>
+                                            These values fall outside the IQR bounds of <strong>${lowerBound}</strong> and <strong>${upperBound}</strong>.<br>
+                                            Outlier values (first 10): <strong>${outliers.slice(0, 10).join(', ')}</strong>.`;
                     } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.column}</strong>" to find outliers. Please specify a valid numeric column.`;
+                        aiResponseText = `No significant outliers were detected in the column "<strong>${foundColumn}</strong>" based on the IQR method.`;
                     }
-                    break;
-                case 'PERFORM_T_TEST':
-                    const tTestNumericCol = findNumericColumn(params.numeric_column);
-                    const tTestCategoricalCol = findCategoricalColumn(params.categorical_column);
-                    const tTestGroup1Value = params.group1_value;
-                    const tTestGroup2Value = params.group2_value;
+                } else {
+                    aiResponseText = `I couldn't find a numeric column named "<strong>${colName}</strong>" to find outliers. Please specify a valid numeric column.`;
+                }
+            }
 
-                    if (tTestNumericCol && tTestCategoricalCol && tTestGroup1Value && tTestGroup2Value) {
-                        const tTestResult = performTTest(tTestNumericCol, tTestCategoricalCol, tTestGroup1Value, tTestGroup2Value, rawData);
+            // --- New Command: Hypothesis Testing (T-test) ---
+            else if (lowerQuery.startsWith('perform t-test on ') && lowerQuery.includes(' for ') && lowerQuery.includes(' where ') && lowerQuery.includes(' vs ')) {
+                const regex = /perform t-test on\s+(.+)\s+for\s+(.+)\s+where\s+(.+)\s+vs\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 5) {
+                    const numericColName = match[1].trim();
+                    const categoricalColName = match[2].trim();
+                    const group1Value = match[3].trim();
+                    const group2Value = match[4].trim();
+
+                    const numericCol = findNumericColumn(numericColName);
+                    const categoricalCol = findCategoricalColumn(categoricalColName);
+
+                    if (numericCol && categoricalCol) {
+                        const tTestResult = performTTest(numericCol, categoricalCol, group1Value, group2Value, rawData);
                         if (tTestResult.error) {
                             aiResponseText = `Error performing T-test: ${tTestResult.error}`;
                         } else {
-                            aiResponseText = `**T-Test Results** for **${tTestNumericCol}** between "${tTestGroup1Value}" and "${tTestGroup2Value}" in **${tTestCategoricalCol}**:<br>
-                                            - Mean for "${tTestGroup1Value}": <strong>${tTestResult.group1Mean}</strong> (n=${tTestResult.group1Count})<br>
-                                            - Mean for "${tTestGroup2Value}": <strong>${tTestResult.group2Mean}</strong> (n=${tTestResult.group2Count})<br>
+                            aiResponseText = `**T-Test Results** for **${numericCol}** between "${group1Value}" and "${group2Value}" in **${categoricalCol}**:<br>
+                                            - Mean for "${group1Value}": <strong>${tTestResult.group1Mean}</strong> (n=${tTestResult.group1Count})<br>
+                                            - Mean for "${group2Value}": <strong>${tTestResult.group2Mean}</strong> (n=${tTestResult.group2Count})<br>
                                             - Calculated T-Statistic: <strong>${tTestResult.tStatistic}</strong><br>
                                             - Degrees of Freedom: <strong>${tTestResult.degreesOfFreedom}</strong><br>
                                             - **Interpretation**: ${tTestResult.interpretation}`;
                         }
                     } else {
-                        aiResponseText = `To perform a T-test, I need a valid numeric column, a valid categorical column, and two group values. Please check your column names and the command format.`;
+                        aiResponseText = `To perform a T-test, I need a valid numeric column and a valid categorical column to define the groups. Please check your column names.`;
                     }
-                    break;
-                case 'CALCULATE_MOVING_AVERAGE':
-                    const maNumericCol = findNumericColumn(params.numeric_column);
-                    const maWindowSize = parseInt(params.window_size);
-                    const maNewColName = params.new_column_name;
+                } else {
+                    aiResponseText = `I didn't understand the T-test command format. Example: 'perform t-test on Sales for Region where East vs West'.`;
+                }
+            }
 
-                    if (maNumericCol) {
-                        const result = calculateMovingAverage(maNumericCol, maWindowSize, maNewColName, rawData);
+            // --- New Command: Time Series Analysis (Moving Average) ---
+            else if (lowerQuery.startsWith('calculate moving average of ') && lowerQuery.includes(' with window ') && lowerQuery.includes(' as ')) {
+                const regex = /calculate moving average of\s+(.+)\s+with window\s+(\d+)\s+as\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 4) {
+                    const numericColName = match[1].trim();
+                    const windowSize = parseInt(match[2].trim());
+                    const newColName = match[3].trim().replace(/\s/g, '_');
+
+                    const numericCol = findNumericColumn(numericColName);
+
+                    if (numericCol) {
+                        const result = calculateMovingAverage(numericCol, windowSize, newColName, rawData);
                         aiResponseText = result.message;
                     } else {
-                        aiResponseText = `I couldn't find a numeric column named "<strong>${params.numeric_column}</strong>" to calculate moving average. Please specify a valid numeric column.`;
+                        aiResponseText = `I couldn't find a numeric column named "<strong>${numericColName}</strong>" to calculate moving average. Please specify a valid numeric column.`;
                     }
-                    break;
-                case 'PERFORM_SIMPLE_LINEAR_REGRESSION':
-                    const sregYCol = findNumericColumn(params.dependent_variable);
-                    const sregXCol = findNumericColumn(params.independent_variable);
-                    if (sregYCol && sregXCol) {
-                        const regressionResult = performSimpleLinearRegression(sregXCol, sregYCol, rawData);
-                        if (regressionResult) {
-                            aiResponseText = `**Simple Linear Regression Results** (Y: ${sregYCol}, X: ${sregXCol}):<br>
-                                            - **Slope**: <strong>${regressionResult.slope}</strong><br>
-                                            - **Intercept**: <strong>${regressionResult.intercept}</strong><br>
-                                            - **R-squared**: <strong>${regressionResult.rSquared}</strong><br>
-                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${sregYCol}".`;
-                        } else {
-                            aiResponseText = `Insufficient valid numeric data to perform simple linear regression between "<strong>${sregYCol}</strong>" and "<strong>${sregXCol}</strong>".`;
-                        }
-                    } else {
-                        aiResponseText = `To perform simple linear regression, I need two valid numeric columns (dependent and independent). Please check your column names and types.`;
-                    }
-                    break;
-                case 'PERFORM_MULTIPLE_REGRESSION':
-                    const mregDependentCol = findNumericColumn(params.dependent_variable);
-                    const mregIndependentColNames = params.independent_variables;
-                    const mregIndependentCols = mregIndependentColNames.map(colName => findNumericColumn(colName)).filter(Boolean);
+                } else {
+                    aiResponseText = `I didn't understand the moving average command format. Example: 'calculate moving average of Stock_Price with window 5 as MA_5_Days'.`;
+                }
+            }
 
-                    if (!mregDependentCol) {
-                        aiResponseText = `Dependent variable "<strong>${params.dependent_variable}</strong>" not found or is not numeric.`;
-                    } else if (mregIndependentCols.length !== mregIndependentColNames.length) {
-                        aiResponseText = `One or more independent variables (${mregIndependentColNames.filter(name => !findNumericColumn(name)).join(', ')}) not found or are not numeric.`;
-                    } else if (mregIndependentCols.length === 0) {
+            // --- New Command: Multiple Linear Regression ---
+            else if (lowerQuery.startsWith('perform multiple regression with y as ') && lowerQuery.includes(' and x as ')) {
+                const regex = /perform multiple regression with y as\s+(.+)\s+and x as\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 3) {
+                    const dependentColName = match[1].trim();
+                    const independentColsString = match[2].trim();
+                    const independentColNames = independentColsString.split(',').map(col => col.trim());
+
+                    const dependentCol = findNumericColumn(dependentColName);
+                    const independentCols = independentColNames.map(col => findNumericColumn(col)).filter(Boolean); // Filter out nulls
+
+                    if (!dependentCol) {
+                        aiResponseText = `Dependent variable "<strong>${dependentColName}</strong>" not found or is not numeric.`;
+                    } else if (independentCols.length !== independentColNames.length) {
+                        aiResponseText = `One or more independent variables (${independentColNames.filter(name => !findNumericColumn(name)).join(', ')}) not found or are not numeric.`;
+                    } else if (independentCols.length === 0) {
                         aiResponseText = `Please provide at least one independent variable for multiple regression.`;
                     } else {
-                        const regressionResult = calculateMultipleLinearRegression(mregDependentCol, mregIndependentCols, rawData);
+                        const regressionResult = calculateMultipleLinearRegression(dependentCol, independentCols, rawData);
                         if (regressionResult.error) {
                             aiResponseText = `Error performing multiple linear regression: ${regressionResult.error}`;
                         } else {
@@ -2429,71 +2642,91 @@
                             for (const col in regressionResult.slopes) {
                                 slopesHtml += `<li><strong>${col}</strong>: ${regressionResult.slopes[col]}</li>`;
                             }
-                            aiResponseText = `**Multiple Linear Regression Results** (Y: ${mregDependentCol}):<br>
+                            aiResponseText = `**Multiple Linear Regression Results** (Y: ${dependentCol}):<br>
                                             - **Intercept**: <strong>${regressionResult.intercept}</strong><br>
                                             - **Slopes**: <ul>${slopesHtml}</ul>
                                             - **R-squared**: <strong>${regressionResult.rSquared}</strong><br>
-                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${mregDependentCol}".`;
+                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${dependentCol}".`;
                         }
                     }
-                    break;
-                case 'PERFORM_POLYNOMIAL_REGRESSION':
-                    const polyDependentCol = findNumericColumn(params.dependent_variable);
-                    const polyIndependentCol = findNumericColumn(params.independent_variable);
-                    const polyDegree = parseInt(params.degree);
+                } else {
+                    aiResponseText = `I didn't understand the multiple regression command format. Example: 'perform multiple regression with Y as Sales and X as Advertising, Price'.`;
+                }
+            }
 
-                    if (!polyDependentCol) {
-                        aiResponseText = `Dependent variable "<strong>${params.dependent_variable}</strong>" not found or is not numeric.`;
-                    } else if (!polyIndependentCol) {
-                        aiResponseText = `Independent variable "<strong>${params.independent_variable}</strong>" not found or is not numeric.`;
-                    } else if (isNaN(polyDegree) || polyDegree < 2 || polyDegree > 5) {
-                        aiResponseText = `Polynomial degree must be a number between 2 and 5 for practical analysis.`;
+            // --- New Command: Polynomial Regression ---
+            else if (lowerQuery.startsWith('perform polynomial regression with y as ') && lowerQuery.includes(' and x as ') && lowerQuery.includes(' with degree ')) {
+                const regex = /perform polynomial regression with y as\s+(.+)\s+and x as\s+(.+)\s+with degree\s+(\d+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 4) {
+                    const dependentColName = match[1].trim();
+                    const independentColName = match[2].trim();
+                    const degree = parseInt(match[3].trim());
+
+                    const dependentCol = findNumericColumn(dependentColName);
+                    const independentCol = findNumericColumn(independentColName);
+
+                    if (!dependentCol) {
+                        aiResponseText = `Dependent variable "<strong>${dependentColName}</strong>" not found or is not numeric.`;
+                    } else if (!independentCol) {
+                        aiResponseText = `Independent variable "<strong>${independentColName}</strong>" not found or is not numeric.`;
+                    } else if (degree < 2 || degree > 5) { // Limit degree to avoid overfitting and computational burden
+                        aiResponseText = `Polynomial degree must be between 2 and 5 for practical analysis.`;
                     } else {
+                        // Create temporary columns for polynomial features
                         const tempIndependentCols = [];
-                        const tempRawData = JSON.parse(JSON.stringify(rawData)); // Deep copy
+                        const tempRawData = JSON.parse(JSON.stringify(rawData)); // Deep copy to avoid modifying original rawData directly
 
-                        for (let i = 1; i <= polyDegree; i++) {
-                            const newPolyColName = `${polyIndependentCol}_poly_${i}`;
+                        for (let i = 1; i <= degree; i++) {
+                            const newPolyColName = `${independentCol}_poly_${i}`;
                             tempIndependentCols.push(newPolyColName);
                             tempRawData.forEach(row => {
-                                const originalValue = Number(row[polyIndependentCol]);
+                                const originalValue = Number(row[independentCol]);
                                 if (!isNaN(originalValue)) {
                                     row[newPolyColName] = Math.pow(originalValue, i);
                                 } else {
-                                    row[newPolyColName] = NaN;
+                                    row[newPolyColName] = NaN; // Mark as NaN if original is not a number
                                 }
                             });
                         }
 
-                        const regressionResult = calculateMultipleLinearRegression(polyDependentCol, tempIndependentCols, tempRawData);
+                        const regressionResult = calculateMultipleLinearRegression(dependentCol, tempIndependentCols, tempRawData);
 
                         if (regressionResult.error) {
                             aiResponseText = `Error performing polynomial regression: ${regressionResult.error}`;
                         } else {
                             let slopesHtml = '';
-                            for (const col of tempIndependentCols) {
+                            for (const col of tempIndependentCols) { // Use tempIndependentCols to iterate through generated columns
                                 slopesHtml += `<li><strong>${col}</strong>: ${regressionResult.slopes[col]}</li>`;
                             }
-                            aiResponseText = `**Polynomial Regression Results** (Y: ${polyDependentCol}, X: ${polyIndependentCol}, Degree: ${polyDegree}):<br>
+                            aiResponseText = `**Polynomial Regression Results** (Y: ${dependentCol}, X: ${independentCol}, Degree: ${degree}):<br>
                                             - **Intercept**: <strong>${regressionResult.intercept}</strong><br>
                                             - **Coefficients for polynomial terms**: <ul>${slopesHtml}</ul>
                                             - **R-squared**: <strong>${regressionResult.rSquared}</strong><br>
-                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${polyDependentCol}" using polynomial terms of "${polyIndependentCol}".`;
+                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${dependentCol}" using polynomial terms of "${independentCol}".`;
                         }
                     }
-                    break;
-                case 'PERFORM_KMEANS_CLUSTERING':
-                    const kmFeatures = params.features;
-                    const kmK = parseInt(params.k);
-                    const kmNewColName = params.new_column_name;
+                } else {
+                    aiResponseText = `I didn't understand the polynomial regression command format. Example: 'perform polynomial regression with Y as Sales and X as Advertising with degree 2'.`;
+                }
+            }
 
-                    const kmRequestedFeatureCols = kmFeatures.map(col => col.trim());
-                    const kmValidFeatureCols = kmRequestedFeatureCols.filter(name => findNumericColumn(name));
+            // --- New Command: K-Means Clustering ---
+            else if (lowerQuery.startsWith('perform k-means clustering on ') && lowerQuery.includes(' into ') && lowerQuery.includes(' clusters as ')) {
+                const regex = /perform k-means clustering on\s+([^,]+(?:,\s*[^,]+)*)\s+into\s+(\d+)\s+clusters as\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 4) {
+                    const featureColsString = match[1].trim();
+                    const k = parseInt(match[2].trim());
+                    const newColName = match[3].trim().replace(/\s/g, '_');
 
-                    if (kmValidFeatureCols.length !== kmRequestedFeatureCols.length) {
-                        aiResponseText = `One or more specified columns for clustering (${kmRequestedFeatureCols.filter(name => !findNumericColumn(name)).join(', ')}) are not found or not numeric.`;
+                    const requestedFeatureCols = featureColsString.split(',').map(col => col.trim());
+                    const validFeatureCols = requestedFeatureCols.filter(name => findNumericColumn(name));
+
+                    if (validFeatureCols.length !== requestedFeatureCols.length) {
+                        aiResponseText = `One or more specified columns for clustering (${requestedFeatureCols.filter(name => !findNumericColumn(name)).join(', ')}) are not found or not numeric.`;
                     } else {
-                        const clusteringResult = performKMeansClustering(kmValidFeatureCols, kmK, kmNewColName, rawData);
+                        const clusteringResult = performKMeansClustering(validFeatureCols, k, newColName, rawData);
                         if (clusteringResult.success) {
                             let distributionHtml = '<ul>';
                             for (const cluster in clusteringResult.distribution) {
@@ -2506,386 +2739,85 @@
                             aiResponseText = `Error performing K-Means clustering: ${clusteringResult.message}`;
                         }
                     }
-                    break;
-                case 'FILTER_DATA':
-                    const filterColName = params.column;
-                    const filterOperator = params.operator ? params.operator.toLowerCase() : '';
-                    const filterValue = params.value;
+                } else {
+                    aiResponseText = `I didn't understand the K-Means clustering command format. Example: 'perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment'.`;
+                }
+            }
 
-                    const fCol = findColumnByName(filterColName);
-                    if (!fCol) {
-                        aiResponseText = `Column "<strong>${filterColName}</strong>" not found for filtering.`;
-                        break;
-                    }
+            // --- New Command: Data Pivoting ---
+            else if (lowerQuery.startsWith('create pivot table with ') && lowerQuery.includes(' as rows, ') && lowerQuery.includes(' as columns, ') && lowerQuery.includes(' as values aggregated by ')) {
+                const regex = /create pivot table with\s+(.+)\s+as rows,\s+(.+)\s+as columns,\s+(.+)\s+as values aggregated by\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 5) {
+                    const indexCol = match[1].trim();
+                    const pivotCol = match[2].trim();
+                    const valueCol = match[3].trim();
+                    const aggType = match[4].trim();
 
-                    let filteredData;
-                    if (schema[fCol] === 'number') {
-                        const numValue = Number(filterValue);
-                        if (isNaN(numValue)) {
-                            aiResponseText = `Filter value for numeric column "${fCol}" must be a number.`;
-                            break;
-                        }
-                        filteredData = rawData.filter(row => {
-                            const rowValue = Number(row[fCol]);
-                            if (isNaN(rowValue)) return false; // Don't include rows with invalid numeric values
-
-                            switch (filterOperator) {
-                                case 'greater than': return rowValue > numValue;
-                                case 'less than': return rowValue < numValue;
-                                case 'equal to': return rowValue === numValue;
-                                case 'not equal to': return rowValue !== numValue;
-                                case 'greater than or equal to': return rowValue >= numValue;
-                                case 'less than or equal to': return rowValue <= numValue;
-                                default: return false;
-                            }
-                        });
-                    } else { // string column
-                        const lowerFilterValue = filterValue.toLowerCase();
-                        filteredData = rawData.filter(row => {
-                            const rowValue = String(row[fCol]).toLowerCase();
-                            switch (filterOperator) {
-                                case 'equal to': return rowValue === lowerFilterValue;
-                                case 'not equal to': return rowValue !== lowerFilterValue;
-                                case 'contains': return rowValue.includes(lowerFilterValue);
-                                case 'starts with': return rowValue.startsWith(lowerFilterValue);
-                                case 'ends with': return rowValue.endsWith(lowerFilterValue);
-                                default: return false;
-                            }
-                        });
-                    }
-
-                    if (filteredData.length > 0) {
-                        rawData = filteredData; // Update rawData with filtered results
-                        aiResponseText = `Successfully filtered the data! Your dataset now contains **${rawData.length} rows** based on the criteria: "<strong>${filterColName} ${filterOperator} ${filterValue}</strong>".`;
-                        analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** of your filtered data:</p>
-                                            <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>`;
+                    const pivotResult = createPivotTable(indexCol, pivotCol, valueCol, aggType, rawData);
+                    if (pivotResult.error) {
+                        aiResponseText = `Error creating pivot table: ${pivotResult.error}`;
                     } else {
-                        aiResponseText = `No rows matched your filtering criteria ("<strong>${filterColName} ${filterOperator} ${filterValue}</strong>"). Your dataset remains unchanged.`;
+                        aiResponseText = `Here's your **pivot table** for ${valueCol} aggregated by ${aggType}:`;
+                        analysisContent = `<div class="mt-4 overflow-x-auto">${pivotResult.tableHtml}</div>
+                                            <p class="mt-4 text-sm text-gray-400">This pivot table provides a summarized view of your data, transformed entirely client-side.</p>`;
                     }
-                    break;
-                case 'ADD_CALCULATED_COLUMN':
-                    const newCalcColName = params.new_column_name;
-                    const col1Name = params.column1;
-                    const operator = params.operator ? params.operator.toLowerCase() : '';
-                    const col2Name = params.column2;
+                } else {
+                    aiResponseText = `I didn't understand the pivot table command format. Example: 'create pivot table with Region as rows, Product_Category as columns, Sales as values aggregated by sum'.`;
+                }
+            }
+            // --- New Command: Data Unpivoting (Melt) ---
+            else if (lowerQuery.startsWith('unpivot data keeping ') && lowerQuery.includes(' and melting ') && lowerQuery.includes(' into new variable ') && lowerQuery.includes(' and value ')) {
+                const regex = /unpivot data keeping\s+(.+)\s+and melting\s+([^,]+(?:,\s*[^,]+)*)\s+into new variable\s+(.+)\s+and value\s+(.+)/i;
+                const match = query.match(regex);
+                if (match && match.length === 5) {
+                    const idColsString = match[1].trim();
+                    const colsToUnpivotString = match[2].trim();
+                    const newVarCol = match[3].trim();
+                    const newValCol = match[4].trim();
 
-                    const cCol1 = findNumericColumn(col1Name);
-                    const cCol2 = findNumericColumn(col2Name);
+                    const idCols = idColsString.split(',').map(col => col.trim());
+                    const colsToUnpivot = colsToUnpivotString.split(',').map(col => col.trim());
 
-                    if (Object.keys(schema).includes(newCalcColName)) {
-                        aiResponseText = `Column "<strong>${newCalcColName}</strong>" already exists. Please choose a different name for the new column.`;
-                        break;
-                    }
-                    if (!cCol1 || !cCol2) {
-                        aiResponseText = `Both columns ("<strong>${col1Name}</strong>" and "<strong>${col2Name}</strong>") must be numeric to perform a calculation.`;
-                        break;
-                    }
-
-                    rawData = rawData.map(row => {
-                        const val1 = Number(row[cCol1]);
-                        const val2 = Number(row[cCol2]);
-                        let result;
-                        if (isNaN(val1) || isNaN(val2)) {
-                            result = NaN; // Propagate NaN for invalid inputs
-                        } else {
-                            switch (operator) {
-                                case 'plus': result = val1 + val2; break;
-                                case 'minus': result = val1 - val2; break;
-                                case 'times': result = val1 * val2; break;
-                                case 'divided by':
-                                    result = val2 !== 0 ? val1 / val2 : NaN; // Handle division by zero
-                                    break;
-                                default: result = NaN;
-                            }
-                        }
-                        return { ...row, [newCalcColName]: isNaN(result) ? 'N/A' : result.toFixed(2) };
-                    });
-                    schema[newCalcColName] = 'number';
-                    displaySchema(schema);
-                    aiResponseText = `Successfully added a new column "<strong>${newCalcColName}</strong>" with the calculation of "<strong>${cCol1} ${operator} ${cCol2}</strong>".`;
-                    break;
-                case 'CATEGORIZE_NUMERIC_COLUMN':
-                    const catNumericCol = findNumericColumn(params.numeric_column);
-                    const catNumBins = parseInt(params.num_bins);
-                    const catNewColName = params.new_column_name;
-
-                    if (!catNumericCol) {
-                        aiResponseText = `Column "<strong>${params.numeric_column}</strong>" not found or is not numeric.`;
-                        break;
-                    }
-                    if (isNaN(catNumBins) || catNumBins <= 0) {
-                        aiResponseText = `Number of bins must be a positive integer.`;
-                        break;
-                    }
-                    const catResult = categorizeNumericColumn(catNumericCol, catNumBins, catNewColName, rawData);
-                    aiResponseText = catResult.message;
-                    break;
-                case 'REMOVE_DUPLICATE_ROWS':
-                    const removeDupResult = removeDuplicateRows(rawData);
-                    if (removeDupResult.success) {
-                        aiResponseText = `Successfully removed **${removeDupResult.removedCount} duplicate rows**. Your dataset now has **${rawData.length} rows**.`;
+                    const unpivotResult = unpivotData(idCols, colsToUnpivot, newVarCol, newValCol, rawData, schema);
+                    if (unpivotResult.success) {
+                        aiResponseText = unpivotResult.message;
+                        analysisContent = `<p class="text-gray-300 mt-2">Your data has been unpivoted successfully. Here's a preview of the **first 10 rows** of the transformed dataset:</p>
+                                            <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
+                                            <p class="text-sm text-gray-400 mt-2">The schema has also been updated to reflect these changes.</p>`;
                     } else {
-                        aiResponseText = `No duplicate rows were found or an error occurred.`;
+                        aiResponseText = `Error unpivoting data: ${unpivotResult.message}`;
                     }
-                    break;
-                case 'RENAME_COLUMN':
-                    const oldColName = params.old_name;
-                    const newColName = params.new_name;
-                    const renameResult = renameColumn(oldColName, newColName);
-                    aiResponseText = renameResult.message;
-                    break;
-                case 'SUMMARIZE_NUMERIC_BY_CATEGORICAL':
-                    const sumNumCol = findNumericColumn(params.numeric_column);
-                    const sumCatCol = findCategoricalColumn(params.categorical_column);
+                } else {
+                    aiResponseText = `I didn't understand the unpivot data command format. Example: 'unpivot data keeping ID and melting Q1_Sales, Q2_Sales, Q3_Sales into new variable Quarter and value Sales_Amount'.`;
+                }
+            }
 
-                    if (sumNumCol && sumCatCol) {
-                        const summaryData = groupByAndAggregate(rawData, sumCatCol, sumNumCol, 'sum');
-                        createChart('bar', `Total ${sumNumCol} by ${sumCatCol}`, summaryData.labels, summaryData.data, sumCatCol, `Total ${sumNumCol}`);
-                        return; // Charting functions append messages themselves
-                    } else {
-                        aiResponseText = `To summarize, I need a valid numeric column and a valid categorical column.`;
-                    }
-                    break;
-                case 'SHOW_OVERALL_BUSINESS_OVERVIEW':
-                    // Renamed the variable to avoid conflict
-                    const overallNumRows = rawData.length;
-                    const overallNumCols = Object.keys(schema).length;
-                    let overallDescriptionNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have <strong>${overallNumRows} rows</strong>, which means ${overallNumRows} individual records, and <strong>${overallNumCols} columns</strong>, representing ${overallNumCols} different types of information.</p>
-                                                 <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
-                                                 <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
 
-                    for (const col in schema) {
-                        overallDescriptionNarrative += `<li class="font-medium">${col}: (<span class="text-blue-400">${schema[col]}</span> type) `;
-                        const values = rawData.map(row => row[col]);
+            // Automated Insights
+            else if (lowerQuery.includes('show proactive insights') || lowerQuery.includes('what insights do you have?')) {
+                if (rawData.length === 0) {
+                    appendMessage('AI', 'Please upload a CSV file before I can generate proactive insights. I need data to analyze!', 'ai');
+                    return;
+                }
+                generateProactiveInsights(); // Re-generate insights (they are stored in lastProactiveInsights)
+                renderProactiveInsights(); // Render them with current filters (default to all, no search)
+                proactiveInsightsOverlay.classList.remove('hidden'); // Show the overlay
+                return; // Don't append an AI message to chat, the overlay handles it
+            }
 
-                        if (schema[col] === 'number') {
-                            const numericValues = values.map(Number).filter(n => !isNaN(n));
-                            const { min: minVal, max: maxVal } = calculateColumnMinMax(col, rawData);
-                            const avgVal = calculateColumnAverage(col, rawData);
-                            const medianVal = calculateMedian(col, rawData);
-                            const stdDevVal = calculateStandardDeviation(col, rawData);
-                            const quartiles = calculateQuartiles(col, rawData);
+            // Command Guide
+            else if (lowerQuery.includes('show command guide')) {
+                commandGuideOverlay.classList.remove('hidden');
+                commandGuideContent.innerHTML = getCommandListHtml();
+                toggleCommandGuideText.textContent = 'Hide Command Guide';
+                toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
+                return; // Don't append another AI message, the overlay handles it
+            }
 
-                            if (numericValues.length > 0) {
-                                overallDescriptionNarrative += `This column contains numerical data, ranging from <strong>${minVal}</strong> to <strong>${maxVal}</strong>, with an average value of approximately <strong>${avgVal.toFixed(2)}</strong>.`;
-                                if (medianVal !== null) overallDescriptionNarrative += ` The median is <strong>${medianVal.toFixed(2)}</strong>.`;
-                                if (stdDevVal !== null) overallDescriptionNarrative += ` Standard deviation is <strong>${stdDevVal.toFixed(2)}</strong>.`;
-                                if (quartiles.q1 !== null) overallDescriptionNarrative += ` Q1 is <strong>${quartiles.q1}</strong>, Q3 is <strong>${quartiles.q3}</strong>, and the IQR is <strong>${quartiles.iqr}</strong>.`;
-                                const correlationWithOtherNumerics = [];
-                                for (const otherCol in schema) {
-                                    if (otherCol !== col && schema[otherCol] === 'number') {
-                                        const corr = calculateCorrelation(col, otherCol, rawData);
-                                        if (corr !== null && !isNaN(corr)) {
-                                            correlationWithOtherNumerics.push(`${otherCol}: ${corr.toFixed(2)}`);
-                                        }
-                                    }
-                                }
-                                if (correlationWithOtherNumerics.length > 0) {
-                                    overallDescriptionNarrative += ` It shows correlations with other numeric columns: ${correlationWithOtherNumerics.join(', ')}.`;
-                                }
-                            } else {
-                                overallDescriptionNarrative += `This numeric column currently has no valid numerical entries.`;
-                            }
-                        } else { // string type
-                            const uniqueValues = [...new Set(values)];
-                            const valueCounts = {};
-                            values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
-                            const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
-                            overallDescriptionNarrative += `This column holds text information. I found <strong>${uniqueValues.length} unique values</strong>. The most frequent entries are: ${sortedCounts.slice(0, 5).map(item => `"${item[0]}" appearing ${item[1]} times`).join(', ')}.`;
-                        }
-                        overallDescriptionNarrative += `</li>`;
-                    }
-                    overallDescriptionNarrative += `</ul>`;
-                    analysisContent = overallDescriptionNarrative;
-                    aiResponseText = `Certainly! Here's a comprehensive overview and description of your dataset, crafted to give you quick insights. This analysis was performed entirely client-side, ensuring your data's privacy.`;
-                    break;
-                case 'SHOW_ALL_DATA':
-                    analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
-                                        <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
-                                        <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
-                    aiResponseText = `Understood! Here's your data:`;
-                    break;
-                case 'SHOW_SPECIFIC_COLUMN_DATA':
-                    const showColumnName = params.column;
-                    const foundShowColumn = findColumnByName(showColumnName);
-                    if (foundShowColumn) {
-                        const columnValues = rawData.map(row => row[foundShowColumn]);
-                        analysisContent = `<p class="text-gray-300 mt-2">Here are the **first 10 values** from the "<strong>${foundShowColumn}</strong>" column:</p>
-                                            <div class="code-block mt-2">${columnValues.slice(0, 10).join('\n')}</div>
-                                            <p class="text-sm text-gray-400 mt-2">There are ${columnValues.length} total values in this column.</p>`;
-                        aiResponseText = `Absolutely! Here's the data for column "${foundShowColumn}", retrieved instantly from your local dataset.`;
-                    } else {
-                        aiResponseText = `I couldn't find the column "<strong>${showColumnName}</strong>". Please check your column name.`;
-                    }
-                    break;
-                case 'COUNT_ROWS':
-                    const countRowsResult = rawData.length; // Ensure this is not 'numRows' to avoid re-declaration
-                    aiResponseText = `Your dataset currently contains **${countRowsResult} rows** (records).`; // Use the new variable
-                    break;
-                case 'DESCRIBE_DATASET': // This maps to SHOW_OVERALL_BUSINESS_OVERVIEW for now
-                    let describeNumRows = rawData.length; // This one is fine, already unique as 'describeNumRows'
-                    let describeNumCols = Object.keys(schema).length;
-                    let describeNarrative = `<p class="text-gray-300 leading-relaxed mb-3">Alright, let's take a look at your dataset. It appears you have <strong>${describeNumRows} rows</strong>, which means ${describeNumRows} individual records, and <strong>${describeNumCols} columns</strong>, representing ${describeNumCols} different types of information.</p>
-                                                 <h5 class="text-md font-semibold mt-3 mb-2 text-gray-200">Here's a breakdown of what I found in each column:</h5>
-                                                 <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">`;
-
-                    for (const col in schema) {
-                        describeNarrative += `<li class="font-medium">${col}: (<span class="text-blue-400">${schema[col]}</span> type) `;
-                        const values = rawData.map(row => row[col]);
-
-                        if (schema[col] === 'number') {
-                            const numericValues = values.map(Number).filter(n => !isNaN(n));
-                            const { min: minVal, max: maxVal } = calculateColumnMinMax(col, rawData);
-                            const avgVal = calculateColumnAverage(col, rawData);
-                            const medianVal = calculateMedian(col, rawData);
-                            const stdDevVal = calculateStandardDeviation(col, rawData);
-                            const quartiles = calculateQuartiles(col, rawData);
-
-                            if (numericValues.length > 0) {
-                                describeNarrative += `This column contains numerical data, ranging from <strong>${minVal}</strong> to <strong>${maxVal}</strong>, with an average value of approximately <strong>${avgVal.toFixed(2)}</strong>.`;
-                                if (medianVal !== null) describeNarrative += ` The median is <strong>${medianVal.toFixed(2)}</strong>.`;
-                                if (stdDevVal !== null) describeNarrative += ` Standard deviation is <strong>${stdDevVal.toFixed(2)}</strong>.`;
-                                if (quartiles.q1 !== null) describeNarrative += ` Q1 is <strong>${quartiles.q1}</strong>, Q3 is <strong>${quartiles.q3}</strong>, and the IQR is <strong>${quartiles.iqr}</strong>.`;
-                                const correlationWithOtherNumerics = [];
-                                for (const otherCol in schema) {
-                                    if (otherCol !== col && schema[otherCol] === 'number') {
-                                        const corr = calculateCorrelation(col, otherCol, rawData);
-                                        if (corr !== null && !isNaN(corr)) {
-                                            correlationWithOtherNumerics.push(`${otherCol}: ${corr.toFixed(2)}`);
-                                        }
-                                    }
-                                }
-                                if (correlationWithOtherNumerics.length > 0) {
-                                    describeNarrative += ` It shows correlations with other numeric columns: ${correlationWithOtherNumerics.join(', ')}.`;
-                                }
-                            } else {
-                                describeNarrative += `This numeric column currently has no valid numerical entries.`;
-                            }
-                        } else { // string type
-                            const uniqueValues = [...new Set(values)];
-                            const valueCounts = {};
-                            values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
-                            const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
-                            describeNarrative += `This column holds text information. I found <strong>${uniqueValues.length} unique values</strong>. The most frequent entries are: ${sortedCounts.slice(0, 5).map(item => `"${item[0]}" appearing ${item[1]} times`).join(', ')}.`;
-                        }
-                        describeNarrative += `</li>`;
-                    }
-                    describeNarrative += `</ul>`;
-                    analysisContent = describeNarrative;
-                    aiResponseText = `Certainly! Here's a comprehensive overview and description of your dataset, crafted to give you quick insights. This analysis was performed entirely client-side, ensuring your data's privacy.`;
-                    break;
-                case 'SHOW_SCHEMA':
-                    analysisContent = `<p class="text-gray-300 mt-2">Here's the **schema I inferred** from your uploaded data:</p>
-                                        <div class="code-block mt-2">${JSON.stringify(schema, null, 2)}</div>`;
-                    aiResponseText = `Certainly! I've extracted the schema for you. All schema inference happens privately in your browser.`;
-                    break;
-                case 'SHOW_BAR_CHART':
-                    const barNumericCol = findNumericColumn(params.numeric_column);
-                    const barCategoricalCol = findCategoricalColumn(params.categorical_column);
-                    const barAggregateType = params.aggregate_type || 'sum'; // Default to sum
-
-                    if (barNumericCol && barCategoricalCol) {
-                        const chartData = groupByAndAggregate(rawData, barCategoricalCol, barNumericCol, barAggregateType);
-                        createChart('bar', `${barAggregateType.charAt(0).toUpperCase() + barAggregateType.slice(1)} ${barNumericCol} by ${barCategoricalCol}`, chartData.labels, chartData.data, barCategoricalCol, `${barAggregateType.charAt(0).toUpperCase() + barAggregateType.slice(1)} ${barNumericCol}`);
-                        return;
-                    } else {
-                        aiResponseText = `To create a bar chart, I need a valid numeric column and a valid categorical column.`;
-                    }
-                    break;
-                case 'SHOW_LINE_CHART':
-                    const lineXCol = findColumnByName(params.x_column);
-                    const lineYCol = findNumericColumn(params.y_column);
-
-                    if (lineXCol && lineYCol) {
-                        const chartLabels = rawData.map(row => row[lineXCol]);
-                        const chartData = rawData.map(row => Number(row[lineYCol])).filter(n => !isNaN(n)); // Filter out NaNs
-                        createChart('line', `${lineYCol} over ${lineXCol}`, chartLabels, chartData, lineXCol, lineYCol);
-                        return;
-                    } else {
-                        aiResponseText = `To create a line chart, I need a valid X-axis column and a valid numeric Y-axis column.`;
-                    }
-                    break;
-                case 'SHOW_SCATTER_PLOT':
-                    const scatterXCol = findNumericColumn(params.x_column);
-                    const scatterYCol = findNumericColumn(params.y_column);
-
-                    if (scatterXCol && scatterYCol) {
-                        const scatterData = rawData.map(row => ({
-                            x: Number(row[scatterXCol]),
-                            y: Number(row[scatterYCol])
-                        })).filter(point => !isNaN(point.x) && !isNaN(point.y));
-                        createChart('scatter', `Scatter Plot of ${scatterYCol} vs ${scatterXCol}`, scatterData.map(d => d.x), scatterData.map(d => d.y), scatterXCol, scatterYCol);
-                        return;
-                    } else {
-                        aiResponseText = `To create a scatter plot, I need two valid numeric columns.`;
-                    }
-                    break;
-                case 'SHOW_PIE_CHART':
-                case 'SHOW_DOUGHNUT_CHART':
-                case 'SHOW_POLAR_AREA_CHART':
-                    const chartType = func.replace('SHOW_', '').replace('_CHART', '').toLowerCase(); // e.g., 'pie', 'doughnut'
-                    let labels, chartData;
-                    let title = '';
-
-                    if (params.column) { // Case: show pie chart of [column] (for categorical distribution)
-                        const pieCol = findCategoricalColumn(params.column);
-                        if (!pieCol) {
-                            aiResponseText = `Column "<strong>${params.column}</strong>" not found or is not categorical for a ${chartType} chart.`;
-                            break;
-                        }
-                        const valueCounts = {};
-                        rawData.map(row => row[pieCol]).forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
-                        labels = Object.keys(valueCounts);
-                        chartData = Object.values(valueCounts);
-                        title = `Distribution of ${pieCol}`;
-                    } else if (params.numeric_column && params.categorical_column) { // Case: show pie chart of [numeric_col] by [categorical_col]
-                        const pieNumericCol = findNumericColumn(params.numeric_column);
-                        const pieCategoricalCol = findCategoricalColumn(params.categorical_column);
-                        const pieAggregateType = params.aggregate_type || 'sum';
-
-                        if (!pieNumericCol || !pieCategoricalCol) {
-                            aiResponseText = `To create a ${chartType} chart by aggregation, I need a valid numeric and a valid categorical column.`;
-                            break;
-                        }
-                        const aggregated = groupByAndAggregate(rawData, pieCategoricalCol, pieNumericCol, pieAggregateType);
-                        labels = aggregated.labels;
-                        chartData = aggregated.data;
-                        title = `${pieAggregateType.charAt(0).toUpperCase() + pieAggregateType.slice(1)} ${pieNumericCol} by ${pieCategoricalCol}`;
-                    } else {
-                        aiResponseText = `I didn't understand the command for a ${chartType} chart. Please specify a column for categorical distribution, or a numeric column and a categorical column for aggregation.`;
-                        break;
-                    }
-
-                    if (labels.length > 0 && chartData.length > 0) {
-                        createChart(chartType, title, labels, chartData);
-                        return;
-                    } else {
-                        aiResponseText = `Not enough valid data to create a ${chartType} chart for the specified columns.`;
-                    }
-                    break;
-                case 'DOWNLOAD_MODIFIED_DATASET':
-                    downloadCSV();
-                    return; // downloadCSV already appends a message
-                case 'SHOW_PROACTIVE_INSIGHTS':
-                    if (rawData.length === 0) {
-                        aiResponseText = 'Please upload a CSV file before I can generate proactive insights. I need data to analyze!';
-                    } else {
-                        generateProactiveInsights(); // Re-generate insights (they are stored in lastProactiveInsights)
-                        renderProactiveInsights(); // Render the insights into the overlay
-                        proactiveInsightsOverlay.classList.remove('hidden'); // Show the overlay
-                        return; // Don't append an AI message to chat, the overlay handles it
-                    }
-                    break;
-                case 'SHOW_COMMAND_GUIDE':
-                    commandGuideOverlay.classList.remove('hidden');
-                    commandGuideContent.innerHTML = getCommandListHtml();
-                    toggleCommandGuideText.textContent = 'Hide Command Guide';
-                    toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
-                    return; // Don't append another AI message, the overlay handles it
-                case 'NO_ACTION_NEEDED':
-                default:
-                    aiResponseText = `I'm sorry, I didn't understand that command. ${params && params.reason ? `(Reason: ${params.reason}).` : ''} Please refer to the command list by typing 'show command guide' for examples, or try rephrasing your request.`;
-                    break;
+            // Unrecognized command
+            else {
+                aiResponseText = `I'm sorry, I didn't understand that command. Please refer to the command list by typing 'show command guide' for examples, or try rephrasing your request.`;
             }
             
             appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
