@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -381,7 +380,7 @@
         </div>
         <div id="proactiveInsightsContent" class="flex-grow text-gray-200">
             <!-- Proactive insights content will be inserted here -->
-            <p class="text-gray-400 text-center py-4">Upload a CSV file to generate proactive insights.</p>
+            <p class="text-gray-400 text-center py-4">No proactive insights available yet. Upload a CSV file to generate proactive insights.</p>
         </div>
     </div>
 
@@ -1005,6 +1004,7 @@
         csvFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
+                // Update upload status immediately
                 fileNameDisplay.textContent = `File: ${file.name}`;
                 uploadStatus.textContent = 'Loading and parsing...';
                 uploadStatus.className = 'mt-1 text-xs font-semibold text-blue-400 animate-pulse';
@@ -1015,7 +1015,8 @@
                         rawData = parseCSV(e.target.result);
                         schema = inferSchema(rawData);
                         displaySchema(schema);
-                        uploadStatus.textContent = `Successfully loaded ${rawData.length} rows.`;
+                        // Updated success message
+                        uploadStatus.textContent = `Your ${file.name} has been uploaded successfully and is ready to perform analysis on.`;
                         uploadStatus.className = 'mt-1 text-xs font-semibold text-green-500';
 
                         // Proactively check for data cleaning needs
@@ -1434,7 +1435,7 @@
                                 }
                                 messageToUser += `<br>_You can find more details and suggested actions in "Proactive Insights"._`;
 
-                                appendMessage('AI', messageToUser, 'ai'); // This is the new direct alert in chat
+                                // Removed: appendMessage('AI', messageToUser, 'ai'); // This was the direct alert in chat
 
                                 insights.push({
                                     type: 'anomaly',
