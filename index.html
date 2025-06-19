@@ -36,6 +36,16 @@
             z-index: 0;
         }
 
+        .bubble {
+            position: absolute;
+            display: block;
+            list-style: none;
+            border-radius: 50%;
+            background-color: rgba(66, 153, 225, 0.1); /* Subtle blue bubbles */
+            animation: bubble-flow 25s linear infinite;
+            bottom: -150px; /* Start below the viewport */
+        }
+
         .bubble:nth-child(1) { width: 80px; height: 80px; left: 15%; top: 10%; animation-duration: 22s; opacity: 0.05; }
         .bubble:nth-child(2) { width: 120px; height: 120px; left: 35%; top: 80%; animation-duration: 25s; opacity: 0.04; }
         .bubble:nth-child(3) { width: 90px; height: 90px; left: 70%; top: 15%; animation-duration: 19s; opacity: 0.06; }
@@ -327,6 +337,21 @@
         .collapsible-content.show {
             max-height: 500px; /* Adjust as needed for content */
         }
+
+        /* Loading spinner for buttons */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="relative bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center h-screen w-screen">
@@ -411,6 +436,11 @@
             <div class="relative flex items-center space-x-3 px-8 pb-6 pt-4"> <!-- Adjusted padding for input area -->
                 <input type="text" id="chatInput" placeholder="Ask CoDA a question about your data, e.g., 'Show me the average sales'..." class="flex-grow p-4 border border-gray-600 bg-gray-700 text-gray-200 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-600 shadow-lg text-base transition duration-300 ease-in-out">
                 <div id="suggestionsContainer" class="suggestions-container"></div> <!-- Suggestions container -->
+                <button id="generateDataStoryBtn" class="send-button-gradient text-white p-4 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2">
+                    <i class="fas fa-magic text-xl"></i>
+                    <span>Generate Data Story ✨</span>
+                    <div id="dataStorySpinner" class="spinner ml-2 hidden"></div>
+                </button>
                 <button id="sendMessageBtn" class="send-button-gradient text-white p-4 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
                     <i class="fas fa-paper-plane text-xl"></i>
                 </button>
@@ -502,6 +532,9 @@
         const closeProactiveInsightsBtn = document.getElementById('closeProactiveInsightsBtn');
         const insightSearchInput = document.getElementById('insightSearchInput');
         const filterButtons = document.querySelectorAll('.filter-btn');
+        const generateDataStoryBtn = document.getElementById('generateDataStoryBtn'); // New: Data Story button
+        const dataStorySpinner = document.getElementById('dataStorySpinner'); // New: Spinner for Data Story button
+
 
         let isHeaderShrunk = false; // New flag to track header state
 
@@ -936,7 +969,7 @@
                 { category: 'Data Transformation & Reshaping', sr: 37, command: 'Create Pivot Table', example: '<code>create pivot table with [row_col] as rows, [column_col] as columns, [value_col] as values aggregated by [sum/average/count]</code> (e.g., <code>create pivot table with Region as rows, Product_Category as columns, Sales as values aggregated by sum</code>)' },
                 { category: 'Data Transformation & Reshaping', sr: 38, command: 'Unpivot/Melt Data', example: '<code>unpivot data keeping [id_col(s)] and melting [col1], [col2], ... into new variable [new_var_col] and value [new_val_col]</code> (e.g., <code>unpivot data keeping ID and melting Q1_Sales, Q2_Sales, Q3_Sales into new variable Quarter and value Sales_Amount</code>)' },
                 { category: 'Proactive Insights', sr: 39, command: 'Show Proactive Insights', example: '<code>show proactive insights</code> or <code>what insights do you have?</code>' },
-                { category: 'Reporting & Storytelling', sr: 40, command: 'Generate Data Story / Create Report', example: '<code>generate data story</code> or <code>create report</code>' },
+                { category: 'Reporting & Storytelling', sr: 40, command: 'Generate Data Story / Create Report', example: 'Click the "Generate Data Story ✨" button' }, // Updated example for the button
             ];
 
             const lowerSearchTerm = searchTerm.toLowerCase();
@@ -1285,7 +1318,7 @@
         // New Feature: Rename column
         function renameColumn(oldName, newName) {
             const actualOldName = findColumnByName(oldName);
-            if (!actualOldOldName) {
+            if (!actualOldName) {
                 return { success: false, message: `Column "<strong>${oldName}</strong>" not found.` };
             }
             if (Object.keys(schema).includes(newName)) {
@@ -1988,8 +2021,7 @@
             while (indices.size < numCentroidsToPick) {
                 const randomIndex = Math.floor(Math.random() * dataLength);
                 if (!indices.has(randomIndex)) {
-                    indices.add(randomIndex);
-                    centroids.push([...dataPoints[randomIndex]]); // Copy the point
+                    indices.push(dataPoints[randomIndex]); // Changed to push the point directly
                 }
             }
             return centroids;
@@ -2048,7 +2080,9 @@
                 } else {
                     // Handle empty cluster: re-initialize random point or a point furthest from other centroids
                     // For simplicity in a prototype, we'll re-initialize it to a random data point
-                    newCentroids[i] = dataPoints[Math.floor(Math.random() * dataPoints.length)];
+                    // This might lead to issues with small datasets or very specific distributions.
+                    // A more robust solution might involve picking a data point furthest from existing centroids.
+                    newCentroids[i] = dataPoints[Math.floor(Math.random() * dataPoints.length)].slice(); // Ensure deep copy
                 }
             }
             return newCentroids;
@@ -2295,7 +2329,7 @@
 
 
         // Simulate AI response based on direct command matching (NLU removed)
-        function simulateAIResponse(query, isResort = false) {
+        async function simulateAIResponse(query, isResort = false) { // Made async for Gemini API call
             let aiResponseText = '';
             let analysisContent = '';
             const lowerQuery = query.toLowerCase();
@@ -3055,35 +3089,9 @@
             }
             // New: Automated Report Generation & Data Storytelling
             else if (lowerQuery.includes('generate data story') || lowerQuery.includes('create report')) {
-                if (rawData.length === 0) {
-                    appendMessage('AI', 'Please upload a CSV file before I can generate a data story. I need data to tell a story about!', 'ai');
-                    return;
-                }
-                const reportResult = generateDataStory(); // This function is not provided in current context, assuming it exists externally
-                if (reportResult && reportResult.success) {
-                    aiResponseText = `Here's a concise **Data Story** based on your loaded dataset. This provides a high-level narrative of key findings.<br>`;
-                    analysisContent = `<div class="bg-gray-700 p-6 rounded-lg mt-4 shadow-xl overflow-y-auto custom-scrollbar max-h-[400px] text-gray-200">${reportResult.reportHtml}</div>
-                                        <button id="downloadDataStoryBtn" class="send-button-gradient text-white p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-base font-bold mx-auto">
-                                            <i class="fas fa-file-download"></i>
-                                            <span>Download Data Story (.txt)</span>
-                                        </button>`;
-                    // Add event listener for the download button after it's rendered
-                    setTimeout(() => {
-                        const downloadBtn = document.getElementById('downloadDataStoryBtn');
-                        if (downloadBtn) {
-                            downloadBtn.addEventListener('click', () => {
-                                // Make sure downloadDataStory function is defined
-                                if (typeof downloadDataStory === 'function') {
-                                    downloadDataStory(reportResult.reportHtml.replace(/<[^>]*>/g, '')); // Remove HTML tags for plain text download
-                                } else {
-                                    console.error("downloadDataStory function is not defined.");
-                                }
-                            });
-                        }
-                    }, 0); // Use setTimeout to ensure the button is in DOM
-                } else {
-                    aiResponseText = `Error generating data story: ${reportResult ? reportResult.message : 'Unknown error.'}`;
-                }
+                // This command is now handled by the dedicated button
+                // If typed, we can simulate a click on the button or just tell the user to click the button.
+                aiResponseText = `Please click the "Generate Data Story ✨" button to get an AI-powered data story.`;
             }
 
 
@@ -3175,66 +3183,158 @@
         // Initial schema display
         displaySchema(schema);
 
-        // Placeholder for generateDataStory and downloadDataStory, if not provided elsewhere.
-        // In a real application, these would be defined or imported.
-        function generateDataStory() {
-            // This is a placeholder. You would implement logic to generate a narrative report here.
-            // For example, summarize key insights from `lastProactiveInsights`,
-            // or generate descriptions based on descriptive statistics, top values, etc.
+
+        // --- Gemini API Integration for Data Story ---
+        generateDataStoryBtn.addEventListener('click', async () => {
+            if (rawData.length === 0) {
+                appendMessage('AI', 'Please upload a CSV file before I can generate a data story. I need data to analyze!', 'ai');
+                return;
+            }
+
+            // Show loading spinner
+            generateDataStoryBtn.disabled = true;
+            dataStorySpinner.classList.remove('hidden');
+            generateDataStoryBtn.querySelector('span').textContent = 'Generating...';
+
+            try {
+                const reportResult = await generateAIDataStory(); // Call the AI-powered function
+                if (reportResult && reportResult.success) {
+                    let aiResponseText = `Here's a concise **Data Story** based on your loaded dataset. This provides a high-level narrative of key findings:<br>`;
+                    let analysisContent = `<div class="bg-gray-700 p-6 rounded-lg mt-4 shadow-xl overflow-y-auto custom-scrollbar max-h-[400px] text-gray-200">${reportResult.reportHtml}</div>
+                                            <button id="downloadDataStoryBtn" class="send-button-gradient text-white p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-base font-bold mx-auto">
+                                                <i class="fas fa-file-download"></i>
+                                                <span>Download Data Story (.txt)</span>
+                                            </button>`;
+                    appendMessage('AI', aiResponseText + analysisContent, 'ai');
+
+                    // Add event listener for the download button after it's rendered
+                    setTimeout(() => {
+                        const downloadBtn = document.getElementById('downloadDataStoryBtn');
+                        if (downloadBtn) {
+                            downloadBtn.addEventListener('click', () => {
+                                // Remove markdown/HTML tags for plain text download
+                                const plainTextContent = reportResult.reportHtml.replace(/<[^>]*>/g, '').replace(/\*\*/g, '').replace(/###/g, '').replace(/##/g, '').replace(/#/g, '').replace(/^- /gm, ' ');
+                                downloadDataStoryFile(plainTextContent);
+                            });
+                        }
+                    }, 0); // Use setTimeout to ensure the button is in DOM
+                } else {
+                    appendMessage('AI', `Error generating data story: ${reportResult ? reportResult.message : 'Unknown error.'}`, 'ai');
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                appendMessage('AI', `I encountered an error while trying to generate the data story. Please try again later. Details: ${error.message}`, 'ai');
+            } finally {
+                // Hide loading spinner and re-enable button
+                generateDataStoryBtn.disabled = false;
+                dataStorySpinner.classList.add('hidden');
+                generateDataStoryBtn.querySelector('span').textContent = 'Generate Data Story ✨';
+            }
+        });
+
+
+        async function generateAIDataStory() {
             if (rawData.length === 0) {
                 return { success: false, message: "No data loaded to generate a story." };
             }
 
-            let storyHtml = `<h3 class="text-2xl font-bold text-blue-400 mb-4">Your Data Story: Initial Overview</h3>
-                            <p class="mb-4">This report provides a high-level summary of your dataset and key insights.</p>`;
+            let promptParts = [];
 
+            // 1. Dataset Summary
             const numRows = rawData.length;
             const numCols = Object.keys(schema).length;
-            storyHtml += `<h4 class="text-xl font-semibold text-gray-300 mb-2">Dataset Summary:</h4>
-                          <p class="mb-4">Your dataset contains <strong>${numRows} rows</strong> and <strong>${numCols} columns</strong>.</p>`;
+            promptParts.push(`Dataset Summary:\n- Rows: ${numRows}\n- Columns: ${numCols}`);
 
+            // 2. Schema Information
+            const schemaText = Object.entries(schema).map(([col, type]) => `${col} (${type})`).join(', ');
+            promptParts.push(`\nData Schema: ${schemaText}`);
+
+            // 3. Key Numeric Statistics (select up to 3 numeric columns for detailed stats)
             const numericColumns = Object.keys(schema).filter(col => schema[col] === 'number');
             if (numericColumns.length > 0) {
-                storyHtml += `<h4 class="text-xl font-semibold text-gray-300 mb-2">Key Numeric Trends:</h4><ul>`;
+                let numericStats = `\nKey Numeric Statistics (selected columns):\n`;
                 numericColumns.slice(0, 3).forEach(col => {
                     const stats = getDescriptiveStats(col, rawData);
                     if (stats) {
-                        storyHtml += `<li><strong>${col}</strong>: Average of ${stats.mean.toFixed(2)}, ranging from ${stats.min.toFixed(2)} to ${stats.max.toFixed(2)}.</li>`;
+                        numericStats += `- ${col}: Average ${stats.mean.toFixed(2)}, Min ${stats.min.toFixed(2)}, Max ${stats.max.toFixed(2)}, StdDev ${stats.stdDev.toFixed(2)}.\n`;
                     }
                 });
-                storyHtml += `</ul>`;
+                promptParts.push(numericStats);
             }
 
-            if (lastProactiveInsights.length > 0) {
-                storyHtml += `<h4 class="text-xl font-semibold text-gray-300 mt-4 mb-2">Highlighted Insights:</h4>`;
-                lastProactiveInsights.slice(0, 5).forEach(insight => { // Include top 5 insights
-                    storyHtml += `<div class="insight-card p-4 my-2 border border-gray-600 rounded-lg">
-                                    <h5 class="font-bold text-blue-300 mb-1 flex items-center"><i class="${insight.icon} mr-2"></i>${insight.title}</h5>
-                                    <p class="text-sm text-gray-300">${insight.message.split('<br>')[0].replace('<strong>', '').replace('</strong>', '')}</p>
-                                  </div>`;
+            // 4. Top Categorical Distributions (select up to 3 categorical columns)
+            const categoricalColumns = Object.keys(schema).filter(col => schema[col] === 'string');
+            if (categoricalColumns.length > 0) {
+                let categoricalDist = `\nTop Categorical Distributions (selected columns):\n`;
+                categoricalColumns.slice(0, 3).forEach(col => {
+                    const { labels, data: counts } = getFrequencyDistribution(col, rawData);
+                    if (labels.length > 0) {
+                        const topValues = labels.slice(0, Math.min(3, labels.length)).map((label, i) => `${label} (${((counts[i]/numRows)*100).toFixed(1)}%)`).join(', ');
+                        categoricalDist += `- ${col}: Top values are ${topValues}.\n`;
+                    }
                 });
-                storyHtml += `<p class="mt-4">For a full list and details, click "Show Proactive Insights".</p>`;
-            } else {
-                storyHtml += `<p class="mt-4 text-gray-400">No specific proactive insights generated yet. Upload data and look for the "Show Proactive Insights" button!</p>`;
+                promptParts.push(categoricalDist);
             }
 
-            storyHtml += `<p class="mt-6 text-gray-400 italic">This story is automatically generated and provides a starting point for your analysis.</p>`;
+            // 5. Proactive Insights
+            if (lastProactiveInsights.length > 0) {
+                let insightsSummary = `\nKey Proactive Insights Detected:\n`;
+                lastProactiveInsights.slice(0, 5).forEach(insight => { // Summarize top 5 insights
+                    insightsSummary += `- **${insight.title}**: ${insight.message.split('<br>')[0].replace('<strong>', '').replace('</strong>', '')}\n`;
+                });
+                promptParts.push(insightsSummary);
+            }
 
-            return { success: true, reportHtml: storyHtml };
+            const fullPrompt = `You are a highly analytical and articulate data analysis assistant. Your task is to generate a concise, engaging, and professional "Data Story" or executive summary based on the following information derived from a CSV dataset. Focus on highlighting key findings, significant trends, and any detected anomalies. The audience is a business executive who needs quick, actionable insights.\n\n` +
+                                `Please structure the story with a compelling title, a brief introduction, main findings (using subheadings like 'Dataset Overview', 'Key Numeric Insights', 'Categorical Breakdown', 'Anomalies & Trends'), and a concluding summary. Use markdown formatting (bolding, bullet points, headings) to make it highly readable. Aim for a length of approximately 200-400 words. Keep it strictly about the provided data, without inventing external factors or assumptions.\n\n` +
+                                promptParts.join('\n\n') +
+                                `\n\nStart your response with the title.`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: fullPrompt }] });
+
+            try {
+                const apiKey = "AIzaSyBtndkNaFZQRsGj2art_AAXWO8I3pcRxHU"; // Canvas will provide this at runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} ${response.statusText} - ${errorData.error ? errorData.error.message : 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiGeneratedText = result.candidates[0].content.parts[0].text;
+                    return { success: true, reportHtml: aiGeneratedText }; // Return as plain text, will be rendered as markdown in UI
+                } else {
+                    return { success: false, message: "No valid response from AI for data story." };
+                }
+            } catch (error) {
+                console.error("Error during AI data story generation:", error);
+                return { success: false, message: `Failed to generate AI data story: ${error.message}` };
+            }
         }
 
-        function downloadDataStory(text) {
+        function downloadDataStoryFile(text) {
             const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
-            link.setAttribute('download', 'CoDA_Data_Story.txt');
+            link.setAttribute('download', 'CoDA_AI_Data_Story.txt');
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            appendMessage('AI', 'Your data story has been downloaded as **CoDA_Data_Story.txt**!', 'ai');
+            appendMessage('AI', 'Your AI-generated data story has been downloaded as **CoDA_AI_Data_Story.txt**!', 'ai');
         }
     </script>
 </body>
