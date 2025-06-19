@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter (for body) & Roboto Mono (for code) -->
-    <link href="https="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:400;500;700&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Chart.js CDN for graphing - UPDATED to a specific v4.x version to avoid 'extend' errors from deprecated methods -->
@@ -177,6 +177,62 @@
             color: #4299e1;
         }
 
+        /* Command Guide Specific Styles */
+        .command-guide-intro {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #cbd5e0; /* text-gray-200 */
+            margin-bottom: 1rem;
+        }
+
+        /* Updated Category Header Styling */
+        .command-table .category-header {
+            background-color: #3e4c5e; /* A muted, slightly lighter dark gray */
+            color: #e2e8f0; /* Light text for blending */
+            font-weight: 600; /* Slightly less bold */
+            padding: 0.6rem 0.75rem; /* Adjusted padding for a tighter, modern feel */
+            border-radius: 0.375rem; /* Slightly less rounded corners */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Softer shadow */
+            margin-top: 0.75rem; /* Slightly reduced spacing */
+            margin-bottom: 0.25rem; /* Reduced spacing below */
+        }
+        .command-table .category-header td {
+            border-bottom: none; /* No border below category header */
+            padding: 0.6rem 0.75rem; /* Apply padding to td within category header */
+        }
+        .command-table tbody tr td:first-child {
+            font-weight: 500; /* Medium weight for Sr. No. */
+            color: #a0aec0; /* Lighter grey for number */
+        }
+        .command-table code {
+            background-color: #4a5568; /* Darker background for code snippets */
+            color: #90cdf4; /* Light blue text for code */
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.3rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.875rem; /* text-sm */
+        }
+        /* Search input specific styles for command guide */
+        #commandSearchInput {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #4a5568;
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+            transition: all 0.2s ease-in-out;
+        }
+        #commandSearchInput::placeholder {
+            color: #a0aec0;
+        }
+        #commandSearchInput:focus {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.4);
+            outline: none;
+        }
+
 
         /* Styles for shrunk header */
         .header-shrunk {
@@ -289,7 +345,7 @@
         <!-- This pane is now conditionally hidden/shown by JavaScript, default hidden on md+ -->
         <div id="data-panel" class="p-8 flex-col border-r border-gray-700 bg-gray-800 rounded-l-3xl shadow-inner-dark overflow-y-auto custom-scrollbar hidden md:w-0 md:hidden">
             <h2 class="text-4xl font-extrabold text-blue-400 mb-2 text-center tracking-tight">CoDA <span class="text-blue-600">AI</span></h2>
-            <p class="text-md text-gray-400 mb-2 text-center italic">Your Private, Conversational Data Analyst</p>
+            <p class="text-md text-gray-400 mb-2 text-center italic">Your Strategic Data Copilot</p>
             <p class="text-sm text-gray-500 mb-6 text-center">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
             <div class="mb-4 border-2 border-dashed border-blue-600 bg-gray-700 rounded-2xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
@@ -326,7 +382,7 @@
         <div id="chat-panel" class="w-full flex flex-col bg-gray-900 rounded-3xl">
             <div id="headerContainer" class="px-8 pt-6 pb-2 transition-all duration-500 ease-in-out"> <!-- Condensed padding for header content -->
                 <h2 class="text-4xl font-extrabold text-blue-400 mb-1 text-center tracking-tight" id="mainTitle">CoDA <span class="text-blue-600">AI</span></h2>
-                <p class="text-md text-gray-400 mb-1 text-center italic" id="subTitle">Your Private, Conversational Data Analyst</p>
+                <p class="text-md text-gray-400 mb-1 text-center italic" id="subTitle">Your Strategic Data Copilot</p>
                 <p class="text-sm text-gray-500 mb-4 text-center" id="createdBy">Created by: <span class="font-semibold text-blue-300">Utkarsh Kumar</span></p>
 
                 <!-- Toggle Buttons for Data Panel and Command Guide - Positioned together and left-aligned -->
@@ -370,6 +426,8 @@
                 <i class="fas fa-times mr-2"></i> <span>Close Guide</span>
             </button>
         </div>
+        <!-- Search Input for Command Guide -->
+        <input type="text" id="commandSearchInput" placeholder="Search commands..." class="mb-4">
         <div id="commandGuideContent" class="flex-grow text-gray-200">
             <!-- Command guide content will be inserted here -->
         </div>
@@ -434,6 +492,7 @@
         const toggleCommandGuideBtn = document.getElementById('toggleCommandGuideBtn');
         const commandGuideOverlay = document.getElementById('commandGuideOverlay');
         const commandGuideContent = document.getElementById('commandGuideContent');
+        const commandSearchInput = document.getElementById('commandSearchInput'); // Added reference
         const closeCommandGuideBtn = document.getElementById('closeCommandGuideBtn');
         const toggleCommandGuideText = document.getElementById('toggleCommandGuideText');
         const headerContainer = document.getElementById('headerContainer');
@@ -836,282 +895,94 @@
         }
 
         // Function to get the HTML for the command list table
-        function getCommandListHtml() {
-            return `<p class="leading-relaxed mb-4">I'm ready to help with your data analysis! Here's a quick guide to what I can do:</p>
+        function getCommandListHtml(searchTerm = '') { // Added searchTerm parameter
+            const allCommands = [ // Define all commands as an array of objects
+                { category: 'General Overview', sr: 1, command: 'Show all data', example: '<code>show all data</code>' },
+                { category: 'General Overview', sr: 2, command: 'Show specific column data', example: '<code>show [column name]</code> (e.g., <code>show City</code>)' },
+                { category: 'General Overview', sr: 3, command: 'Count rows', example: '<code>count rows</code>' },
+                { category: 'General Overview', sr: 4, command: 'Describe dataset', example: '<code>describe my dataset</code>' },
+                { category: 'General Overview', sr: 5, command: 'Show schema', example: '<code>show schema</code>' },
+                { category: 'Statistical Analysis', sr: 6, command: 'Sum a numeric column', example: '<code>sum [numeric column]</code> (e.g., <code>sum sales</code>)' },
+                { category: 'Statistical Analysis', sr: 7, command: 'Average a numeric column', example: '<code>average [numeric column]</code> (e.g., <code>average age</code>)' },
+                { category: 'Statistical Analysis', sr: 8, command: 'Median of a numeric column', example: '<code>median [numeric column]</code> (e.g., <code>median income</code>)' },
+                { category: 'Statistical Analysis', sr: 9, command: 'Standard deviation of a numeric column', example: '<code>standard deviation [numeric column]</code> (e.g., <code>standard deviation price</code>)' },
+                { category: 'Statistical Analysis', sr: 10, command: 'Quartiles of a numeric column', example: '<code>quartiles [numeric column]</code> (e.g., <code>quartiles score</code>)' },
+                { category: 'Statistical Analysis', sr: 11, command: 'Count unique values in a column', example: '<code>count unique [column name]</code> (e.g., <code>count unique city</code>)' },
+                { category: 'Statistical Analysis', sr: 12, command: 'Show frequency/top values', example: '<code>show frequency of [column name]</code> or <code>top values in [column name]</code> (e.g., <code>show frequency of product type</code>)' },
+                { category: 'Statistical Analysis', sr: 13, command: 'Min/Max of a numeric column', example: '<code>min [numeric column]</code> or <code>max [numeric column]</code> (e.g., <code>min temperature</code>)' },
+                { category: 'Statistical Analysis', sr: 14, command: 'Average a numeric column by categorical group', example: '<code>average [numeric column] by [categorical column]</code> (e.g., <code>average sales by region</code>)' },
+                { category: 'Statistical Analysis', sr: 15, command: 'Correlation between two numeric columns', example: '<code>show correlation between [numeric_col1] and [numeric_col2]</code> (e.g., <code>show correlation between Age and Income</code>)' },
+                { category: 'Statistical Analysis', sr: 16, command: 'Find outliers in a numeric column', example: '<code>find outliers in [numeric column]</code> (e.g., <code>find outliers in Sales</code>)' },
+                { category: 'Hypothesis Testing', sr: 17, command: 'Perform T-test', example: '<code>perform t-test on [numeric_col] for [categorical_col] where [group1_value] vs [group2_value]</code> (e.g., <code>perform t-test on Sales for Region where East vs West</code>)' },
+                { category: 'Time Series Analysis', sr: 18, command: 'Calculate Moving Average', example: '<code>calculate moving average of [numeric_col] with window [window_size] as [new_col_name]</code> (e.g., <code>calculate moving average of Stock_Price with window 5 as MA_5_Days</code>)' },
+                { category: 'Data Manipulation', sr: 19, command: 'Filter data', example: '<code>filter data where [column] [operator] [value]</code> (e.g., <code>sales > 1000</code> or <code>city = "London"</code>)' },
+                { category: 'Data Manipulation', sr: 20, command: 'Add a new calculated column', example: '<code>add column [new_name] as [col1] [operator] [col2]</code> (Operators: \'plus\', \'minus\', \'times\', \'divided by\'. E.g., <code>add column profit as revenue minus cost</code>)' },
+                { category: 'Data Manipulation', sr: 21, command: 'Categorize numeric data into bins', example: '<code>categorize [numeric_col] into [num_bins] bins as [new_col_name]</code> (e.g., <code>categorize Age into 5 bins as Age_Group</code>)' },
+                { category: 'Data Manipulation', sr: 22, command: 'Remove duplicate rows', example: '<code>remove duplicate rows</code>' },
+                { category: 'Data Manipulation', sr: 23, command: 'Rename column', example: '<code>rename column [old_name] to [new_name]</code> (e.g., <code>rename column Product_ID to SKU</code>)' },
+                { category: 'Business Intelligence', sr: 24, command: 'Summarize numeric by categorical', example: '<code>summarize [numeric_col] by [categorical_col]</code> (e.g., <code>summarize Sales by Region</code>)' },
+                { category: 'Business Intelligence', sr: 25, command: 'Show overall business overview', example: '<code>show overall business overview</code>' },
+                { category: 'Data Export', sr: 26, command: 'Download modified dataset', example: 'Click the "Download Modified CSV" button' },
+                { category: 'Charting & Visualization', sr: 27, command: 'Show Bar Chart', example: '<code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)' },
+                { category: 'Charting & Visualization', sr: 28, command: 'Show Line Chart', example: '<code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)' },
+                { category: 'Charting & Visualization', sr: 29, command: 'Show Scatter Plot', example: '<code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)' },
+                { category: 'Charting & Visualization', sr: 30, command: 'Show Pie Chart', example: '<code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code>' },
+                { category: 'Charting & Visualization', sr: 31, command: 'Show Doughnut Chart', example: '<code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code>' },
+                { category: 'Charting & Visualization', sr: 32, command: 'Show Polar Area Chart', example: '<code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code>' },
+                { category: 'Modeling', sr: 33, command: 'Perform Simple Linear Regression', example: '<code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)' },
+                { category: 'Advanced Modeling & Unsupervised Learning', sr: 34, command: 'Perform Multiple Linear Regression', example: '<code>perform multiple regression with Y as [dep_var] and X as [indep_var1], [indep_var2], ...</code> (e.g., <code>perform multiple regression with Y as Sales and X as Advertising, Price</code>)' },
+                { category: 'Advanced Modeling & Unsupervised Learning', sr: 35, command: 'Perform Polynomial Regression', example: '<code>perform polynomial regression with Y as [dep_var] and X as [indep_var] with degree [degree]</code> (e.g., <code>perform polynomial regression with Y as Sales and X as Advertising with degree 2</code>)' },
+                { category: 'Advanced Modeling & Unsupervised Learning', sr: 36, command: 'Perform K-Means Clustering', example: '<code>perform k-means clustering on [col1], [col2], ... into [k] clusters as [new_cluster_column]</code> (e.g., <code>perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment</code>)' },
+                { category: 'Data Transformation & Reshaping', sr: 37, command: 'Create Pivot Table', example: '<code>create pivot table with [row_col] as rows, [column_col] as columns, [value_col] as values aggregated by [sum/average/count]</code> (e.g., <code>create pivot table with Region as rows, Product_Category as columns, Sales as values aggregated by sum</code>)' },
+                { category: 'Data Transformation & Reshaping', sr: 38, command: 'Unpivot/Melt Data', example: '<code>unpivot data keeping [id_col(s)] and melting [col1], [col2], ... into new variable [new_var_col] and value [new_val_col]</code> (e.g., <code>unpivot data keeping ID and melting Q1_Sales, Q2_Sales, Q3_Sales into new variable Quarter and value Sales_Amount</code>)' },
+                { category: 'Proactive Insights', sr: 39, command: 'Show Proactive Insights', example: '<code>show proactive insights</code> or <code>what insights do you have?</code>' },
+                { category: 'Reporting & Storytelling', sr: 40, command: 'Generate Data Story / Create Report', example: '<code>generate data story</code> or <code>create report</code>' },
+            ];
+
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            const filteredCommands = allCommands.filter(cmd =>
+                cmd.category.toLowerCase().includes(lowerSearchTerm) ||
+                cmd.command.toLowerCase().includes(lowerSearchTerm) ||
+                cmd.example.toLowerCase().includes(lowerSearchTerm.replace(/`/g, '')) // Remove backticks for example search
+            );
+
+            let tableHtml = `<p class="command-guide-intro">I'm ready to help with your data analysis! Here's a quick guide to what I can do:</p>
                 <table class="command-table">
                     <thead>
                         <tr>
                             <th>Sr. No.</th>
-                            <th>Category</th>
+                            <!-- Removed Category Header -->
                             <th>Command</th>
                             <th>Example</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>General Overview</td>
-                            <td>Show all data</td>
-                            <td><code>show all data</code></td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>General Overview</td>
-                            <td>Show specific column data</td>
-                            <td><code>show [column name]</code> (e.g., <code>show City</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>General Overview</td>
-                            <td>Count rows</td>
-                            <td><code>count rows</code></td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>General Overview</td>
-                            <td>Describe dataset</td>
-                            <td><code>describe my dataset</code></td>
-                        </tr>
-                        <tr>
-                            <td>5</td>
-                            <td>General Overview</td>
-                            <td>Show schema</td>
-                            <td><code>show schema</code></td>
-                        </tr>
-                        <tr>
-                            <td>6</td>
-                            <td>Statistical Analysis</td>
-                            <td>Sum a numeric column</td>
-                            <td><code>sum [numeric column]</code> (e.g., <code>sum sales</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>7</td>
-                            <td>Statistical Analysis</td>
-                            <td>Average a numeric column</td>
-                            <td><code>average [numeric column]</code> (e.g., <code>average age</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>8</td>
-                            <td>Statistical Analysis</td>
-                            <td>Median of a numeric column</td>
-                            <td><code>median [numeric column]</code> (e.g., <code>median income</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>9</td>
-                            <td>Statistical Analysis</td>
-                            <td>Standard deviation of a numeric column</td>
-                            <td><code>standard deviation [numeric column]</code> (e.g., <code>standard deviation price</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>10</td>
-                            <td>Statistical Analysis</td>
-                            <td>Quartiles of a numeric column</td>
-                            <td><code>quartiles [numeric column]</code> (e.g., <code>quartiles score</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>11</td>
-                            <td>Statistical Analysis</td>
-                            <td>Count unique values in a column</td>
-                            <td><code>count unique [column name]</code> (e.g., <code>count unique city</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>12</td>
-                            <td>Statistical Analysis</td>
-                            <td>Show frequency/top values</td>
-                            <td><code>show frequency of [column name]</code> or <code>top values in [column name]</code> (e.g., <code>show frequency of product type</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>13</td>
-                            <td>Statistical Analysis</td>
-                            <td>Min/Max of a numeric column</td>
-                            <td><code>min [numeric column]</code> or <code>max [numeric column]</code> (e.g., <code>min temperature</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>14</td>
-                            <td>Statistical Analysis</td>
-                            <td>Average a numeric column by categorical group</td>
-                            <td><code>average [numeric column] by [categorical column]</code> (e.g., <code>average sales by region</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>15</td>
-                            <td>Statistical Analysis</td>
-                            <td>Correlation between two numeric columns</td>
-                            <td><code>show correlation between [numeric_col1] and [numeric_col2]</code> (e.g., <code>show correlation between Age and Income</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>16</td>
-                            <td>Statistical Analysis</td>
-                            <td>Find outliers in a numeric column</td>
-                            <td><code>find outliers in [numeric column]</code> (e.g., <code>find outliers in Sales</code>)</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Hypothesis Testing</td>
-                        </tr>
-                        <tr>
-                            <td>17</td>
-                            <td>Hypothesis Testing</td>
-                            <td>Perform T-test</td>
-                            <td><code>perform t-test on [numeric_col] for [categorical_col] where [group1_value] vs [group2_value]</code> (e.g., <code>perform t-test on Sales for Region where East vs West</code>)</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Time Series Analysis</td>
-                        </tr>
-                        <tr>
-                            <td>18</td>
-                            <td>Time Series Analysis</td>
-                            <td>Calculate Moving Average</td>
-                            <td><code>calculate moving average of [numeric_col] with window [window_size] as [new_col_name]</code> (e.g., <code>calculate moving average of Stock_Price with window 5 as MA_5_Days</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>19</td>
-                            <td>Data Manipulation</td>
-                            <td>Filter data</td>
-                            <td><code>filter data where [column] [operator] [value]</code> (e.g., <code>sales > 1000</code> or <code>city = "London"</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>20</td>
-                            <td>Data Manipulation</td>
-                            <td>Add a new calculated column</td>
-                            <td><code>add column [new_name] as [col1] [operator] [col2]</code> (Operators: 'plus', 'minus', 'times', 'divided by'. E.g., <code>add column profit as revenue minus cost</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>21</td>
-                            <td>Data Manipulation</td>
-                            <td>Categorize numeric data into bins</td>
-                            <td><code>categorize [numeric_col] into [num_bins] bins as [new_col_name]</code> (e.g., <code>categorize Age into 5 bins as Age_Group</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>22</td>
-                            <td>Data Manipulation</td>
-                            <td>Remove duplicate rows</td>
-                            <td><code>remove duplicate rows</code></td>
-                        </tr>
-                        <tr>
-                            <td>23</td>
-                            <td>Data Manipulation</td>
-                            <td>Rename column</td>
-                            <td><code>rename column [old_name] to [new_name]</code> (e.g., <code>rename column Product_ID to SKU</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>24</td>
-                            <td>Business Intelligence</td>
-                            <td>Summarize numeric by categorical</td>
-                            <td><code>summarize [numeric_col] by [categorical_col]</code> (e.g., <code>summarize Sales by Region</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>25</td>
-                            <td>Business Intelligence</td>
-                            <td>Show overall business overview</td>
-                            <td><code>show overall business overview</code></td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Data Export</td>
-                        </tr>
-                        <tr>
-                            <td>26</td>
-                            <td>Data Export</td>
-                            <td>Download modified dataset</td>
-                            <td>Click the "Download Modified CSV" button</td>
-                        </tr>
-                        <tr>
-                            <td>27</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Bar Chart</td>
-                            <td><code>show bar chart of [numeric_col] by [categorical_col] [as sum/average]</code> (e.g., <code>show bar chart of sales by region as average</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>28</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Line Chart</td>
-                            <td><code>show line chart with X as [column] and Y as [numeric_column]</code> (e.g., <code>show line chart with X as Date and Y as Stock Price</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>29</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Scatter Plot</td>
-                            <td><code>show scatter plot with X as [numeric_column1] and Y as [numeric_column2]</code> (e.g., <code>show scatter plot with X as Age and Y as Income</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>30</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Pie Chart</td>
-                            <td><code>show pie chart of [column]</code> (e.g., <code>show pie chart of Gender</code>) or <code>show pie chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
-                        </tr>
-                        <tr>
-                            <td>31</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Doughnut Chart</td>
-                            <td><code>show doughnut chart of [column]</code> (e.g., <code>show doughnut chart of Region</code>) or <code>show doughnut chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
-                        </tr>
-                        <tr>
-                            <td>32</td>
-                            <td>Charting & Visualization</td>
-                            <td>Show Polar Area Chart</td>
-                            <td><code>show polar area chart of [column]</code> (e.g., <code>show polar area chart of Status</code>) or <code>show polar area chart of [numeric_col] by [categorical_col] [as sum/average]</code></td>
-                        </tr>
-                        <tr>
-                            <td>33</td>
-                            <td>Modeling</td>
-                            <td>Perform Simple Linear Regression</td>
-                            <td><code>perform regression with Y as [numeric_col_y] and X as [numeric_col_x]</code> (e.g., <code>perform regression with Y as Sales and X as Advertising</code>)</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Advanced Modeling & Unsupervised Learning</td>
-                        </tr>
-                        <tr>
-                            <td>34</td>
-                            <td>Advanced Modeling</td>
-                            <td>Perform Multiple Linear Regression</td>
-                            <td><code>perform multiple regression with Y as [dep_var] and X as [indep_var1], [indep_var2], ...</code> (e.g., <code>perform multiple regression with Y as Sales and X as Advertising, Price</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>35</td>
-                            <td>Advanced Modeling</td>
-                            <td>Perform Polynomial Regression</td>
-                            <td><code>perform polynomial regression with Y as [dep_var] and X as [indep_var] with degree [degree]</code> (e.g., <code>perform polynomial regression with Y as Sales and X as Advertising with degree 2</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>36</td>
-                            <td>Unsupervised Learning</td>
-                            <td>Perform K-Means Clustering</td>
-                            <td><code>perform k-means clustering on [col1], [col2], ... into [k] clusters as [new_cluster_column]</code> (e.g., <code>perform k-means clustering on Age, Income, Spending_Score into 3 clusters as Customer_Segment</code>)</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Data Transformation & Reshaping</td>
-                        </tr>
-                        <tr>
-                            <td>37</td>
-                            <td>Data Transformation</td>
-                            <td>Create Pivot Table</td>
-                            <td><code>create pivot table with [row_col] as rows, [column_col] as columns, [value_col] as values aggregated by [sum/average/count]</code> (e.g., <code>create pivot table with Region as rows, Product_Category as columns, Sales as values aggregated by sum</code>)</td>
-                        </tr>
-                        <tr>
-                            <td>38</td>
-                            <td>Data Transformation</td>
-                            <td>Unpivot/Melt Data</td>
-                            <td><code>unpivot data keeping [id_col(s)] and melting [col1], [col2], ... into new variable [new_var_col] and value [new_val_col]</code> (e.g., <code>unpivot data keeping ID and melting Q1_Sales, Q2_Sales, Q3_Sales into new variable Quarter and value Sales_Amount</code>)</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Proactive Insights</td>
-                        </tr>
-                        <tr>
-                            <td>39</td>
-                            <td>Automated Insights</td>
-                            <td>Show Proactive Insights</td>
-                            <td><code>show proactive insights</code> or <code>what insights do you have?</code></td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Reporting & Storytelling</td>
-                        </tr>
-                        <tr>
-                            <td>40</td>
-                            <td>Automated Reporting</td>
-                            <td>Generate Data Story / Create Report</td>
-                            <td><code>generate data story</code> or <code>create report</code></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p class="mt-4">If I've made a cleaning suggestion, you can simply type <strong>'yes'</strong> to confirm.</p>`;
+                    <tbody>`;
+
+            let currentCategory = '';
+            filteredCommands.forEach(cmd => {
+                if (cmd.category !== currentCategory) {
+                    currentCategory = cmd.category;
+                    // Updated Category Header Styling
+                    tableHtml += `<tr class="category-header">
+                                    <td colspan="3">${currentCategory}</td> <!-- colspan changed to 3 -->
+                                  </tr>`;
+                }
+                tableHtml += `
+                    <tr>
+                        <td>${cmd.sr}</td>
+                        <td>${cmd.command}</td>
+                        <td>${cmd.example}</td>
+                    </tr>`;
+            });
+
+            if (filteredCommands.length === 0) {
+                tableHtml += `<tr><td colspan="3" class="text-center text-gray-400 py-4">No commands match your search.</td></tr>`;
+            }
+
+            tableHtml += `</tbody></table>
+                <p class="mt-4 text-gray-400">If I've made a cleaning suggestion, you can simply type <strong>'yes'</strong> to confirm.</p>`;
+
+            return tableHtml;
         }
 
         /**
@@ -1414,7 +1285,7 @@
         // New Feature: Rename column
         function renameColumn(oldName, newName) {
             const actualOldName = findColumnByName(oldName);
-            if (!actualOldName) {
+            if (!actualOldOldName) {
                 return { success: false, message: `Column "<strong>${oldName}</strong>" not found.` };
             }
             if (Object.keys(schema).includes(newName)) {
@@ -1526,7 +1397,7 @@
         toggleCommandGuideBtn.addEventListener('click', () => {
             // Show the overlay
             commandGuideOverlay.classList.remove('hidden');
-            commandGuideContent.innerHTML = getCommandListHtml(); // Populate the content
+            commandGuideContent.innerHTML = getCommandListHtml(); // Populate the content with no search term initially
             // Update the text/icon of the toggle button itself to reflect it's "hiding" the guide
             toggleCommandGuideText.textContent = 'Hide Command Guide';
             toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
@@ -1539,7 +1410,15 @@
             // Reset the toggle button's text/icon
             toggleCommandGuideText.textContent = 'Show Command Guide';
             toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book mr-2';
+            commandSearchInput.value = ''; // Clear search input when closing
         });
+
+        // Event listener for Command Guide Search Input
+        commandSearchInput.addEventListener('input', () => {
+            const searchTerm = commandSearchInput.value.trim();
+            commandGuideContent.innerHTML = getCommandListHtml(searchTerm); // Re-render with search term
+        });
+
 
         /**
          * Helper function to parse dates. Handles common formats.
@@ -1626,7 +1505,10 @@
 
                             if (salesDropPercentage > dropThreshold) {
                                 let messageToUser = `**Heads up! Sales in the ${region} region are down ${salesDropPercentage.toFixed(1)}% on ${latestDate.toLocaleDateString()}** compared to the last 7-day average. This deviation is significant.`;
-                                let actionForUser = `filter data where ${regionCol} = "${region}" and ${dateCol} = "${latestDate.toLocaleDateString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit'})}"`;
+                                // FIX: Use single quotes for string values and escape inner single quotes if any.
+                                // The `.replace(/'/g, "\\'")` in the onclick attribute will then correctly escape this.
+                                let actionForUser = `filter data where ${regionCol} = '${region.replace(/'/g, "\\'")}' and ${dateCol} = '${latestDate.toLocaleDateString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/'/g, "\\'")}'`;
+
 
                                 // Check for consistent marketing spend
                                 if (marketingSpendCol) {
@@ -2391,7 +2273,7 @@
             });
             newSchema[newVarColName] = 'string'; // The variable column will always be string
             // Infer type for the new value column (could be number or string)
-            const isNewValNumeric = newRawData.every(row => row[newValColName] === '' || !isNaN(Number(row[newValColName])));
+            const isNewValNumeric = newRawData.every(row => row[newValColName] === '' || !isNaN(Number(newRawData[0][newValColName]))); // Check first element for type
             newSchema[newValColName] = isNewValNumeric ? 'number' : 'string';
             
             schema = newSchema;
@@ -3129,7 +3011,7 @@
                 if (aggregatedParts && aggregatedParts.length >= 3) {
                     const numericColName = aggregatedParts[1].trim();
                     const categoricalColName = aggregatedParts[2].trim();
-                    const aggregateType = aggregatedParts[4] ? aggregatedParts[4].toLowerCase() : 'sum';
+                    const aggregateType = aggregatedParts[4] ? parts[4].toLowerCase() : 'sum'; // Default to sum
 
                     const numericCol = findNumericColumn(numericColName);
                     const categoricalCol = findCategoricalColumn(categoricalColName);
@@ -3174,33 +3056,33 @@
             // New: Automated Report Generation & Data Storytelling
             else if (lowerQuery.includes('generate data story') || lowerQuery.includes('create report')) {
                 if (rawData.length === 0) {
-                    aiResponseText = 'Please upload a CSV file before I can generate a data story. I need data to tell a story about!';
+                    appendMessage('AI', 'Please upload a CSV file before I can generate a data story. I need data to tell a story about!', 'ai');
+                    return;
+                }
+                const reportResult = generateDataStory(); // This function is not provided in current context, assuming it exists externally
+                if (reportResult && reportResult.success) {
+                    aiResponseText = `Here's a concise **Data Story** based on your loaded dataset. This provides a high-level narrative of key findings.<br>`;
+                    analysisContent = `<div class="bg-gray-700 p-6 rounded-lg mt-4 shadow-xl overflow-y-auto custom-scrollbar max-h-[400px] text-gray-200">${reportResult.reportHtml}</div>
+                                        <button id="downloadDataStoryBtn" class="send-button-gradient text-white p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-base font-bold mx-auto">
+                                            <i class="fas fa-file-download"></i>
+                                            <span>Download Data Story (.txt)</span>
+                                        </button>`;
+                    // Add event listener for the download button after it's rendered
+                    setTimeout(() => {
+                        const downloadBtn = document.getElementById('downloadDataStoryBtn');
+                        if (downloadBtn) {
+                            downloadBtn.addEventListener('click', () => {
+                                // Make sure downloadDataStory function is defined
+                                if (typeof downloadDataStory === 'function') {
+                                    downloadDataStory(reportResult.reportHtml.replace(/<[^>]*>/g, '')); // Remove HTML tags for plain text download
+                                } else {
+                                    console.error("downloadDataStory function is not defined.");
+                                }
+                            });
+                        }
+                    }, 0); // Use setTimeout to ensure the button is in DOM
                 } else {
-                    const reportResult = generateDataStory(); // This function is not provided in current context, assuming it exists externally
-                    if (reportResult && reportResult.success) {
-                        aiResponseText = `Here's a concise **Data Story** based on your loaded dataset. This provides a high-level narrative of key findings.<br>`;
-                        analysisContent = `<div class="bg-gray-700 p-6 rounded-lg mt-4 shadow-xl overflow-y-auto custom-scrollbar max-h-[400px] text-gray-200">${reportResult.reportHtml}</div>
-                                            <button id="downloadDataStoryBtn" class="send-button-gradient text-white p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-base font-bold mx-auto">
-                                                <i class="fas fa-file-download"></i>
-                                                <span>Download Data Story (.txt)</span>
-                                            </button>`;
-                        // Add event listener for the download button after it's rendered
-                        setTimeout(() => {
-                            const downloadBtn = document.getElementById('downloadDataStoryBtn');
-                            if (downloadBtn) {
-                                downloadBtn.addEventListener('click', () => {
-                                    // Make sure downloadDataStory function is defined
-                                    if (typeof downloadDataStory === 'function') {
-                                        downloadDataStory(reportResult.reportHtml.replace(/<[^>]*>/g, '')); // Remove HTML tags for plain text download
-                                    } else {
-                                        console.error("downloadDataStory function is not defined.");
-                                    }
-                                });
-                            }
-                        }, 0); // Use setTimeout to ensure the button is in DOM
-                    } else {
-                        aiResponseText = `Error generating data story: ${reportResult ? reportResult.message : 'Unknown error.'}`;
-                    }
+                    aiResponseText = `Error generating data story: ${reportResult ? reportResult.message : 'Unknown error.'}`;
                 }
             }
 
