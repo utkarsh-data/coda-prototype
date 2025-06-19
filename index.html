@@ -332,8 +332,9 @@
             </div>
 
             <!-- Chat Input -->
-            <div class="flex items-center space-x-3 px-8 pb-6 pt-4"> <!-- Adjusted padding for input area -->
+            <div class="relative flex items-center space-x-3 px-8 pb-6 pt-4"> <!-- Adjusted padding for input area -->
                 <input type="text" id="chatInput" placeholder="Ask CoDA a question about your data, e.g., 'Show me the average sales'..." class="flex-grow p-4 border border-gray-600 bg-gray-700 text-gray-200 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-600 shadow-lg text-base transition duration-300 ease-in-out">
+                <div id="suggestionsContainer" class="suggestions-container"></div> <!-- Suggestions container -->
                 <button id="sendMessageBtn" class="send-button-gradient text-white p-4 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
                     <i class="fas fa-paper-plane text-xl"></i>
                 </button>
@@ -391,6 +392,10 @@
         let myChart = null; // Holds the Chart.js instance for dynamic updates
         let lastProactiveInsights = []; // Store last generated insights as an array of objects
 
+        // Autocomplete elements
+        const suggestionsContainer = document.getElementById('suggestionsContainer');
+
+        // References to DOM elements (moved up for scope)
         const chatArea = document.getElementById('chatArea');
         const chatInput = document.getElementById('chatInput');
         const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -398,27 +403,23 @@
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const uploadStatus = document.getElementById('uploadStatus');
         const schemaDisplay = document.getElementById('schemaDisplay');
-        const downloadCsvBtn = document.getElementById('downloadCsvBtn'); // New button element
-        const toggleDataPanelBtn = document.getElementById('toggleDataPanelBtn'); // New toggle button for data panel
-        const dataPanel = document.getElementById('data-panel'); // Reference to the data panel
-        const chatPanel = document.getElementById('chat-panel'); // Reference to the chat panel
-        const toggleButtonText = document.getElementById('toggleButtonText'); // Text for data panel toggle button
-
-        const toggleCommandGuideBtn = document.getElementById('toggleCommandGuideBtn'); // New toggle button for command guide
-        const commandGuideOverlay = document.getElementById('commandGuideOverlay'); // The new overlay div
-        const commandGuideContent = document.getElementById('commandGuideContent'); // Content area inside the overlay
-        const closeCommandGuideBtn = document.getElementById('closeCommandGuideBtn'); // Button to close the overlay
-        const toggleCommandGuideText = document.getElementById('toggleCommandGuideText'); // Text for command guide toggle button
-        const headerContainer = document.getElementById('headerContainer'); // Reference to the header container
-
-        // New elements for proactive insights overlay
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+        const toggleDataPanelBtn = document.getElementById('toggleDataPanelBtn');
+        const dataPanel = document.getElementById('data-panel');
+        const chatPanel = document.getElementById('chat-panel');
+        const toggleButtonText = document.getElementById('toggleButtonText');
+        const toggleCommandGuideBtn = document.getElementById('toggleCommandGuideBtn');
+        const commandGuideOverlay = document.getElementById('commandGuideOverlay');
+        const commandGuideContent = document.getElementById('commandGuideContent');
+        const closeCommandGuideBtn = document.getElementById('closeCommandGuideBtn');
+        const toggleCommandGuideText = document.getElementById('toggleCommandGuideText');
+        const headerContainer = document.getElementById('headerContainer');
         const showProactiveInsightsBtn = document.getElementById('showProactiveInsightsBtn');
         const proactiveInsightsOverlay = document.getElementById('proactiveInsightsOverlay');
         const proactiveInsightsContent = document.getElementById('proactiveInsightsContent');
         const closeProactiveInsightsBtn = document.getElementById('closeProactiveInsightsBtn');
-        const insightSearchInput = document.getElementById('insightSearchInput'); // Search input
-        const filterButtons = document.querySelectorAll('.filter-btn'); // Filter buttons
-
+        const insightSearchInput = document.getElementById('insightSearchInput');
+        const filterButtons = document.querySelectorAll('.filter-btn');
 
         let isHeaderShrunk = false; // New flag to track header state
 
@@ -630,7 +631,7 @@
                         groupedData[groupKey] = { sum: 0, count: 0 };
                     }
                     groupedData[groupKey].sum += value;
-                    groupedData[groupKey].count++; // Corrected: should be groupKey, not key
+                    groupedData[groupKey].count++;
                 }
             });
 
@@ -647,6 +648,21 @@
             }
             return { labels, data: values };
         }
+
+        // NEW HELPER: Get frequency distribution for a single categorical column
+        function getFrequencyDistribution(columnName, data) {
+            const values = data.map(row => row[columnName]).filter(v => v !== undefined && v !== null && v !== '');
+            const valueCounts = {};
+            values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
+
+            // Sort by count descending to make charts more readable
+            const sortedEntries = Object.entries(valueCounts).sort(([,countA], [,countB]) => countB - countA);
+
+            const labels = sortedEntries.map(entry => entry[0]);
+            const counts = sortedEntries.map(entry => entry[1]);
+            return { labels, data: counts };
+        }
+
 
         // Advanced Feature: Check for missing values and suggest cleaning
         function checkAndSuggestDataCleaning(data, currentSchema) {
@@ -720,19 +736,33 @@
             // Scroll to the bottom of the chat area to show the latest chart
             chatArea.scrollTop = chatArea.scrollHeight;
 
+            // Configure datasets based on chart type
+            let datasetsConfig = [];
+            if (chartType === 'scatter') {
+                datasetsConfig.push({
+                    label: chartTitle,
+                    data: data, // Data for scatter plots is already in {x, y} format
+                    backgroundColor: getChartColors(1)[0], // Use a single color for all points
+                    borderColor: getChartColors(1)[0].replace('0.8', '1'),
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                });
+            } else {
+                datasetsConfig.push({
+                    label: chartTitle,
+                    data: data,
+                    backgroundColor: getChartColors(data.length),
+                    borderColor: getChartColors(data.length).map(color => color.replace('0.8', '1')), // Opaque borders
+                    borderWidth: 1
+                });
+            }
 
             const ctx = chartCanvas.getContext('2d');
             myChart = new Chart(ctx, {
                 type: chartType,
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: chartTitle, // Use chartTitle for dataset label
-                        data: data,
-                        backgroundColor: getChartColors(data.length),
-                        borderColor: getChartColors(data.length).map(color => color.replace('0.8', '1')), // Opaque borders
-                        borderWidth: 1
-                    }]
+                    labels: (chartType !== 'scatter') ? labels : undefined, // Labels for non-scatter charts
+                    datasets: datasetsConfig
                 },
                 options: {
                     responsive: true,
@@ -751,6 +781,8 @@
                     },
                     scales: {
                         x: {
+                            // For scatter, ensure type 'linear'. For others, 'category' is common for labels.
+                            type: (chartType === 'scatter' || chartType === 'line') ? 'linear' : 'category',
                             ticks: {
                                 color: '#a0aec0' // Light grey ticks
                             },
@@ -764,6 +796,7 @@
                             }
                         },
                         y: {
+                            type: 'linear', // Y is typically linear for quantitative data
                             ticks: {
                                 color: '#a0aec0' // Light grey ticks
                             },
@@ -777,7 +810,7 @@
                             }
                         }
                     },
-                    ...options // Merge custom options
+                    ...options // Merge custom options (allows overriding scales too)
                 }
             });
         }
@@ -1046,6 +1079,15 @@
                             <td>Automated Insights</td>
                             <td>Show Proactive Insights</td>
                             <td><code>show proactive insights</code> or <code>what insights do you have?</code></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-center font-bold text-blue-300 bg-gray-700">Reporting & Storytelling</td>
+                        </tr>
+                        <tr>
+                            <td>40</td>
+                            <td>Automated Reporting</td>
+                            <td>Generate Data Story / Create Report</td>
+                            <td><code>generate data story</code> or <code>create report</code></td>
                         </tr>
                     </tbody>
                 </table>
@@ -1418,7 +1460,7 @@
 
             // 1. Sales Drop Anomaly Detection with Root Cause Suggestion
             const dateCol = findColumnByName('Date') || findColumnByName('Order Date') || findColumnByName('Transaction Date');
-            const salesCol = findNumericColumn('Sales') || findNumericColumn('Revenue') || findNumericColumn('Amount');
+            const salesCol = findNumericColumn('Sales') || findNumericColumn('Revenue') || findColumnByName('Amount');
             const regionCol = findCategoricalColumn('Region') || findCategoricalColumn('Area') || findCategoricalColumn('Territory');
             const marketingSpendCol = findNumericColumn('Marketing_Spend') || findNumericColumn('Ad_Spend') || findNumericColumn('Campaign_Cost');
 
@@ -2251,7 +2293,7 @@
             let analysisContent = '';
             const lowerQuery = query.toLowerCase();
 
-            if (rawData.length === 0 && !lowerQuery.includes('command guide')) {
+            if (rawData.length === 0 && !lowerQuery.includes('command guide') && !lowerQuery.includes('data story') && !lowerQuery.includes('create report')) {
                 appendMessage('AI', "Please upload a CSV file first before asking questions. I'm ready when you are!", 'ai');
                 return;
             }
@@ -2616,7 +2658,7 @@
 
             // --- New Command: Multiple Linear Regression ---
             else if (lowerQuery.startsWith('perform multiple regression with y as ') && lowerQuery.includes(' and x as ')) {
-                const regex = /perform multiple regression with y as\s+(.+)\s+and x as\s+(.+)/i;
+                const regex = /perform multiple regression with y as\s+(.+?)\s+and x as\s+(.+)/i; // Changed to non-greedy for y
                 const match = query.match(regex);
                 if (match && match.length === 3) {
                     const dependentColName = match[1].trim();
@@ -2655,7 +2697,7 @@
 
             // --- New Command: Polynomial Regression ---
             else if (lowerQuery.startsWith('perform polynomial regression with y as ') && lowerQuery.includes(' and x as ') && lowerQuery.includes(' with degree ')) {
-                const regex = /perform polynomial regression with y as\s+(.+)\s+and x as\s+(.+)\s+with degree\s+(\d+)/i;
+                const regex = /perform polynomial regression with y as\s+(.+?)\s+and x as\s+(.+?)\s+with degree\s+(\d+)/i; // Changed to non-greedy
                 const match = query.match(regex);
                 if (match && match.length === 4) {
                     const dependentColName = match[1].trim();
@@ -2712,7 +2754,7 @@
 
             // --- New Command: K-Means Clustering ---
             else if (lowerQuery.startsWith('perform k-means clustering on ') && lowerQuery.includes(' into ') && lowerQuery.includes(' clusters as ')) {
-                const regex = /perform k-means clustering on\s+([^,]+(?:,\s*[^,]+)*)\s+into\s+(\d+)\s+clusters as\s+(.+)/i;
+                const regex = /perform k-means clustering on\s+([^,]+(?:,\s*[^,]+)*?)\s+into\s+(\d+)\s+clusters as\s+(.+)/i; // Changed to non-greedy for cols and newColName
                 const match = query.match(regex);
                 if (match && match.length === 4) {
                     const featureColsString = match[1].trim();
@@ -2745,7 +2787,7 @@
 
             // --- New Command: Data Pivoting ---
             else if (lowerQuery.startsWith('create pivot table with ') && lowerQuery.includes(' as rows, ') && lowerQuery.includes(' as columns, ') && lowerQuery.includes(' as values aggregated by ')) {
-                const regex = /create pivot table with\s+(.+)\s+as rows,\s+(.+)\s+as columns,\s+(.+)\s+as values aggregated by\s+(.+)/i;
+                const regex = /create pivot table with\s+(.+?)\s+as rows,\s+(.+?)\s+as columns,\s+(.+?)\s+as values aggregated by\s+(.+)/i; // Changed to non-greedy
                 const match = query.match(regex);
                 if (match && match.length === 5) {
                     const indexCol = match[1].trim();
@@ -2767,7 +2809,7 @@
             }
             // --- New Command: Data Unpivoting (Melt) ---
             else if (lowerQuery.startsWith('unpivot data keeping ') && lowerQuery.includes(' and melting ') && lowerQuery.includes(' into new variable ') && lowerQuery.includes(' and value ')) {
-                const regex = /unpivot data keeping\s+(.+)\s+and melting\s+([^,]+(?:,\s*[^,]+)*)\s+into new variable\s+(.+)\s+and value\s+(.+)/i;
+                const regex = /unpivot data keeping\s+([^,]+(?:,\s*[^,]+)*?)\s+and melting\s+([^,]+(?:,\s*[^,]+)*?)\s+into new variable\s+(.+?)\s+and value\s+(.+)/i; // Changed to non-greedy
                 const match = query.match(regex);
                 if (match && match.length === 5) {
                     const idColsString = match[1].trim();
@@ -2799,12 +2841,182 @@
                     appendMessage('AI', 'Please upload a CSV file before I can generate proactive insights. I need data to analyze!', 'ai');
                     return;
                 }
-                generateProactiveInsights(); // Re-generate insights (they are stored in lastProactiveInsights)
-                renderProactiveInsights(); // Render them with current filters (default to all, no search)
+                generateProactiveInsights(); // Ensure insights are fresh
+                renderProactiveInsights(); // Render the insights into the overlay
                 proactiveInsightsOverlay.classList.remove('hidden'); // Show the overlay
                 return; // Don't append an AI message to chat, the overlay handles it
             }
 
+            // Charting & Visualization
+            else if (lowerQuery.startsWith('show bar chart of ') && lowerQuery.includes(' by ')) {
+                const parts = query.match(/show bar chart of\s+(.+)\s+by\s+(.+)(?:\s+as\s+(sum|average))?/i);
+                if (parts && parts.length >= 3) {
+                    const numericColName = parts[1].trim();
+                    const categoricalColName = parts[2].trim();
+                    const aggregateType = parts[4] ? parts[4].toLowerCase() : 'sum'; // Default to sum
+
+                    const numericCol = findNumericColumn(numericColName);
+                    const categoricalCol = findCategoricalColumn(categoricalColName);
+
+                    if (numericCol && categoricalCol) {
+                        const { labels, data: aggregatedData } = groupByAndAggregate(rawData, categoricalCol, numericCol, aggregateType);
+                        if (labels.length > 0) {
+                            createChart('bar', `${numericCol} by ${categoricalCol} (${aggregateType})`, labels, aggregatedData, categoricalCol, `${numericCol} (${aggregateType})`);
+                            aiResponseText = `Here's the **bar chart** showing the ${aggregateType} of "<strong>${numericCol}</strong>" grouped by "<strong>${categoricalCol}</strong>".`;
+                        } else {
+                            aiResponseText = `No valid data to create a bar chart for "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>". Ensure columns have data.`;
+                        }
+                    } else {
+                        aiResponseText = `To show a bar chart, I need a valid numeric column and a valid categorical column. Please check your column names.`;
+                    }
+                } else {
+                    aiResponseText = `I didn't understand the bar chart command format. Example: 'show bar chart of sales by region as average'.`;
+                }
+            } else if (lowerQuery.startsWith('show line chart with x as ') && lowerQuery.includes(' and y as ')) {
+                const parts = query.match(/show line chart with x as\s+(.+)\s+and y as\s+(.+)/i);
+                if (parts && parts.length === 3) {
+                    const xColName = parts[1].trim();
+                    const yColName = parts[2].trim();
+                    const xCol = findColumnByName(xColName); // X can be string (e.g., date) or number
+                    const yCol = findNumericColumn(yColName);
+
+                    if (xCol && yCol) {
+                        // For line chart, prepare data as array of {x,y} for potentially mixed X-axis types
+                        // Chart.js `linear` type for X-axis works best with numbers, `category` for strings.
+                        // `time` adapter would be needed for proper date plotting, but keeping it simpler for now.
+                        const lineData = rawData.map(row => {
+                            const xVal = row[xCol]; // Keep original for labels
+                            const yVal = Number(row[yCol]);
+                            return (!isNaN(yVal)) ? { x: xVal, y: yVal } : null;
+                        }).filter(Boolean); // Filter out nulls/invalid y values
+
+                        if (lineData.length > 0) {
+                            // Sort by X value if X is numeric, or alphabetically if string (for better line flow)
+                            if (schema[xCol] === 'number') {
+                                lineData.sort((a, b) => a.x - b.x);
+                            } else { // Assume string, sort alphabetically
+                                lineData.sort((a, b) => String(a.x).localeCompare(String(b.x)));
+                            }
+                            
+                            // Extract labels and data (y values) for Chart.js
+                            const labels = lineData.map(d => d.x);
+                            const data = lineData.map(d => d.y);
+
+                            createChart('line', `${yCol} over ${xCol}`, labels, data, xCol, yCol);
+                            aiResponseText = `Here's the **line chart** visualizing "<strong>${yCol}</strong>" against "<strong>${xCol}</strong>".`;
+                        } else {
+                            aiResponseText = `No valid numeric data in "<strong>${yCol}</strong>" to create a line chart.`;
+                        }
+                    } else {
+                        aiResponseText = `To show a line chart, I need valid X and Y columns. Y must be numeric. Please check your column names.`;
+                    }
+                } else {
+                    aiResponseText = `I didn't understand the line chart command format. Example: 'show line chart with X as Date and Y as Stock Price'.`;
+                }
+            } else if (lowerQuery.startsWith('show scatter plot with x as ') && lowerQuery.includes(' and y as ')) {
+                const parts = query.match(/show scatter plot with x as\s+(.+)\s+and y as\s+(.+)/i);
+                if (parts && parts.length === 3) {
+                    const xColName = parts[1].trim();
+                    const yColName = parts[2].trim();
+                    const xCol = findNumericColumn(xColName);
+                    const yCol = findNumericColumn(yColName);
+
+                    if (xCol && yCol) {
+                        // For scatter, Chart.js expects data in {x, y} pairs
+                        const scatterData = rawData.map(row => {
+                            const xVal = Number(row[xCol]);
+                            const yVal = Number(row[yCol]);
+                            return (!isNaN(xVal) && !isNaN(yVal)) ? { x: xVal, y: yVal } : null;
+                        }).filter(Boolean); // Filter out nulls
+
+                        if (scatterData.length > 0) {
+                            // Scatter plot labels are not typically used for the X axis, but rather for tooltips.
+                            // The actual X axis values come from the 'x' property of the data points.
+                            const chartOptions = {
+                                scales: {
+                                    x: {
+                                        type: 'linear', // Ensure x-axis is linear for scatter plot
+                                        position: 'bottom',
+                                        title: {
+                                            display: true,
+                                            text: xCol,
+                                            color: '#e2e8f0'
+                                        }
+                                    },
+                                    y: {
+                                        type: 'linear', // Ensure y-axis is linear
+                                        title: {
+                                            display: true,
+                                            text: yCol,
+                                            color: '#e2e8f0'
+                                        }
+                                    }
+                                }
+                            };
+                            createChart('scatter', `Scatter Plot: ${yCol} vs ${xCol}`, [], scatterData, xCol, yCol, chartOptions); // Pass empty labels as data contains x,y
+                            aiResponseText = `Here's the **scatter plot** visualizing the relationship between "<strong>${xCol}</strong>" and "<strong>${yCol}</strong>".`;
+                        } else {
+                            aiResponseText = `No valid numeric data in both "<strong>${xCol}</strong>" and "<strong>${yCol}</strong>" to create a scatter plot.`;
+                        }
+                    } else {
+                        aiResponseText = `To show a scatter plot, I need two valid numeric columns. Please check your column names.`;
+                    }
+                } else {
+                    aiResponseText = `I didn't understand the scatter plot command format. Example: 'show scatter plot with X as Age and Y as Income'.`;
+                }
+            } else if (lowerQuery.startsWith('show pie chart of ') || lowerQuery.startsWith('show doughnut chart of ') || lowerQuery.startsWith('show polar area chart of ')) {
+                let chartType = '';
+                let queryRemainder = '';
+                if (lowerQuery.startsWith('show pie chart of ')) {
+                    chartType = 'pie';
+                    queryRemainder = query.substring('show pie chart of '.length).trim();
+                } else if (lowerQuery.startsWith('show doughnut chart of ')) {
+                    chartType = 'doughnut';
+                    queryRemainder = query.substring('show doughnut chart of '.length).trim();
+                } else if (lowerQuery.startsWith('show polar area chart of ')) {
+                    chartType = 'polarArea';
+                    queryRemainder = query.substring('show polar area chart of '.length).trim();
+                }
+
+                // Attempt to parse for aggregated charts first (e.g., Sales by Region as sum)
+                const aggregatedParts = queryRemainder.match(/(.+)\s+by\s+(.+)(?:\s+as\s+(sum|average))?/i);
+                if (aggregatedParts && aggregatedParts.length >= 3) {
+                    const numericColName = aggregatedParts[1].trim();
+                    const categoricalColName = aggregatedParts[2].trim();
+                    const aggregateType = aggregatedParts[4] ? aggregatedParts[4].toLowerCase() : 'sum';
+
+                    const numericCol = findNumericColumn(numericColName);
+                    const categoricalCol = findCategoricalColumn(categoricalColName);
+
+                    if (numericCol && categoricalCol) {
+                        const { labels, data: aggregatedData } = groupByAndAggregate(rawData, categoricalCol, numericCol, aggregateType);
+                        if (labels.length > 0) {
+                            createChart(chartType, `${numericCol} by ${categoricalCol} (${aggregateType})`, labels, aggregatedData);
+                            aiResponseText = `Here's the **${chartType} chart** visualizing the ${aggregateType} of "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>".`;
+                        } else {
+                            aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>". Ensure columns have data.`;
+                        }
+                    } else {
+                        aiResponseText = `To show a ${chartType} chart with aggregation, I need a valid numeric column and a valid categorical column. Please check your column names.`;
+                    }
+                } else {
+                    // If not aggregated, try to parse for simple categorical distribution (e.g., Gender)
+                    const categoricalColName = queryRemainder; // The whole remainder should be the column name
+                    const categoricalCol = findCategoricalColumn(categoricalColName);
+
+                    if (categoricalCol) {
+                        const { labels, data: counts } = getFrequencyDistribution(categoricalCol, rawData);
+                        if (labels.length > 0) {
+                            createChart(chartType, `Distribution of ${categoricalCol}`, labels, counts);
+                            aiResponseText = `Here's the **${chartType} chart** showing the distribution of "<strong>${categoricalCol}</strong>".`;
+                        } else {
+                            aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${categoricalCol}</strong>". Ensure the column has data.`;
+                        }
+                    } else {
+                        aiResponseText = `I couldn't find a valid categorical column named "<strong>${categoricalColName}</strong>" or I didn't understand the command format for this chart. Example: 'show ${chartType} chart of Gender' or 'show ${chartType} chart of Sales by Region as sum'.`;
+                    }
+                }
+            }
             // Command Guide
             else if (lowerQuery.includes('show command guide')) {
                 commandGuideOverlay.classList.remove('hidden');
@@ -2813,6 +3025,39 @@
                 toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
                 return; // Don't append another AI message, the overlay handles it
             }
+            // New: Automated Report Generation & Data Storytelling
+            else if (lowerQuery.includes('generate data story') || lowerQuery.includes('create report')) {
+                if (rawData.length === 0) {
+                    aiResponseText = 'Please upload a CSV file before I can generate a data story. I need data to tell a story about!';
+                } else {
+                    const reportResult = generateDataStory(); // This function is not provided in current context, assuming it exists externally
+                    if (reportResult && reportResult.success) {
+                        aiResponseText = `Here's a concise **Data Story** based on your loaded dataset. This provides a high-level narrative of key findings.<br>`;
+                        analysisContent = `<div class="bg-gray-700 p-6 rounded-lg mt-4 shadow-xl overflow-y-auto custom-scrollbar max-h-[400px] text-gray-200">${reportResult.reportHtml}</div>
+                                            <button id="downloadDataStoryBtn" class="send-button-gradient text-white p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center space-x-2 mt-4 text-base font-bold mx-auto">
+                                                <i class="fas fa-file-download"></i>
+                                                <span>Download Data Story (.txt)</span>
+                                            </button>`;
+                        // Add event listener for the download button after it's rendered
+                        setTimeout(() => {
+                            const downloadBtn = document.getElementById('downloadDataStoryBtn');
+                            if (downloadBtn) {
+                                downloadBtn.addEventListener('click', () => {
+                                    // Make sure downloadDataStory function is defined
+                                    if (typeof downloadDataStory === 'function') {
+                                        downloadDataStory(reportResult.reportHtml.replace(/<[^>]*>/g, '')); // Remove HTML tags for plain text download
+                                    } else {
+                                        console.error("downloadDataStory function is not defined.");
+                                    }
+                                });
+                            }
+                        }, 0); // Use setTimeout to ensure the button is in DOM
+                    } else {
+                        aiResponseText = `Error generating data story: ${reportResult ? reportResult.message : 'Unknown error.'}`;
+                    }
+                }
+            }
+
 
             // Unrecognized command
             else {
@@ -2893,6 +3138,68 @@
 
         // Initial schema display
         displaySchema(schema);
+
+        // Placeholder for generateDataStory and downloadDataStory, if not provided elsewhere.
+        // In a real application, these would be defined or imported.
+        function generateDataStory() {
+            // This is a placeholder. You would implement logic to generate a narrative report here.
+            // For example, summarize key insights from `lastProactiveInsights`,
+            // or generate descriptions based on descriptive statistics, top values, etc.
+            if (rawData.length === 0) {
+                return { success: false, message: "No data loaded to generate a story." };
+            }
+
+            let storyHtml = `<h3 class="text-2xl font-bold text-blue-400 mb-4">Your Data Story: Initial Overview</h3>
+                            <p class="mb-4">This report provides a high-level summary of your dataset and key insights.</p>`;
+
+            const numRows = rawData.length;
+            const numCols = Object.keys(schema).length;
+            storyHtml += `<h4 class="text-xl font-semibold text-gray-300 mb-2">Dataset Summary:</h4>
+                          <p class="mb-4">Your dataset contains <strong>${numRows} rows</strong> and <strong>${numCols} columns</strong>.</p>`;
+
+            const numericColumns = Object.keys(schema).filter(col => schema[col] === 'number');
+            if (numericColumns.length > 0) {
+                storyHtml += `<h4 class="text-xl font-semibold text-gray-300 mb-2">Key Numeric Trends:</h4><ul>`;
+                numericColumns.slice(0, 3).forEach(col => {
+                    const stats = getDescriptiveStats(col, rawData);
+                    if (stats) {
+                        storyHtml += `<li><strong>${col}</strong>: Average of ${stats.mean.toFixed(2)}, ranging from ${stats.min.toFixed(2)} to ${stats.max.toFixed(2)}.</li>`;
+                    }
+                });
+                storyHtml += `</ul>`;
+            }
+
+            if (lastProactiveInsights.length > 0) {
+                storyHtml += `<h4 class="text-xl font-semibold text-gray-300 mt-4 mb-2">Highlighted Insights:</h4>`;
+                lastProactiveInsights.slice(0, 5).forEach(insight => { // Include top 5 insights
+                    storyHtml += `<div class="insight-card p-4 my-2 border border-gray-600 rounded-lg">
+                                    <h5 class="font-bold text-blue-300 mb-1 flex items-center"><i class="${insight.icon} mr-2"></i>${insight.title}</h5>
+                                    <p class="text-sm text-gray-300">${insight.message.split('<br>')[0].replace('<strong>', '').replace('</strong>', '')}</p>
+                                  </div>`;
+                });
+                storyHtml += `<p class="mt-4">For a full list and details, click "Show Proactive Insights".</p>`;
+            } else {
+                storyHtml += `<p class="mt-4 text-gray-400">No specific proactive insights generated yet. Upload data and look for the "Show Proactive Insights" button!</p>`;
+            }
+
+            storyHtml += `<p class="mt-6 text-gray-400 italic">This story is automatically generated and provides a starting point for your analysis.</p>`;
+
+            return { success: true, reportHtml: storyHtml };
+        }
+
+        function downloadDataStory(text) {
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'CoDA_Data_Story.txt');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            appendMessage('AI', 'Your data story has been downloaded as **CoDA_Data_Story.txt**!', 'ai');
+        }
     </script>
 </body>
 </html>
