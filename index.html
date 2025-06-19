@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter (for body) & Roboto Mono (for code) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:400;500;700&display=swap" rel="stylesheet">
+    <link href="https="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:400;500;700&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Chart.js CDN for graphing - UPDATED to a specific v4.x version to avoid 'extend' errors from deprecated methods -->
@@ -134,29 +134,49 @@
             max-width: 100%;
         }
 
-        /* Table specific styles for the command list */
-        .command-table {
+        /* Table specific styles for the command list and data preview */
+        .data-table, .command-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
             font-size: 0.9rem;
             text-align: left;
         }
+        .data-table th, .data-table td,
         .command-table th, .command-table td {
             padding: 0.75rem;
             border-bottom: 1px solid #4a5568; /* Slightly lighter border for table rows */
         }
-        .command-table th {
+        .data-table th, .command-table th {
             background-color: #2d3748; /* Darker header background */
             font-weight: 600;
             color: #a0aec0; /* Lighter text for headers */
+            cursor: pointer; /* Indicate sortable headers */
+            position: relative; /* For sort icons */
+            padding-right: 25px; /* Space for sort icon */
         }
-        .command-table tbody tr:hover {
+        .data-table tbody tr:hover, .command-table tbody tr:hover {
             background-color: #4a5568; /* Hover effect for rows */
         }
-        .command-table tbody tr:last-child td {
+        .data-table tbody tr:last-child td, .command-table tbody tr:last-child td {
             border-bottom: none;
         }
+        /* Sort icon styling */
+        .data-table th .sort-icon {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7em;
+            color: #718096;
+        }
+        .data-table th.sorted-asc .sort-icon {
+            color: #4299e1;
+        }
+        .data-table th.sorted-desc .sort-icon {
+            color: #4299e1;
+        }
+
 
         /* Styles for shrunk header */
         .header-shrunk {
@@ -389,8 +409,11 @@
         let rawData = []; // Stores the parsed CSV data
         let schema = {}; // Stores the column names and inferred types
         let pendingCleaningSuggestion = null; // Stores details of a pending cleaning action
-        let myChart = null; // Holds the Chart.js instance for dynamic updates
+        // myChart will no longer be a global holding a single chart, as each chart will be independent
+        // let myChart = null;
         let lastProactiveInsights = []; // Store last generated insights as an array of objects
+        let currentSortColumn = null; // Stores the currently sorted column
+        let currentSortDirection = 'asc'; // 'asc' or 'desc'
 
         // Autocomplete elements
         const suggestionsContainer = document.getElementById('suggestionsContainer');
@@ -710,11 +733,7 @@
 
         // Function to create a chart (now with axis label options)
         function createChart(chartType, chartTitle, labels, data, xAxisLabelText = '', yAxisLabelText = '', options = {}) {
-            // Destroy existing chart if it exists
-            if (myChart) {
-                myChart.destroy();
-            }
-
+            // MyChart no longer destroys, each chart is a new instance
             // Create the AI message that introduces the chart
             const chartMessageDiv = document.createElement('div');
             chartMessageDiv.className = 'flex items-start mb-4 fade-in-message';
@@ -758,7 +777,8 @@
             }
 
             const ctx = chartCanvas.getContext('2d');
-            myChart = new Chart(ctx, {
+            // Create a NEW Chart.js instance for each chart
+            new Chart(ctx, { // Removed 'myChart =' assignment
                 type: chartType,
                 data: {
                     labels: (chartType !== 'scatter') ? labels : undefined, // Labels for non-scatter charts
@@ -1094,6 +1114,105 @@
                 <p class="mt-4">If I've made a cleaning suggestion, you can simply type <strong>'yes'</strong> to confirm.</p>`;
         }
 
+        /**
+         * Generates an HTML table for displaying raw data with sortable headers.
+         * @param {Array<Object>} data - The raw data to display.
+         * @param {Object} schema - The schema of the data.
+         * @param {string} sortCol - The current column being sorted.
+         * @param {string} sortDir - The current sort direction ('asc' or 'desc').
+         * @returns {string} HTML string of the data table.
+         */
+        function createDataTableHtml(data, schema, sortCol, sortDir) {
+            if (data.length === 0 || Object.keys(schema).length === 0) {
+                return '<p class="text-gray-400 text-center py-4">No data available to display in a table. Please upload a CSV first!</p>';
+            }
+
+            const headers = Object.keys(schema);
+            let tableHtml = `<div class="overflow-x-auto max-h-[400px] custom-scrollbar rounded-lg shadow-inner-dark border border-gray-700">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>`;
+            headers.forEach(header => {
+                const isSorted = header === sortCol;
+                const sortClass = isSorted ? `sorted-${sortDir}` : '';
+                const sortIcon = isSorted ? (sortDir === 'asc' ? '<i class="fas fa-sort-up sort-icon"></i>' : '<i class="fas fa-sort-down sort-icon"></i>') : '<i class="fas fa-sort sort-icon"></i>';
+                tableHtml += `<th class="${sortClass}" data-column-name="${header}">${header} ${sortIcon}</th>`;
+            });
+            tableHtml += `</tr></thead><tbody>`;
+
+            // Display a limited number of rows for large datasets for performance
+            const displayLimit = 200; // Limit to first 200 rows for preview
+            const dataToDisplay = data.slice(0, displayLimit);
+
+            dataToDisplay.forEach(row => {
+                tableHtml += `<tr>`;
+                headers.forEach(header => {
+                    const value = row[header] !== undefined && row[header] !== null ? row[header] : '';
+                    tableHtml += `<td>${value}</td>`;
+                });
+                tableHtml += `</tr>`;
+            });
+            tableHtml += `</tbody></table></div>`;
+
+            if (data.length > displayLimit) {
+                tableHtml += `<p class="text-sm text-gray-400 mt-2">Displaying first ${displayLimit} of ${data.length} rows. Scroll to see more. Data is processed entirely on your device!</p>`;
+            } else {
+                tableHtml += `<p class="text-sm text-gray-400 mt-2">You have a total of ${data.length} rows. Data is processed entirely on your device!</p>`;
+            }
+
+
+            return tableHtml;
+        }
+
+        // --- Data Preview Table Sorting Logic ---
+        function attachTableSortingListeners() {
+            // Find the newly rendered data table
+            const dataTable = chatArea.querySelector('.data-table');
+            if (!dataTable) return; // No table found
+
+            const headers = dataTable.querySelectorAll('th[data-column-name]');
+            headers.forEach(header => {
+                header.addEventListener('click', (event) => {
+                    const column = header.dataset.columnName;
+
+                    if (column === currentSortColumn) {
+                        currentSortDirection = (currentSortDirection === 'asc') ? 'desc' : 'asc';
+                    } else {
+                        currentSortColumn = column;
+                        currentSortDirection = 'asc';
+                    }
+                    
+                    // Sort the rawData
+                    rawData.sort((a, b) => {
+                        const valA = a[currentSortColumn];
+                        const valB = b[currentSortColumn];
+
+                        if (schema[currentSortColumn] === 'number') {
+                            const numA = parseFloat(valA);
+                            const numB = parseFloat(valB);
+                            if (isNaN(numA) && isNaN(numB)) return 0;
+                            if (isNaN(numA)) return currentSortDirection === 'asc' ? 1 : -1; // nulls/non-numbers at end
+                            if (isNaN(numB)) return currentSortDirection === 'asc' ? -1 : 1;
+                            return (currentSortDirection === 'asc' ? numA - numB : numB - numA);
+                        } else { // string comparison
+                            const strA = String(valA).toLowerCase();
+                            const strB = String(valB).toLowerCase();
+                            if (strA < strB) return currentSortDirection === 'asc' ? -1 : 1;
+                            if (strA > strB) return currentSortDirection === 'asc' ? 1 : -1;
+                            return 0;
+                        }
+                    });
+
+                    // Re-render the chat area with the sorted table
+                    // This is a simplified re-render for the prototype: it clears and re-adds the entire chat content
+                    // For a more complex app, you might only update the table itself.
+                    // To re-render only the table, we'll simulate the "show all data" command.
+                    simulateAIResponse('show all data', true); // Pass true to skip appending AI message again
+
+                });
+            });
+        }
+
 
         // Handle CSV file input change
         csvFileInput.addEventListener('change', (event) => {
@@ -1110,6 +1229,10 @@
                         rawData = parseCSV(e.target.result);
                         schema = inferSchema(rawData);
                         displaySchema(schema);
+                        // Reset sorting state on new file upload
+                        currentSortColumn = null;
+                        currentSortDirection = 'asc';
+
                         // Updated success message
                         uploadStatus.textContent = `Your ${file.name} has been uploaded successfully and is ready to perform analysis on.`;
                         uploadStatus.className = 'mt-1 text-xs font-semibold text-green-500';
@@ -1137,7 +1260,7 @@
         });
 
         // Function to append messages to the chat area
-        function appendMessage(sender, text, type = 'user') {
+        function appendMessage(sender, text, type = 'user', skipScroll = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex mb-4 ${type === 'user' ? 'justify-end' : 'items-start'} fade-in-message`;
 
@@ -1156,7 +1279,9 @@
                 `;
             }
             chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
+            if (!skipScroll) { // Only scroll if not skipping
+                chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
+            }
         }
 
         // Helper to find a column by name (case-insensitive and partial match)
@@ -2288,10 +2413,33 @@
 
 
         // Simulate AI response based on direct command matching (NLU removed)
-        function simulateAIResponse(query) {
+        function simulateAIResponse(query, isResort = false) {
             let aiResponseText = '';
             let analysisContent = '';
             const lowerQuery = query.toLowerCase();
+
+            // Clear chat if this is a "show all data" command triggered by a sort
+            // This prevents duplicate messages when sorting re-renders the table.
+            if (isResort && (lowerQuery.includes('show all data') || lowerQuery.includes('display everything') || lowerQuery.includes('what\'s in the dataset'))) {
+                // Remove only messages related to the previous "show all data" output.
+                // A more robust solution might clear specific content divs instead of entire messages.
+                // For this prototype, we'll clear all previous AI messages (which includes old tables).
+                const aiMessages = chatArea.querySelectorAll('.flex.items-start');
+                aiMessages.forEach(msg => {
+                    // Check if the message contains a data-table.
+                    if (msg.nextElementSibling && msg.nextElementSibling.querySelector('.data-table')) {
+                         msg.remove(); // Remove the AI message bubble
+                         msg.nextElementSibling.remove(); // Remove the data table container
+                    }
+                });
+                 // To re-add AI message for the sorted table.
+                appendMessage('AI', `Here's your data, sorted by "<strong>${currentSortColumn}</strong>" in ${currentSortDirection === 'asc' ? 'ascending' : 'descending'} order:`, 'ai', true); // Skip initial scroll
+                analysisContent = createDataTableHtml(rawData, schema, currentSortColumn, currentSortDirection);
+                appendMessage('AI', analysisContent, 'ai'); // Append table content
+                attachTableSortingListeners(); // Re-attach listeners for the new table
+                return;
+            }
+
 
             if (rawData.length === 0 && !lowerQuery.includes('command guide') && !lowerQuery.includes('data story') && !lowerQuery.includes('create report')) {
                 appendMessage('AI', "Please upload a CSV file first before asking questions. I'm ready when you are!", 'ai');
@@ -2320,9 +2468,7 @@
 
             // General Overview
             if (lowerQuery.includes('show all data') || lowerQuery.includes('display everything') || lowerQuery.includes('what\'s in the dataset')) {
-                analysisContent = `<p class="text-gray-300 mt-2">Here's a preview of the **first 10 rows** from your dataset:</p>
-                                    <div class="code-block mt-2">${rawData.slice(0, 10).map(row => JSON.stringify(row, null, 2)).join('\n')}</div>
-                                    <p class="text-sm text-gray-400 mt-2">You have a total of ${rawData.length} rows. This data is processed entirely on your device!</p>`;
+                analysisContent = createDataTableHtml(rawData, schema, currentSortColumn, currentSortDirection);
                 aiResponseText = `Understood! Here's your data:`;
             } else if (lowerQuery.startsWith('show ') && lowerQuery.includes(' column')) {
                 const colNameMatch = query.match(/show\s+(.+)\s+column/i);
@@ -2862,7 +3008,7 @@
                         const { labels, data: aggregatedData } = groupByAndAggregate(rawData, categoricalCol, numericCol, aggregateType);
                         if (labels.length > 0) {
                             createChart('bar', `${numericCol} by ${categoricalCol} (${aggregateType})`, labels, aggregatedData, categoricalCol, `${numericCol} (${aggregateType})`);
-                            aiResponseText = `Here's the **bar chart** showing the ${aggregateType} of "<strong>${numericCol}</strong>" grouped by "<strong>${categoricalCol}</strong>".`;
+                            // No aiResponseText here, createChart handles the message
                         } else {
                             aiResponseText = `No valid data to create a bar chart for "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>". Ensure columns have data.`;
                         }
@@ -2903,7 +3049,7 @@
                             const data = lineData.map(d => d.y);
 
                             createChart('line', `${yCol} over ${xCol}`, labels, data, xCol, yCol);
-                            aiResponseText = `Here's the **line chart** visualizing "<strong>${yCol}</strong>" against "<strong>${xCol}</strong>".`;
+                            // No aiResponseText here, createChart handles the message
                         } else {
                             aiResponseText = `No valid numeric data in "<strong>${yCol}</strong>" to create a line chart.`;
                         }
@@ -2954,7 +3100,7 @@
                                 }
                             };
                             createChart('scatter', `Scatter Plot: ${yCol} vs ${xCol}`, [], scatterData, xCol, yCol, chartOptions); // Pass empty labels as data contains x,y
-                            aiResponseText = `Here's the **scatter plot** visualizing the relationship between "<strong>${xCol}</strong>" and "<strong>${yCol}</strong>".`;
+                            // No aiResponseText here, createChart handles the message
                         } else {
                             aiResponseText = `No valid numeric data in both "<strong>${xCol}</strong>" and "<strong>${yCol}</strong>" to create a scatter plot.`;
                         }
@@ -2992,7 +3138,7 @@
                         const { labels, data: aggregatedData } = groupByAndAggregate(rawData, categoricalCol, numericCol, aggregateType);
                         if (labels.length > 0) {
                             createChart(chartType, `${numericCol} by ${categoricalCol} (${aggregateType})`, labels, aggregatedData);
-                            aiResponseText = `Here's the **${chartType} chart** visualizing the ${aggregateType} of "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>".`;
+                            // No aiResponseText here, createChart handles the message
                         } else {
                             aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>". Ensure columns have data.`;
                         }
@@ -3008,7 +3154,7 @@
                         const { labels, data: counts } = getFrequencyDistribution(categoricalCol, rawData);
                         if (labels.length > 0) {
                             createChart(chartType, `Distribution of ${categoricalCol}`, labels, counts);
-                            aiResponseText = `Here's the **${chartType} chart** showing the distribution of "<strong>${categoricalCol}</strong>".`;
+                            // No aiResponseText here, createChart handles the message
                         } else {
                             aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${categoricalCol}</strong>". Ensure the column has data.`;
                         }
@@ -3064,7 +3210,15 @@
                 aiResponseText = `I'm sorry, I didn't understand that command. Please refer to the command list by typing 'show command guide' for examples, or try rephrasing your request.`;
             }
             
-            appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+            // Only append an AI message if aiResponseText has content. Chart commands will now be silent here.
+            if (aiResponseText || analysisContent) { // Ensure something is being appended
+                appendMessage('AI', aiResponseText + (analysisContent ? `<div class="mt-4">${analysisContent}</div>` : ''), 'ai');
+            }
+
+            // Attach listeners after the message has been appended to the DOM
+            if (lowerQuery.includes('show all data') || lowerQuery.includes('display everything') || lowerQuery.includes('what\'s in the dataset')) {
+                attachTableSortingListeners();
+            }
         }
 
         // Handle sending messages
