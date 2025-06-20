@@ -30,7 +30,7 @@
             --chat-bubble-user: #3b82f6; /* Accent blue for user bubble */
             --code-bg: #f1f5f9; /* Very light grey code background */
             --code-text: #1a202c; /* Dark code text */
-            --code-border: #3b82f6; /* Accent blue for code border */
+            --code-border': #3b82f6; /* Accent blue for code border */
             --table-header-bg: #f0f4f8; /* Light grey table header */
             --table-header-text: #2d3748; /* Dark text for table header */
             --table-row-hover: #e2e8f0; /* Slightly darker hover for light theme */
@@ -363,7 +363,7 @@
         }
 
         .command-list-table th {
-            background-color: var(--table-header-bg); /* Light grey header */
+            background-color: var(--table-header-bg);
             color: var(--table-header-text);
             font-weight: 600;
             font-size: 0.9rem;
@@ -466,32 +466,35 @@
         }
 
 
-        /* Styles for shrunk header */
-        .header-shrunk {
-            padding-top: 1rem !important;
-            padding-bottom: 0.5rem !important;
+        /* Header animation */
+        #headerContainer {
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center horizontally initially */
+            align-items: center; /* Center vertically initially */
+            transition: padding 0.5s ease-in-out, height 0.5s ease-in-out; /* Corrected transition */
         }
-        .header-shrunk #mainTitle {
+
+        /* This rule for the header as a whole */
+        #headerContainer.header-shrunk {
+            align-items: flex-start !important; /* Moves content to the top-left */
+            padding: 1rem 2rem !important; /* Reduces the padding to make it smaller */
+            height: auto; /* Allow height to adjust */
+        }
+
+        /* This rule hides the extra text when the header is shrunk */
+        #headerContainer.header-shrunk #subTitle,
+        #headerContainer.header-shrunk #createdBy {
+            display: none !important;
+        }
+
+        /* This rule makes the main title smaller */
+        #headerContainer.header-shrunk #mainTitle {
             font-size: 1.5rem !important;
-            margin-bottom: 0.25rem !important;
+            margin-bottom: 0 !important;
+            text-align: left !important;
         }
-        .header-shrunk #subTitle {
-            font-size: 0.875rem !important;
-            margin-bottom: 0.25rem !important;
-        }
-        .header-shrunk #createdBy {
-            font-size: 0.75rem !important;
-            margin-bottom: 0.5rem !important;
-        }
-        .header-shrunk #toggleButtons {
-            margin-bottom: 0rem !important;
-            flex-wrap: wrap;
-        }
-        .header-shrunk #toggleButtons button {
-            padding-top: 0.4rem !important;
-            padding-bottom: 0.4rem !important;
-            font-size: 0.8rem !important;
-        }
+
 
         /* Proactive Insights Card Styling */
         .insight-card {
@@ -633,9 +636,98 @@
             color: var(--accent-primary);
         }
 
-        /* Guided Tour Specific Styles (removed for this iteration) */
-        /* All guided tour related elements and styles have been removed. */
-        /* #tourOverlay, #tourModal, .tour-tooltip, .tour-highlight, etc. are no longer in use. */
+        /* Floating Action Button (FAB) styles */
+        .fab-container {
+            position: fixed;
+            top: 2rem; /* Position top-right */
+            right: 2rem;
+            z-index: 50; /* Above most content, below overlays */
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            align-items: flex-end; /* Align buttons to the right */
+            gap: 0.75rem; /* Space between fanned-out buttons */
+        }
+
+        .fab-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem; /* Space between buttons when fanned out */
+            max-height: 0; /* Initially hidden */
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .fab-controls.show {
+            max-height: 300px; /* Max height to reveal all buttons, adjust if more buttons */
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .fab-main-btn {
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            width: 3.5rem; /* Slightly larger for main button */
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            outline: none; /* Remove outline on focus */
+            border: none;
+        }
+
+        .fab-main-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        .fab-main-btn .fas {
+            transition: transform 0.3s ease;
+        }
+
+        .fab-main-btn.open .fas {
+            transform: rotate(45deg); /* Rotate for a close icon effect */
+        }
+
+        .fab-controls button {
+            /* Styles for secondary icon-only buttons */
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            width: 3.5rem; /* Make them square to fit icons */
+            height: 3.5rem;
+            border-radius: 50%; /* Make them circular */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center the icon */
+            font-size: 1.2rem; /* Icon size */
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .fab-controls button i {
+            margin-right: 0; /* Remove margin for icon-only buttons */
+            color: var(--accent-primary);
+        }
+
+        .fab-controls button:hover {
+            background-color: var(--table-row-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Hide the original theme selector dropdown */
+        #hiddenThemeSelectorContainer {
+            display: none !important;
+        }
+
     </style>
 </head>
 <body class="relative flex items-center justify-center h-screen w-screen">
@@ -689,31 +781,11 @@
 
         <!-- Right Pane: Conversational Interface & Results -->
         <div id="chat-panel" class="w-full flex flex-col rounded-3xl">
-            <div id="headerContainer" class="px-8 pt-6 pb-2 transition-all duration-500 ease-in-out">
-                <h2 class="text-4xl font-extrabold mb-1 text-center tracking-tight" id="mainTitle">CoDA <span class="font-extrabold">AI</span></h2>
-                <p class="text-md mb-1 text-center italic" id="subTitle">Your Strategic Data Copilot</p>
-                <p class="text-sm mb-4 text-center" id="createdBy">Created by: <span class="font-semibold">Utkarsh Kumar</span></p>
-
-                <!-- Toggle Buttons for Data Panel and Command Guide & Theme Selector -->
-                <div class="flex justify-start space-x-3 mb-2" id="toggleButtons">
-                    <button id="toggleDataPanelBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out hidden md:flex items-center space-x-2">
-                        <i class="fas fa-eye mr-2"></i> <span id="toggleButtonText">Show Data Panel</span>
-                    </button>
-                    <button id="toggleCommandGuideBtn" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out flex items-center space-x-2">
-                        <i class="fas fa-book mr-2"></i> <span id="toggleCommandGuideText">Show Command Guide</span>
-                    </button>
-                    <div class="relative inline-block text-left ml-auto">
-                        <select id="themeSelector" class="bg-gray-700 text-gray-200 px-4 py-2 rounded-full shadow-lg hover:bg-gray-600 transition duration-200 ease-in-out cursor-pointer appearance-none pr-8">
-                            <option value="default">White & Blue</option> <!-- Changed default option text -->
-                            <option value="cyberpunk">Cyberpunk</option>
-                            <option value="forest">Forest</option>
-                            <option value="ocean">Ocean</option>
-                            <option value="sunset">Sunset</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-200">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
+            <div id="headerContainer" class="px-8 pt-6 pb-2">
+                <div id="headerTitles">
+                    <h2 class="text-4xl font-extrabold mb-1 text-center tracking-tight" id="mainTitle">CoDA <span class="font-extrabold">AI</span></h2>
+                    <p class="text-md mb-1 text-center italic" id="subTitle">Your Strategic Data Copilot</p>
+                    <p class="text-sm mb-4 text-center" id="createdBy">Created by: <span class="font-semibold">Utkarsh Kumar</span></p>
                 </div>
             </div>
 
@@ -747,6 +819,39 @@
             </div>
         </div>
     </div>
+
+    <!-- Floating Action Button (FAB) Container -->
+    <div class="fab-container">
+        <!-- Main FAB Button (comes first for downward expansion) -->
+        <button id="fabMainBtn" class="fab-main-btn">
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <!-- Controls that will fan out (appear below main button) -->
+        <div id="fabControls" class="fab-controls">
+            <button id="toggleDataPanelBtn">
+                <i class="fas fa-table-columns"></i>
+            </button>
+            <button id="toggleCommandGuideBtn">
+                <i class="fas fa-book-open"></i>
+            </button>
+            <button id="toggleThemeBtn">
+                <i class="fas fa-palette"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden Theme Selector (original select element) -->
+    <div id="hiddenThemeSelectorContainer">
+        <select id="themeSelector">
+            <option value="default">White & Blue</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="forest">Forest</option>
+            <option value="ocean">Ocean</option>
+            <option value="sunset">Sunset</option>
+        </select>
+    </div>
+
 
     <!-- Command Guide Overlay (Frosted Glass Effect) -->
     <div id="commandGuideOverlay" class="fixed inset-0 bg-opacity-95 p-8 flex flex-col rounded-3xl z-50 hidden overflow-y-auto custom-scrollbar">
@@ -807,6 +912,7 @@
         let lastProactiveInsights = [];
         let currentSortColumn = null;
         let currentSortDirection = 'asc';
+        let isHeaderShrunk = false; // Renamed flag for header animation
 
         // Autocomplete elements
         const suggestionsContainer = document.getElementById('suggestionsContainer');
@@ -823,23 +929,30 @@
         const toggleDataPanelBtn = document.getElementById('toggleDataPanelBtn');
         const dataPanel = document.getElementById('data-panel');
         const chatPanel = document.getElementById('chat-panel');
-        const toggleButtonText = document.getElementById('toggleButtonText');
+        // Removed references to toggleButtonText and toggleCommandGuideText as spans are removed
         const toggleCommandGuideBtn = document.getElementById('toggleCommandGuideBtn');
         const commandGuideOverlay = document.getElementById('commandGuideOverlay');
         const commandGuideContent = document.getElementById('commandGuideContent');
         const commandSearchInput = document.getElementById('commandSearchInput');
         const closeCommandGuideBtn = document.getElementById('closeCommandGuideBtn');
-        const toggleCommandGuideText = document.getElementById('toggleCommandGuideText');
+        // Removed reference to toggleCommandGuideText as span is removed
         const headerContainer = document.getElementById('headerContainer');
+        const headerTitles = document.getElementById('headerTitles'); 
+        const mainTitle = document.getElementById('mainTitle'); 
+        const subTitle = document.getElementById('subTitle'); 
+        const createdBy = document.getElementById('createdBy'); 
         const showProactiveInsightsBtn = document.getElementById('showProactiveInsightsBtn');
         const proactiveInsightsOverlay = document.getElementById('proactiveInsightsOverlay');
         const proactiveInsightsContent = document.getElementById('proactiveInsightsContent');
         const closeProactiveInsightsBtn = document.getElementById('closeProactiveInsightsBtn');
         const insightSearchInput = document.getElementById('insightSearchInput');
         const filterButtons = document.querySelectorAll('.filter-btn');
-        const themeSelector = document.getElementById('themeSelector'); // New theme selector reference
+        const themeSelector = document.getElementById('themeSelector'); 
 
-        let isHeaderShrunk = false;
+        // FAB specific elements
+        const fabMainBtn = document.getElementById('fabMainBtn');
+        const fabControls = document.getElementById('fabControls');
+        const toggleThemeBtn = document.getElementById('toggleThemeBtn'); // New reference for the theme toggle button
 
         // AI Loading Indicator Element
         const aiLoadingIndicator = document.getElementById('aiLoadingIndicator');
@@ -1215,7 +1328,7 @@
                         groupedData[groupKey] = { sum: 0, count: 0 };
                     }
                     groupedData[groupKey].sum += value;
-                    groupedData[key].count++;
+                    groupedData[groupKey].count++;
                 }
             });
 
@@ -1320,19 +1433,34 @@
             chatArea.scrollTop = chatArea.scrollHeight;
 
             let datasetsConfig = [];
+            // For scatter charts AND line charts with a linear X-axis, data array is expected to be {x: val, y: val} objects
+            // For other charts (bar, pie, etc.), data array is just y values, and labels are separate
             if (chartType === 'scatter') {
                 datasetsConfig.push({
                     label: chartTitle,
-                    data: data,
+                    data: data, // `data` here is already [{x,y}, {x,y}, ...]
                     backgroundColor: getChartColors(1)[0],
                     borderColor: getChartColors(1)[0].replace('0.8', '1'),
                     pointRadius: 5,
-                    pointHoverRadius: 7
+                    pointHoverRadius: 7,
+                    showLine: false // Scatter plots usually don't show lines by default
                 });
-            } else {
+            } else if (chartType === 'line' && options.scales && options.scales.x && options.scales.x.type === 'linear') {
+                // Line chart with numeric X axis: data should be {x,y} objects, no separate labels needed in Chart.js config
                 datasetsConfig.push({
                     label: chartTitle,
-                    data: data,
+                    data: data, // `data` here is already [{x,y}, {x,y}, ...] from simulateAIResponse
+                    backgroundColor: 'rgba(0,0,0,0)', // Transparent background for line chart area
+                    borderColor: getChartColors(1)[0].replace('0.8', '1'), // Line color
+                    borderWidth: 2,
+                    pointRadius: 3, // Show points on the line
+                    pointHoverRadius: 5,
+                    fill: false // Do not fill area under the line by default
+                });
+            } else { // All other charts, including line chart with categorical X axis
+                datasetsConfig.push({
+                    label: chartTitle,
+                    data: data, // `data` here is just [y1, y2, ...]
                     backgroundColor: getChartColors(data.length),
                     borderColor: getChartColors(data.length).map(color => color.replace('0.8', '1')),
                     borderWidth: 1
@@ -1348,7 +1476,9 @@
             new Chart(ctx, {
                 type: chartType,
                 data: {
-                    labels: (chartType !== 'scatter') ? labels : undefined,
+                    // Labels are only needed if the x-axis is categorical or for non-scatter/linear-line charts.
+                    // If labels is undefined here, Chart.js will rely on x values in the dataset's `data`.
+                    labels: (chartType === 'scatter' || (chartType === 'line' && options.scales && options.scales.x && options.scales.x.type === 'linear')) ? undefined : labels,
                     datasets: datasetsConfig
                 },
                 options: {
@@ -1378,7 +1508,7 @@
                     },
                     scales: {
                         x: {
-                            type: (chartType === 'scatter' || chartType === 'line') ? 'linear' : 'category',
+                            type: (chartType === 'scatter' || chartType === 'line') ? (options.scales && options.scales.x && options.scales.x.type ? options.scales.x.type : 'linear') : 'category', // Use options type if provided
                             ticks: {
                                 color: tickColor
                             },
@@ -1565,7 +1695,7 @@
             headers.forEach(header => {
                 const isSorted = header === sortCol;
                 const sortClass = isSorted ? `sorted-${sortDir}` : '';
-                const sortIcon = isSorted ? (sortDir === 'asc' ? '<i class="fas fa-sort-up sort-icon"></i>' : '<i class="fas fa-sort-down sort-icon"></i>') : '<i class="fas fa-sort sort-icon"></i>';
+                const sortIcon = isSorted ? (sortDir === 'asc' ? '<i class="fas fa-sort-up sort-icon"></i>' : '<i class="fas fa-sort-down sort-icon"></i>') : '<i class="fas fa-sort-icon"></i>';
                 tableHtml += `<th class="${sortClass}" data-column-name="${header}">${header} ${sortIcon}</th>`;
             });
             tableHtml += `</tr></thead><tbody>`;
@@ -1620,6 +1750,7 @@
                             if (isNaN(numA) && isNaN(numB)) return 0;
                             if (isNaN(numA)) return currentSortDirection === 'asc' ? 1 : -1;
                             if (isNaN(numB)) return currentSortDirection === 'asc' ? -1 : 1;
+                            if (isNaN(numA) || isNaN(numB)) return 0; // Handle cases where one is NaN and the other is a number
                             return (currentSortDirection === 'asc' ? numA - numB : numB - numA);
                         } else {
                             const strA = String(valA).toLowerCase();
@@ -1903,10 +2034,11 @@
         dataPanel.classList.add('hidden', 'md:w-0', 'md:hidden');
         chatPanel.classList.remove('md:w-2/3');
         chatPanel.classList.add('md:w-full');
-        toggleButtonText.textContent = 'Show Data Panel';
-        toggleDataPanelBtn.querySelector('i').className = 'fas fa-eye mr-2';
+        // Removed reference to toggleButtonText
+        toggleDataPanelBtn.querySelector('i').className = 'fas fa-table-columns'; // Updated icon
 
         toggleDataPanelBtn.addEventListener('click', () => {
+            console.log("Toggle Data Panel Clicked");
             const isCurrentlyHidden = dataPanel.classList.contains('hidden');
 
             if (isCurrentlyHidden) {
@@ -1914,15 +2046,13 @@
                 dataPanel.classList.add('flex', 'md:w-1/3');
                 chatPanel.classList.remove('md:w-full');
                 chatPanel.classList.add('md:w-2/3');
-                toggleButtonText.textContent = 'Hide Data Panel';
-                toggleDataPanelBtn.querySelector('i').className = 'fas fa-eye-slash mr-2';
+                // Removed toggleButtonText update
             } else {
                 dataPanel.classList.remove('flex', 'md:w-1/3');
                 dataPanel.classList.add('hidden', 'md:w-0', 'md:hidden');
                 chatPanel.classList.remove('md:w-2/3');
                 chatPanel.classList.add('md:w-full');
-                toggleButtonText.textContent = 'Show Data Panel';
-                toggleDataPanelBtn.querySelector('i').className = 'fas fa-eye mr-2';
+                // Removed toggleButtonText update
             }
         });
 
@@ -1930,10 +2060,13 @@
         toggleCommandGuideBtn.addEventListener('click', () => {
             commandGuideOverlay.classList.remove('hidden');
             commandGuideContent.innerHTML = getCommandListHtml();
-            toggleCommandGuideText.textContent = 'Hide Command Guide';
-            toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
+            // Removed reference to toggleCommandGuideText
+            toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open'; // Updated icon
             // Show the overlay explicitly with the .show class for transitions
             commandGuideOverlay.classList.add('show');
+            // Close FAB controls if open
+            fabControls.classList.remove('show');
+            fabMainBtn.classList.remove('open');
         });
 
         // Event listener for the close button INSIDE the overlay
@@ -1943,8 +2076,8 @@
             setTimeout(() => {
                 commandGuideOverlay.classList.add('hidden'); // Fully hide after transition
             }, 300); // Match CSS transition duration
-            toggleCommandGuideText.textContent = 'Show Command Guide';
-            toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book mr-2';
+            // Removed reference to toggleCommandGuideText
+            toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open'; // Keep consistent icon
             commandSearchInput.value = '';
         });
 
@@ -2591,7 +2724,14 @@
                 }
             }
             sendMessageBtn.click();
-            proactiveInsightsOverlay.classList.add('hidden');
+            proactiveInsightsOverlay.classList.remove('show'); // Hide insights overlay
+            setTimeout(() => {
+                proactiveInsightsOverlay.classList.add('hidden'); // Fully hide after transition
+            }, 300); // Match CSS transition duration
+            commandGuideOverlay.classList.remove('show'); // Hide command guide overlay
+            setTimeout(() => {
+                commandGuideOverlay.classList.add('hidden'); // Fully hide after transition
+            }, 300); // Match CSS transition duration
         }
 
 
@@ -2616,7 +2756,7 @@
             }
 
 
-            if (rawData.length === 0 && !lowerQuery.includes('command guide') && !lowerQuery.includes('data story') && !lowerQuery.includes('create report')) {
+            if (rawData.length === 0 && !lowerQuery.includes('command guide') && !lowerQuery.includes('data story') && !lowerQuery.includes('create report') && !lowerQuery.includes('what insights do you have?')) {
                 appendMessage('AI', "Please upload a CSV file first before asking questions. I'm ready when you are!", 'ai');
                 return;
             }
@@ -2686,7 +2826,7 @@
                                 if (otherCol !== col && schema[otherCol] === 'number') {
                                     const corr = calculateCorrelation(col, otherCol, rawData);
                                     if (corr !== null && !isNaN(corr)) {
-                                        correlationWithOtherNumeration.push(`${otherCol}: ${corr.toFixed(2)}`);
+                                        correlationWithOtherNumerics.push(`${otherCol}: ${corr.toFixed(2)}`);
                                     }
                                 }
                             }
@@ -3260,19 +3400,34 @@
 
                             if (chartData.length > 0) {
                                 // For line and scatter, if x is numeric, sort numerically. Otherwise, sort alphabetically.
+                                // This sorting is for presentation consistency, Chart.js handles linear axes correctly regardless of sort for rendering.
                                 if (schema[xCol] === 'number') {
                                     chartData.sort((a, b) => a.x - b.x);
                                 } else {
                                     chartData.sort((a, b) => String(a.x).localeCompare(String(b.x)));
                                 }
 
-                                const labels = chartData.map(d => d.x);
-                                const data = chartData.map(d => d.y);
+                                // For line chart with categorical X axis, labels and data need to be separated
+                                let chartLabels = undefined; // Default for linear X axis
+                                let chartPlotData = chartData; // Default for linear X axis (array of {x,y} objects)
 
-                                createChart(chartType, `${yCol} vs ${xCol}`, labels, data, xCol, yCol, {
+                                if (chartType === 'line' && schema[xCol] === 'string') {
+                                    // For line chart with categorical X axis, separate labels and data
+                                    chartLabels = chartData.map(d => d.x);
+                                    chartPlotData = chartData.map(d => d.y);
+                                }
+
+                                createChart(chartType, `${yCol} vs ${xCol}`, chartLabels, chartPlotData, xCol, yCol, {
                                     scales: {
-                                        x: { type: schema[xCol] === 'number' ? 'linear' : 'category', position: 'bottom', title: { display: true, text: xCol, color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() } },
-                                        y: { type: 'linear', title: { display: true, text: yCol, color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() } }
+                                        x: {
+                                            type: schema[xCol] === 'number' ? 'linear' : 'category',
+                                            position: 'bottom',
+                                            title: { display: true, text: xCol, color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() }
+                                        },
+                                        y: {
+                                            type: 'linear',
+                                            title: { display: true, text: yCol, color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() }
+                                        }
                                     }
                                 });
                             } else {
@@ -3324,8 +3479,9 @@
             else if (lowerQuery.includes('show command guide')) {
                 commandGuideOverlay.classList.remove('hidden');
                 commandGuideContent.innerHTML = getCommandListHtml();
-                toggleCommandGuideText.textContent = 'Hide Command Guide';
-                toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
+                // Removed reference to toggleCommandGuideText
+                toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open'; // Kept consistent icon
+                commandGuideOverlay.classList.add('show'); // Ensure the overlay shows with transition
                 return;
             }
             else if (lowerQuery.includes('generate data story') || lowerQuery.includes('create report')) {
@@ -3372,18 +3528,54 @@
             }
         }
 
+        // --- FAB Button Logic ---
+        fabMainBtn.addEventListener('click', () => {
+            fabControls.classList.toggle('show');
+            fabMainBtn.classList.toggle('open');
+        });
+
+        // Close FAB controls when clicking outside (on the chat area)
+        chatArea.addEventListener('click', () => {
+            if (fabControls.classList.contains('show')) {
+                fabControls.classList.remove('show');
+                fabMainBtn.classList.remove('open');
+            }
+        });
+
+        // Event listener for the new theme toggle button
+        toggleThemeBtn.addEventListener('click', () => {
+            // Get current theme index
+            const themeNames = Object.keys(themes);
+            let currentThemeIndex = themeNames.indexOf(localStorage.getItem('selectedTheme') || 'default');
+
+            // Calculate next theme index
+            currentThemeIndex = (currentThemeIndex + 1) % themeNames.length;
+            const nextTheme = themeNames[currentThemeIndex];
+
+            // Apply the next theme
+            applyTheme(nextTheme);
+            themeSelector.value = nextTheme; // Update the hidden select value
+        });
+
+
         sendMessageBtn.addEventListener('click', () => {
             const query = chatInput.value.trim();
             if (query) {
                 appendMessage('You', query, 'user');
                 chatInput.value = '';
 
-                if (!isHeaderShrunk) {
-                    headerContainer.classList.add('header-shrunk');
-                    isHeaderShrunk = true;
+                // Trigger header animation only once
+                if (!isHeaderShrunk) { 
+                    headerContainer.classList.add('header-shrunk'); 
+                    isHeaderShrunk = true; 
                 }
 
                 simulateAIResponse(query);
+                // Close FAB controls if open after sending message
+                if (fabControls.classList.contains('show')) {
+                    fabControls.classList.remove('show');
+                    fabMainBtn.classList.remove('open');
+                }
             }
         });
 
@@ -3403,6 +3595,9 @@
             proactiveInsightsOverlay.classList.remove('hidden');
             // Ensure the overlay shows with transition
             proactiveInsightsOverlay.classList.add('show');
+            // Close FAB controls if open
+            fabControls.classList.remove('show');
+            fabMainBtn.classList.remove('open');
         });
 
         closeProactiveInsightsBtn.addEventListener('click', () => {
@@ -3424,7 +3619,7 @@
                 const filterType = button.dataset.filter;
                 const searchTerm = insightSearchInput.value.trim();
                 renderProactiveInsights(filterType, searchTerm);
-            });
+        });
         });
 
         insightSearchInput.addEventListener('input', () => {
@@ -3434,8 +3629,8 @@
             renderProactiveInsights(filterType, searchTerm);
         });
 
-        toggleCommandGuideText.textContent = 'Show Command Guide';
-        toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book mr-2';
+        // Removed direct reference to toggleCommandGuideText for consistency
+        toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open'; 
 
         displaySchema(schema);
 
