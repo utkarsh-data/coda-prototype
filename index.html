@@ -42,118 +42,6 @@
             --filter-inactive-text: #2d3748; /* Dark text */
         }
 
-        /* Cyberpunk Theme (retained for selector) */
-        .cyberpunk-theme {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #1a0a2a;
-            --text-primary: #00ffc0;
-            --text-secondary: #ff00ff;
-            --accent-primary: #00ffff;
-            --accent-secondary: #ff00ff;
-            --accent-primary-rgb: 0, 255, 255;
-            --border-color: #00ffff;
-            --shadow-color: rgba(0, 255, 255, 0.4);
-            --bubble-color: rgba(0, 255, 255, 0.1);
-            --chat-bubble-ai: #2a003a;
-            --chat-bubble-user: #00ffc0;
-            --code-bg: #0d0d0d;
-            --code-text: #00ffc0;
-            --code-border: #00ffff;
-            --table-header-bg: #1a0a2a;
-            --table-header-text: #00ffff;
-            --table-row-hover: #2a0a3a;
-            --category-header-bg: #3a004a;
-            --category-header-text: #ff00ff;
-            --filter-active-bg: #00ffff;
-            --filter-active-text: #0a0a0a;
-            --filter-inactive-bg: #2a0a2a;
-            --filter-inactive-text: #ff00ff;
-        }
-
-        /* Forest Theme (retained for selector) */
-        .forest-theme {
-            --bg-primary: #223c2d;
-            --bg-secondary: #3a5a40;
-            --text-primary: #d4e5d6;
-            --text-secondary: #a8bfae;
-            --accent-primary: #6a994e;
-            --accent-secondary: #82b568;
-            --accent-primary-rgb: 106, 153, 78;
-            --border-color: #5a826a;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --bubble-color: rgba(255, 255, 255, 0.03);
-            --chat-bubble-ai: #4a6a5a;
-            --chat-bubble-user: #6a994e;
-            --code-bg: #2e4a3a;
-            --code-text: #d4e5d6;
-            --code-border: #6a994e;
-            --table-header-bg: #3a5a40;
-            --table-header-text: #d4e5d6;
-            --table-row-hover: #4a6a5a;
-            --category-header-bg: #4a7a5a;
-            --category-header-text: #e2e8f0;
-            --filter-active-bg: #6a994e;
-            --filter-active-text: #d4e5d6;
-            --filter-inactive-bg: #4a6a5a;
-            --filter-inactive-text: #e2e8f0;
-        }
-
-        /* Ocean Theme (retained for selector) */
-        .ocean-theme {
-            --bg-primary: #0f1f3a;
-            --bg-secondary: #1a3a5a;
-            --text-primary: #e0f2f7;
-            --text-secondary: #a7cadb;
-            --accent-primary: #4a90e2;
-            --accent-secondary: #2e78c8;
-            --accent-primary-rgb: 74, 144, 226;
-            --border-color: #3a72b2;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --bubble-color: rgba(255, 255, 255, 0.04);
-            --chat-bubble-ai: #2a4a6a;
-            --chat-bubble-user: #4a90e2;
-            --code-bg: #1e2f4a;
-            --code-text: #e0f2f7;
-            --code-border: #4a90e2;
-            --table-header-bg: #1a3a5a;
-            --table-header-text: #e0f2f7;
-            --table-row-hover: #2a4a6a;
-            --category-header-bg: #3a5a7a;
-            --category-header-text: #e0f2f7;
-            --filter-active-bg: #4a90e2;
-            --filter-active-text: #ffffff;
-            --filter-inactive-bg: #2a4a6a;
-            --filter-inactive-text: #e0f2f7;
-        }
-
-        /* Sunset Theme (retained for selector) */
-        .sunset-theme {
-            --bg-primary: '#3a1a0f';
-            --bg-secondary: '#5a2a1a';
-            --text-primary: '#fce3d7';
-            --text-secondary: '#d7b3a4';
-            --accent-primary: '#e05a30';
-            --accent-secondary: '#c44521';
-            --accent-primary-rgb: '224, 90, 48';
-            --border-color: '#a34a2e';
-            --shadow-color: 'rgba(0, 0, 0, 0.3)';
-            --bubble-color: 'rgba(255, 255, 255, 0.03)';
-            --chat-bubble-ai: '#4a2a1f';
-            --chat-bubble-user: '#e05a30';
-            --code-bg: '#3a2a1a';
-            --code-text: '#fce3d7';
-            --code-border: '#e05a30';
-            --table-header-bg: '#5a2a1a';
-            --table-header-text: '#fce3d7';
-            --table-row-hover: '#4a2a1f';
-            --category-header-bg: '#6a3a2a';
-            --category-header-text: '#fce3d7';
-            --filter-active-bg: '#e05a30';
-            --filter-active-text: '#fce3d7';
-            --filter-inactive-bg: '#4a2a1f';
-            --filter-inactive-text': '#fce3d7';
-        }
-
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
@@ -210,7 +98,20 @@
         #data-panel {
             border-right: 1px solid var(--border-color);
             background-color: var(--bg-secondary);
+            /* Smoother panel transitions */
+            transition: width 0.5s ease-in-out, opacity 0.5s ease-in-out;
         }
+        #data-panel.hidden {
+            width: 0;
+            opacity: 0;
+            pointer-events: none; /* Disable interaction when hidden */
+        }
+        #data-panel.flex {
+            width: 33.333333%; /* md:w-1/3 */
+            opacity: 1;
+            pointer-events: all;
+        }
+
         #data-panel h2 {
             color: var(--accent-primary);
         }
@@ -253,6 +154,19 @@
             background-color: var(--bg-primary);
             color: var(--text-secondary);
             border-color: var(--border-color);
+            /* Engaging Empty State */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 250px; /* Ensure a minimum height */
+            text-align: center;
+        }
+        #data-panel #schemaDisplay .placeholder-icon {
+            font-size: 4rem; /* Large icon */
+            color: var(--text-secondary); /* Subtle color */
+            opacity: 0.3;
+            margin-bottom: 1rem;
         }
         #data-panel #schemaDisplay ul li {
             color: var(--text-secondary);
@@ -298,16 +212,21 @@
         /* Gradient for Send button and Download/Show Insights buttons */
         .send-button-gradient {
             background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            transition: all 0.3s ease-in-out;
+            color: white;
+            border-radius: 0.6rem; /* Slightly less rounded than full circle */
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            box-shadow: 0 4px 8px rgba(var(--accent-primary-rgb), 0.3); /* Lift effect */
         }
         .send-button-gradient:hover {
-            background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 15px rgba(var(--accent-primary-rgb), 0.4);
+            transform: translateY(-2px); /* Further lift on hover */
+            box-shadow: 0 6px 12px rgba(var(--accent-primary-rgb), 0.4);
         }
         .send-button-gradient:active {
-            transform: translateY(0) scale(0.98);
-            box-shadow: 0 2px 5px rgba(var(--accent-primary-rgb), 0.2);
+            transform: translateY(0); /* Press down effect on click */
+            box-shadow: 0 2px 4px rgba(var(--accent-primary-rgb), 0.2);
         }
 
         /* Code block styling - Now just for displaying JSON/raw data if needed, not explanations */
@@ -349,7 +268,7 @@
         }
 
 
-        /* Table specific styles for the command list and data preview */
+        /* Table specific styles for the data preview */
         .data-table {
             color: var(--text-primary); /* Default text color for table content */
             width: 100%;
@@ -386,105 +305,135 @@
             color: var(--accent-primary);
         }
 
-        /* Command Guide Specific Styles */
+        /* Command Guide Specific Styles (Reverted to Table-like, but enhanced) */
         .command-guide-intro {
             color: var(--text-primary);
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
+            margin-bottom: 2rem; /* More space below intro */
+            font-size: 1.15rem; /* Slightly larger text */
             line-height: 1.6;
             text-align: center;
+            font-weight: 500;
         }
 
-        /* NEW Command Guide Layout - Card-based */
         #commandGuideContent {
-            display: flex;
+            display: flex; /* Use flex for a column layout of categories */
             flex-direction: column;
-            gap: 1.5rem; /* Space between categories */
-            padding-bottom: 2rem; /* Ensure scrollability at bottom */
+            gap: 1.5rem; /* Space between category sections */
+            padding-bottom: 2rem;
         }
 
-        .command-category-card {
-            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+        .command-category-section {
+            background-color: var(--bg-secondary); /* White background for category section */
             border: 1px solid var(--border-color);
-            border-radius: 1.5rem; /* More rounded corners */
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15); /* More pronounced shadow */
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem; /* Space between category header and commands */
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-
-        .command-category-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            overflow: hidden; /* Ensures rounded corners clip content */
         }
 
         .category-header-display {
             display: flex;
             align-items: center;
-            justify-content: center; /* Center the category header content */
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 1.8rem; /* Larger font size */
-            font-weight: 800; /* Extra bold */
-            margin-bottom: 1rem;
-            text-align: center;
-            border-bottom: 2px solid var(--border-color); /* Separator line */
-            padding-bottom: 0.75rem;
-            position: relative; /* For background pseudo-element if needed */
+            justify-content: center;
+            padding: 1.25rem 1rem; /* More vertical padding */
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); /* Blue gradient header */
+            color: white; /* White text on blue gradient */
+            font-size: 1.6rem; /* Slightly smaller for better fit */
+            font-weight: 700;
+            position: relative;
+            z-index: 1; /* Ensure it's above content when scrolling */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Shadow for lift */
         }
         .category-header-display i {
             margin-right: 0.75rem;
-            font-size: 2rem; /* Larger icon */
-            -webkit-text-fill-color: var(--accent-primary); /* Ensure icon color from theme */
-            background: none; /* Remove gradient from icon if applied by parent */
+            font-size: 1.8rem;
+            color: white; /* Ensure icons are white */
         }
 
-
-        .command-entry {
-            background-color: var(--code-bg); /* Use code background for command entries */
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1rem 1.25rem;
-            margin-bottom: 0.75rem; /* Space between command entries */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* Subtle shadow for entries */
-            display: flex;
-            flex-direction: column; /* Stack command and example */
-            gap: 0.5rem;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer; /* Indicate interactivity */
-        }
-        .command-entry:hover {
-            background-color: var(--table-row-hover); /* Lighter hover effect */
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        .command-list-table {
+            width: 100%;
+            border-collapse: collapse; /* Collapse borders for clean lines */
         }
 
-        .command-entry strong {
-            color: var(--text-primary); /* Ensure command text is readable */
-            font-size: 1rem;
+        .command-list-table th,
+        .command-list-table td {
+            padding: 1rem 1.25rem; /* Generous padding for content */
+            text-align: left;
+            border-bottom: 1px solid var(--border-color); /* Light separator */
+            line-height: 1.4;
+        }
+
+        .command-list-table th {
+            background-color: var(--table-header-bg); /* Light grey header */
+            color: var(--table-header-text);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .command-list-table tbody tr {
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .command-list-table tbody tr:nth-child(odd) {
+            background-color: var(--bg-secondary); /* White for odd rows */
+        }
+        .command-list-table tbody tr:nth-child(even) {
+            background-color: var(--bg-primary); /* Very light grey for even rows */
+        }
+        .command-list-table tbody tr:hover {
+            background-color: var(--table-row-hover); /* Light hover effect */
+            transform: none; /* No lift on hover for table rows */
+            box-shadow: none; /* No shadow on hover for table rows */
+        }
+        .command-list-table tbody tr:last-child td {
+            border-bottom: none; /* No border on last row */
+        }
+
+        .command-list-table strong {
+            color: var(--text-primary);
             font-weight: 600;
         }
 
-        .command-entry code {
-            background-color: var(--code-border); /* Use accent color for code background */
-            color: var(--filter-active-text); /* White text on accent background */
-            padding: 0.25rem 0.6rem;
-            border-radius: 0.4rem;
+        .command-list-table code {
+            background-color: var(--code-bg); /* Very light grey for code background */
+            color: var(--code-text); /* Dark text for code */
+            padding: 0.2em 0.5em;
+            border-radius: 0.3em;
             font-family: 'Roboto Mono', monospace;
-            font-size: 0.85em; /* Slightly smaller font for code */
+            font-size: 0.85em;
             word-break: break-all;
             white-space: pre-wrap;
-            align-self: flex-start; /* Align code to the start */
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color); /* Subtle border for code */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Very light inner shadow */
         }
+
+        /* Added for click-to-paste feedback */
+        .command-list-table tbody tr.feedback-highlight {
+            background-color: rgba(74, 222, 128, 0.2) !important; /* Light green highlight */
+            transition: background-color 0.1s ease-in-out;
+        }
+
+        .command-list-table td .feedback-icon {
+            margin-left: 0.5rem;
+            color: #10b981; /* Tailwind green-500 */
+            font-size: 1.1em;
+            vertical-align: middle;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        .command-list-table td .feedback-icon.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
 
         /* Search input specific styles for command guide */
         #commandSearchInput {
             border: 1px solid var(--border-color);
-            background-color: var(--bg-primary); /* Primary background for input */
+            background-color: var(--bg-primary);
             color: var(--text-primary);
             padding: 0.75rem 1rem;
             border-radius: 0.75rem;
@@ -512,7 +461,7 @@
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-secondary);
-            pointer-events: none; /* Make icon unclickable */
+            pointer-events: none;
             font-size: 1.1rem;
         }
 
@@ -647,12 +596,31 @@
             box-shadow: 0 0 0 4px rgba(var(--accent-primary-rgb), 0.6);
         }
 
-        /* Overlays */
+        /* Overlays - Frosted Glass Effect */
         #commandGuideOverlay, #proactiveInsightsOverlay {
-            background-color: rgba(0,0,0,0.95); /* Keep dark overlay, opacity handles theme change */
+            background-color: rgba(var(--accent-primary-rgb), 0.1); /* Semi-transparent background using accent color */
+            backdrop-filter: blur(15px); /* Frosted glass effect */
+            -webkit-backdrop-filter: blur(15px); /* For Safari support */
+            border: 1px solid rgba(var(--accent-primary-rgb), 0.2); /* Subtle border for effect */
+            border-radius: 1.5rem; /* More rounded corners for the overlay itself */
             color: var(--text-primary);
             padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); /* Stronger shadow for depth */
+            /* Added transition for smoother display */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
         }
+        /* Ensure overlays are hidden correctly when not active */
+        #commandGuideOverlay:not(.show), #proactiveInsightsOverlay:not(.show) {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #commandGuideOverlay.show, #proactiveInsightsOverlay.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
+
         #commandGuideOverlay h3, #proactiveInsightsOverlay h3 {
             color: var(--accent-primary);
             font-size: 2.2rem;
@@ -665,7 +633,9 @@
             color: var(--accent-primary);
         }
 
-
+        /* Guided Tour Specific Styles (removed for this iteration) */
+        /* All guided tour related elements and styles have been removed. */
+        /* #tourOverlay, #tourModal, .tour-tooltip, .tour-highlight, etc. are no longer in use. */
     </style>
 </head>
 <body class="relative flex items-center justify-center h-screen w-screen">
@@ -686,7 +656,7 @@
             <p class="text-md mb-2 text-center italic">Your Strategic Data Copilot</p>
             <p class="text-sm mb-6 text-center">Created by: <span class="font-semibold">Utkarsh Kumar</span></p>
 
-            <div class="mb-4 border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
+            <div id="csvUploadArea" class="mb-4 border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-600 transition duration-300 ease-in-out shadow-lg hover:shadow-xl">
                 <label for="csvFileInput" class="cursor-pointer font-bold text-base flex flex-col items-center justify-center">
                     <i class="fas fa-cloud-upload-alt text-4xl mb-2"></i>
                     <span class="block text-lg">Upload CSV File</span>
@@ -712,6 +682,7 @@
 
             <h3 class="text-2xl font-bold mb-4 border-b pb-2 mt-8">Data Schema</h3>
             <div id="schemaDisplay" class="p-5 rounded-2xl flex-grow overflow-y-auto custom-scrollbar text-sm shadow-lg border min-h-[250px]">
+                <i class="fas fa-file-csv placeholder-icon"></i> <!-- Engaging Empty State for Schema -->
                 <p class="text-center py-4">Upload a CSV to intelligently infer and display its schema here.</p>
             </div>
         </div>
@@ -755,10 +726,19 @@
                         <p class="leading-relaxed">Hello! Welcome to CoDA. Upload your CSV data to begin our private, client-side analysis. I'm ready to collaborate!</p>
                     </div>
                 </div>
+                <!-- AI Loading Indicator (hidden by default) -->
+                <div id="aiLoadingIndicator" class="flex items-center justify-center mb-4 hidden">
+                    <div class="flex-shrink-0 w-10 h-10 ai-avatar-gradient rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="p-4 rounded-3xl max-w-[80%] shadow-md bg-gray-200 text-gray-700">
+                        <p class="leading-relaxed">CoDA is thinking...</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Chat Input -->
-            <div class="relative flex items-center space-x-3 px-8 pb-6 pt-4">
+            <div id="chatInputArea" class="relative flex items-center space-x-3 px-8 pb-6 pt-4">
                 <input type="text" id="chatInput" placeholder="Ask CoDA a question about your data, e.g., 'Show me the average sales'..." class="flex-grow p-4 border rounded-full focus:outline-none focus:ring-4 shadow-lg text-base transition duration-300 ease-in-out">
                 <div id="suggestionsContainer" class="suggestions-container"></div>
                 <button id="sendMessageBtn" class="send-button-gradient p-4 rounded-full shadow-lg focus:outline-none focus:ring-4">
@@ -768,7 +748,7 @@
         </div>
     </div>
 
-    <!-- Command Guide Overlay (hidden by default) -->
+    <!-- Command Guide Overlay (Frosted Glass Effect) -->
     <div id="commandGuideOverlay" class="fixed inset-0 bg-opacity-95 p-8 flex flex-col rounded-3xl z-50 hidden overflow-y-auto custom-scrollbar">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-3xl font-extrabold">CoDA AI Command Guide</h3>
@@ -787,7 +767,7 @@
         </div>
     </div>
 
-    <!-- Proactive Insights Overlay (hidden by default) -->
+    <!-- Proactive Insights Overlay (Frosted Glass Effect) -->
     <div id="proactiveInsightsOverlay" class="fixed inset-0 bg-opacity-95 p-8 flex flex-col rounded-3xl z-50 hidden overflow-y-auto custom-scrollbar">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-3xl font-extrabold flex items-center">
@@ -810,8 +790,12 @@
             </div>
         </div>
         <div id="proactiveInsightsContent" class="flex-grow">
-            <!-- Proactive insights content will be inserted here -->
-            <p class="text-center py-4">No proactive insights available yet. Upload a CSV file to generate proactive insights.</p>
+            <!-- Engaging Empty State for Proactive Insights -->
+            <div class="flex flex-col items-center justify-center h-full text-center text-secondary opacity-70">
+                <i class="fas fa-lightbulb placeholder-icon text-6xl mb-4"></i>
+                <p class="text-center text-lg font-semibold">No proactive insights available yet.</p>
+                <p class="text-center text-sm mt-2">Upload a CSV file to generate smart insights!</p>
+            </div>
         </div>
     </div>
 
@@ -856,6 +840,10 @@
         const themeSelector = document.getElementById('themeSelector'); // New theme selector reference
 
         let isHeaderShrunk = false;
+
+        // AI Loading Indicator Element
+        const aiLoadingIndicator = document.getElementById('aiLoadingIndicator');
+
 
         // --- Theme Management ---
         const themes = {
@@ -1006,12 +994,20 @@
             const savedTheme = localStorage.getItem('selectedTheme') || 'default';
             applyTheme(savedTheme);
             themeSelector.value = savedTheme; // Set dropdown to current theme
+            
+            // Guided tour removed, no longer start automatically
+            // The logic for starting the guided tour on load is removed here.
         });
 
         // Event listener for theme selector
         themeSelector.addEventListener('change', (event) => {
             applyTheme(event.target.value);
         });
+
+        // --- Guided Tour Functions (REMOVED) ---
+        // All guided tour related elements (HTML div#tourOverlay, div#tourModal, div#tourTooltip)
+        // and JavaScript functions (startGuidedTour, showTourModal, hideTourModal, showTourTooltip, hideTourTooltip, removeHighlight, nextTourStep, prevTourStep, tourSteps array and related event listeners)
+        // have been entirely removed from the code for this version.
 
         // Function to parse CSV data
         function parseCSV(text) {
@@ -1214,26 +1210,29 @@
                 const groupKey = row[groupByColumn];
                 const value = Number(row[aggregateColumn]);
 
-                if (!isNaN(value)) {
+                if (groupKey !== undefined && groupKey !== null && groupKey !== '' && !isNaN(value)) { // Filter out invalid group keys or non-numeric values
                     if (!groupedData[groupKey]) {
                         groupedData[groupKey] = { sum: 0, count: 0 };
                     }
                     groupedData[groupKey].sum += value;
-                    groupedData[groupKey].count++;
+                    groupedData[key].count++;
                 }
             });
 
             const labels = [];
             const values = [];
 
-            for (const key in groupedData) {
+            // Sort labels alphabetically for consistent chart ordering
+            const sortedGroupKeys = Object.keys(groupedData).sort();
+
+            sortedGroupKeys.forEach(key => {
                 labels.push(key);
                 if (aggregateType === 'average') {
                     values.push(groupedData[key].sum / groupedData[key].count);
                 } else {
                     values.push(groupedData[key].sum);
                 }
-            }
+            });
             return { labels, data: values };
         }
 
@@ -1412,7 +1411,7 @@
             });
         }
 
-        // Function to get the HTML for the command list (now card-based)
+        // Function to get the HTML for the command list (now table-like)
         function getCommandListHtml(searchTerm = '') {
             const allCommands = [
                 { category: 'General Overview', icon: 'fas fa-info-circle', commands: [
@@ -1494,42 +1493,51 @@
             allCommands.forEach(cat => {
                 const filteredCategoryCommands = cat.commands.filter(cmd =>
                     cmd.command.toLowerCase().includes(lowerSearchTerm) ||
-                    cmd.example.toLowerCase().includes(lowerSearchTerm.replace(/`/g, ''))
+                    cmd.example.toLowerCase().includes(lowerSearchTerm.replace(/`/g, '')) ||
+                    cat.category.toLowerCase().includes(lowerSearchTerm) // Category itself matches search
                 );
 
-                if (filteredCategoryCommands.length > 0 || cat.category.toLowerCase().includes(lowerSearchTerm)) {
+                if (filteredCategoryCommands.length > 0) {
                     hasMatches = true;
                     contentHtml += `
-                        <div class="command-category-card">
+                        <div class="command-category-section">
                             <div class="category-header-display">
                                 <i class="${cat.icon}"></i>
                                 <span>${cat.category}</span>
                             </div>
+                            <div class="command-list-wrapper">
+                                <table class="command-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 10%;">Sr. No.</th>
+                                            <th style="width: 35%;">Command</th>
+                                            <th style="width: 55%;">Example</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                     `;
 
-                    if (filteredCategoryCommands.length > 0) {
-                         filteredCategoryCommands.forEach(cmd => {
-                            contentHtml += `
-                                <div class="command-entry">
-                                    <strong>${cmd.sr}. ${cmd.command}</strong>
-                                    ${cmd.example}
-                                </div>
-                            `;
-                        });
-                    } else if (cat.category.toLowerCase().includes(lowerSearchTerm) && searchTerm !== '') {
-                        // If category matches, but no commands within it match the search, inform user
-                        contentHtml += `<div class="text-center text-sm text-secondary p-4">No commands in this category match your search.</div>`;
-                    }
+                    filteredCategoryCommands.forEach(cmd => {
+                        contentHtml += `
+                            <tr onclick="typeIntoChatAndSubmit('${cmd.example.replace(/<\/?code>/g, '').replace(/'/g, "\\'")}', this)">
+                                <td>${cmd.sr}</td>
+                                <td><strong>${cmd.command}</strong></td>
+                                <td>${cmd.example}<i class="fas fa-check-circle feedback-icon"></i></td>
+                            </tr>
+                        `;
+                    });
 
-
-                    contentHtml += `</div>`; // Close command-category-card
+                    contentHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>`; // Close command-category-section
                 }
             });
 
             if (!hasMatches) {
                 contentHtml = `<p class="command-guide-intro text-center py-8">No commands or categories match your search criteria.</p>`;
             }
-
 
             contentHtml += `<p class="mt-4 command-guide-intro">If I've made a cleaning suggestion, you can simply type <strong>'yes'</strong> to confirm.</p>`;
 
@@ -1924,11 +1932,17 @@
             commandGuideContent.innerHTML = getCommandListHtml();
             toggleCommandGuideText.textContent = 'Hide Command Guide';
             toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book-open mr-2';
+            // Show the overlay explicitly with the .show class for transitions
+            commandGuideOverlay.classList.add('show');
         });
 
         // Event listener for the close button INSIDE the overlay
         closeCommandGuideBtn.addEventListener('click', () => {
-            commandGuideOverlay.classList.add('hidden');
+            // Hide the overlay explicitly by removing the .show class
+            commandGuideOverlay.classList.remove('show');
+            setTimeout(() => {
+                commandGuideOverlay.classList.add('hidden'); // Fully hide after transition
+            }, 300); // Match CSS transition duration
             toggleCommandGuideText.textContent = 'Show Command Guide';
             toggleCommandGuideBtn.querySelector('i').className = 'fas fa-book mr-2';
             commandSearchInput.value = '';
@@ -1957,6 +1971,8 @@
             }, 0);
         }
 
+        const ID_COLUMNS = ['id', 'row id', 'order id', 'customer id', 'product id', 'user id', 'transaction id'];
+
         function generateProactiveInsights() {
             if (rawData.length === 0) {
                 lastProactiveInsights = [];
@@ -1970,13 +1986,14 @@
             const regionCol = findCategoricalColumn('Region') || findCategoricalColumn('Area') || findCategoricalColumn('Territory');
             const marketingSpendCol = findNumericColumn('Marketing_Spend') || findNumericColumn('Ad_Spend') || findNumericColumn('Campaign_Cost');
 
+            // Insight 1: Significant Sales Drop Detection (Time Series)
             if (dateCol && salesCol && regionCol) {
                 const uniqueDates = [...new Set(rawData.map(row => row[dateCol]))]
                                         .map(parseDate)
                                         .filter(d => d !== null)
                                         .sort((a, b) => a.getTime() - b.getTime());
 
-                if (uniqueDates.length >= 8) {
+                if (uniqueDates.length >= 8) { // Need at least 8 days for 7-day average + current day
                     const latestDate = uniqueDates[uniqueDates.length - 1];
                     const eightDaysAgo = new Date(latestDate.getTime());
                     eightDaysAgo.setDate(latestDate.getDate() - 7);
@@ -2002,7 +2019,7 @@
 
                         if (last7DaysAvgSales > 0) {
                             const salesDropPercentage = ((last7DaysAvgSales - currentDaySales) / last7DaysAvgSales) * 100;
-                            const dropThreshold = 15;
+                            const dropThreshold = 15; // Define a threshold for a "significant" drop
 
                             if (salesDropPercentage > dropThreshold) {
                                 let messageToUser = `Sales in the **${region} region** are **down ${salesDropPercentage.toFixed(1)}%** on ${latestDate.toLocaleDateString()} compared to the last 7-day average. This deviation is significant.`;
@@ -2021,14 +2038,12 @@
                                         messageToUser += ` It also appears **marketing spend has changed** significantly in this period.`;
                                     }
                                 }
-                                messageToUser += `<br>_You can find more details and suggested actions in "Proactive Insights"._`;
-
 
                                 insights.push({
                                     type: 'anomaly',
                                     icon: 'fas fa-chart-line-down',
                                     title: `Significant Sales Drop Detected in ${region} Region!`,
-                                    message: `Sales in the **${region} region** are **down ${salesDropPercentage.toFixed(1)}%** on ${latestDate.toLocaleDateString()} compared to the last 7-day average. This deviation is significant.` + (marketingSpendCol ? (marketingSpendDeviation <= marketingConsistencyThreshold ? ` This is despite a **consistent marketing spend** in the region.` : ` It also appears **marketing spend has changed** significantly in this period.`) : '') + `<br><br><strong>Recommendation:</strong>
+                                    message: messageToUser + `<br><br><strong>Recommendation:</strong>
                                         <ol>
                                             <li><strong>Investigate Sales Transactions:</strong> Examine specific sales transactions in ${region} for ${latestDate.toLocaleDateString()} to identify immediate patterns. Type: \`${actionForUser}\`</li>
                                             <li><strong>Review External Factors:</strong> This suggests external factors may be at play. Consider reviewing recent mobile app updates, website traffic analytics, or local events that might impact sales in the ${region} region.</li>
@@ -2043,7 +2058,7 @@
                 }
             }
 
-
+            // Insight 2: Outlier Detection for Numeric Columns
             const numericCols = Object.keys(schema).filter(col => schema[col] === 'number');
             numericCols.forEach(col => {
                 const { outliers, lowerBound, upperBound } = findOutliers(col, rawData);
@@ -2058,34 +2073,46 @@
                 }
             });
 
+            // Insight 3: Top/Bottom Values by Categorical Groups (Relevant Numeric Columns Only)
             const categoricalCols = Object.keys(schema).filter(col => schema[col] === 'string');
 
             numericCols.forEach(numCol => {
+                // Skip ID columns for 'top/bottom' aggregate insights
+                if (ID_COLUMNS.includes(numCol.toLowerCase())) return;
+
                 categoricalCols.forEach(catCol => {
-                    if (catCol === dateCol) return;
+                    // Skip if the categorical column is likely an ID, a date, or the same as the numeric column
+                    if (ID_COLUMNS.some(id_col => catCol.toLowerCase().includes(id_col)) || catCol === dateCol || catCol === numCol) return;
 
                     const groupedData = {};
+                    let hasValidDataForGrouping = false;
 
                     rawData.forEach(row => {
                         const category = row[catCol];
                         const numericValue = Number(row[numCol]);
 
-                        if (!isNaN(numericValue)) {
+                        if (category !== undefined && category !== null && category !== '' && !isNaN(numericValue)) { // Ensure category is valid and value is numeric
                             if (!groupedData[category]) {
                                 groupedData[category] = { sum: 0, count: 0 };
                             }
                             groupedData[category].sum += numericValue;
                             groupedData[category].count++;
+                            hasValidDataForGrouping = true;
                         }
                     });
+
+                    if (!hasValidDataForGrouping || Object.keys(groupedData).length < 2) {
+                        return; // Not enough valid groups or data points to form a meaningful insight
+                    }
+
 
                     const sortedBySum = Object.entries(groupedData).sort(([, a], [, b]) => b.sum - a.sum);
                     const sortedByAvg = Object.entries(groupedData)
                                             .map(([category, data]) => [category, data.sum / data.count])
-                                            .filter(([, avg]) => !isNaN(avg))
+                                            .filter(([, avg]) => !isNaN(avg)) // Filter out NaN averages
                                             .sort(([, a], [, b]) => b - a);
 
-                    if (sortedBySum.length > 1) {
+                    if (sortedBySum.length > 1) { // Ensure at least two distinct groups for comparison
                         const topSumCat = sortedBySum[0];
                         const bottomSumCat = sortedBySum[sortedBySum.length - 1];
                         insights.push({
@@ -2097,7 +2124,7 @@
                         });
                     }
 
-                    if (sortedByAvg.length > 1) {
+                    if (sortedByAvg.length > 1) { // Ensure at least two distinct groups for comparison
                         const topAvgCat = sortedByAvg[0];
                         const bottomAvgCat = sortedByAvg[sortedByAvg.length - 1];
                         insights.push({
@@ -2111,7 +2138,8 @@
                 });
             });
 
-            const numericColumnNames = Object.keys(schema).filter(col => schema[col] === 'number');
+            // Insight 4: Strong Correlations between Numeric Columns
+            const numericColumnNames = Object.keys(schema).filter(col => schema[col] === 'number' && !ID_COLUMNS.some(id_col => col.toLowerCase().includes(id_col))); // Exclude ID columns from correlation
             for (let i = 0; i < numericColumnNames.length; i++) {
                 for (let j = i + 1; j < numericColumnNames.length; j++) {
                     const col1 = numericColumnNames[i];
@@ -2149,25 +2177,23 @@
                 }
             };
 
+            // Insight 5: Distribution of Categorical Columns (excluding IDs)
             categoricalCols.forEach(catCol => {
-                if (catCol === dateCol || catCol === regionCol) return;
+                if (ID_COLUMNS.some(id_col => catCol.toLowerCase().includes(id_col)) || catCol === dateCol || catCol === regionCol) return; // Skip ID, date, and region as they might be covered by other insights
 
-                const values = rawData.map(row => row[catCol]);
-                const valueCounts = {};
-                values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
-                const sortedCounts = Object.entries(valueCounts).sort(([,a],[,b]) => b-a);
-
-                if (sortedCounts.length > 0) {
-                    let topValues = sortedCounts.slice(0, Math.min(3, sortedCounts.length)).map(item => `"${item[0]}" (${((item[1]/values.length)*100).toFixed(1)}%)`).join(', ');
+                const { labels, data: counts } = getFrequencyDistribution(catCol, rawData);
+                if (labels.length > 0 && labels.length <= 10) { // Limit to columns with reasonable number of unique values for quick insights
+                    let topValues = labels.slice(0, Math.min(3, labels.length)).map((item, i) => `"${item}" (${((counts[i]/rawData.length)*100).toFixed(1)}%)`).join(', ');
                     insights.push({
                         type: 'distribution',
                         icon: 'fas fa-chart-pie',
                         title: `Distribution of ${catCol}`,
-                        message: `In "<strong>${catCol}</strong>", the top values are: ${topValues}. There are ${sortedCounts.length} unique values in total. Understanding these distributions is crucial for market segmentation or resource allocation.`,
+                        message: `In "<strong>${catCol}</strong>", the top values are: ${topValues}. There are ${labels.length} unique values in total. Understanding these distributions is crucial for market segmentation or resource allocation.`,
                         action: `show frequency of ${catCol}`
                     });
                 }
             });
+
 
             lastProactiveInsights = insights;
         }
@@ -2242,11 +2268,18 @@
          * @returns {Object} An object containing t-statistic, degrees of freedom, and interpretation.
          */
         function performTTest(numericColName, categoricalColName, group1Value, group2Value, data) {
-            const group1Data = data.filter(row => row[categoricalColName] === group1Value).map(row => Number(row[numericColName])).filter(n => !isNaN(n));
-            const group2Data = data.filter(row => row[categoricalColName] === group2Value).map(row => Number(row[numericColName])).filter(n => !isNaN(n));
+            const numericCol = findNumericColumn(numericColName);
+            const categoricalCol = findCategoricalColumn(categoricalColName);
+
+            if (!numericCol || !categoricalCol) {
+                return { error: 'Both numeric and categorical columns must be valid for the T-test.' };
+            }
+
+            const group1Data = data.filter(row => row[categoricalCol] === group1Value).map(row => Number(row[numericCol])).filter(n => !isNaN(n));
+            const group2Data = data.filter(row => row[categoricalCol] === group2Value).map(row => Number(row[numericCol])).filter(n => !isNaN(n));
 
             if (group1Data.length < 2 || group2Data.length < 2) {
-                return { error: 'Not enough data points for both groups (minimum 2 per group required).' };
+                return { error: `Not enough data points for both groups (minimum 2 per group required). Group 1 has ${group1Data.length}, Group 2 has ${group2Data.length}.` };
             }
 
             const n1 = group1Data.length;
@@ -2311,7 +2344,7 @@
             data.forEach(row => {
                 const category = row[categoricalCol];
                 const value = Number(row[numericCol]);
-                if (category !== undefined && !isNaN(value)) {
+                if (category !== undefined && category !== null && category !== '' && !isNaN(value)) {
                     if (!groups[category]) {
                         groups[category] = [];
                     }
@@ -2319,7 +2352,7 @@
                 }
             });
 
-            const groupNames = Object.keys(groups).filter(name => groups[name].length > 1); // Need at least 2 data points per group
+            const groupNames = Object.keys(groups).filter(name => groups[name].length > 1); // Need at least 2 data points per group for a valid group
             if (groupNames.length < 2) {
                 return { error: 'Need at least two groups with more than one data point each to perform ANOVA.' };
             }
@@ -2349,7 +2382,7 @@
             const dfWithin = allValues.length - groupNames.length;
 
             if (dfWithin <= 0 || dfBetween <= 0) {
-                return { error: 'Not enough degrees of freedom to perform ANOVA. Ensure enough data points per group and at least two groups.' };
+                return { error: `Not enough degrees of freedom to perform ANOVA. df_between=${dfBetween}, df_within=${dfWithin}. Ensure enough data points per group (min 2 per group) and at least two groups.` };
             }
 
             const MSBetween = SSBetween / dfBetween;
@@ -2401,8 +2434,8 @@
                 const val1 = row[catCol1];
                 const val2 = row[catCol2];
 
-                if (val1 === undefined || val2 === undefined || val1 === null || val2 === null) {
-                    return; // Skip rows with missing values for analysis
+                if (val1 === undefined || val2 === undefined || val1 === null || val2 === null || val1 === '' || val2 === '') {
+                    return; // Skip rows with missing or empty values for analysis
                 }
 
                 if (!contingencyTable[val1]) {
@@ -2419,7 +2452,7 @@
             const colCategories = Object.keys(colTotals);
 
             if (rowCategories.length < 2 || colCategories.length < 2) {
-                return { error: 'Each categorical column must have at least two unique categories for the Chi-Square test.' };
+                return { error: `Each categorical column must have at least two unique, non-empty categories for the Chi-Square test. Found ${rowCategories.length} unique for "${catCol1}" and ${colCategories.length} for "${catCol2}".` };
             }
 
             let chiSquareStatistic = 0;
@@ -2437,7 +2470,7 @@
             const df = (rowCategories.length - 1) * (colCategories.length - 1);
 
             if (df <= 0) {
-                 return { error: 'Degrees of freedom for Chi-Square test is zero or negative. Ensure at least 2 rows and 2 columns in contingency table. This might happen if a column has only one category after filtering or missing data.' };
+                 return { error: `Degrees of freedom for Chi-Square test is zero or negative (df=${df}). This usually happens if a column has only one category after filtering or missing data, or if there's no variability.` };
             }
 
             let interpretation = '';
@@ -2542,8 +2575,21 @@
             };
         }
 
-        function typeIntoChatAndSubmit(command) {
+        // Modified typeIntoChatAndSubmit to accept a clicked element for visual feedback
+        function typeIntoChatAndSubmit(command, clickedElement = null) {
             chatInput.value = command;
+            
+            if (clickedElement) {
+                const feedbackIcon = clickedElement.querySelector('.feedback-icon');
+                if (feedbackIcon) {
+                    clickedElement.classList.add('feedback-highlight');
+                    feedbackIcon.classList.add('show');
+                    setTimeout(() => {
+                        clickedElement.classList.remove('feedback-highlight');
+                        feedbackIcon.classList.remove('show');
+                    }, 1000); // Highlight for 1 second
+                }
+            }
             sendMessageBtn.click();
             proactiveInsightsOverlay.classList.add('hidden');
         }
@@ -2640,7 +2686,7 @@
                                 if (otherCol !== col && schema[otherCol] === 'number') {
                                     const corr = calculateCorrelation(col, otherCol, rawData);
                                     if (corr !== null && !isNaN(corr)) {
-                                        correlationWithOtherNumerics.push(`${otherCol}: ${corr.toFixed(2)}`);
+                                        correlationWithOtherNumeration.push(`${otherCol}: ${corr.toFixed(2)}`);
                                     }
                                 }
                             }
@@ -3072,7 +3118,7 @@
                                             - **Intercept**: <strong>${regressionResult.intercept}</strong><br>
                                             - **Coefficients for polynomial terms**: <ul>${slopesHtml}</ul>
                                             - **R-squared**: <strong>${regressionResult.rSquared}</strong><br>
-                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${dependentCol}" using polynomial terms of "${independentCol}".`;
+                                            This model explains **${(parseFloat(regressionResult.rSquared) * 100).toFixed(2)}%** of the variance in "${dependentCol}".`;
                         }
                     }
                 } else {
@@ -3100,7 +3146,6 @@
                             for (const cluster in clusteringResult.distribution) {
                                 distributionHtml += `<li>${cluster}: <strong>${clusteringResult.distribution[cluster]} data points</strong></li>`;
                             }
-                            distributionHtml += '</ul>';
                             aiResponseText = `${clusteringResult.message}<br><br>
                                             **Cluster Distribution**:<br>${distributionHtml}`;
                         } else {
@@ -3167,118 +3212,26 @@
                 generateProactiveInsights();
                 renderProactiveInsights();
                 proactiveInsightsOverlay.classList.remove('hidden');
+                // Ensure the overlay shows with transition
+                proactiveInsightsOverlay.classList.add('show');
                 return;
             }
 
-            else if (lowerQuery.startsWith('show bar chart of ') && lowerQuery.includes(' by ')) {
-                const parts = query.match(/show bar chart of\s+(.+)\s+by\s+(.+)(?:\s+as\s+(sum|average))?/i);
-                if (parts && parts.length >= 3) {
-                    const numericColName = parts[1].trim();
-                    const categoricalColName = parts[2].trim();
-                    const aggregateType = parts[4] ? parts[4].toLowerCase() : 'sum';
-
-                    const numericCol = findNumericColumn(numericColName);
-                    const categoricalCol = findCategoricalColumn(categoricalColName);
-
-                    if (numericCol && categoricalCol) {
-                        const { labels, data: aggregatedData } = groupByAndAggregate(rawData, categoricalCol, numericCol, aggregateType);
-                        if (labels.length > 0) {
-                            createChart('bar', `${numericCol} by ${categoricalCol} (${aggregateType})`, labels, aggregatedData, categoricalCol, `${numericCol} (${aggregateType})`);
-                        } else {
-                            aiResponseText = `No valid data to create a bar chart for "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>". Ensure columns have data.`;
-                        }
-                    } else {
-                        aiResponseText = `To show a bar chart, I need a valid numeric column and a valid categorical column. Please check your column names.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the bar chart command format. Example: 'show bar chart of sales by region as average'.`;
-                }
-            } else if (lowerQuery.startsWith('show line chart with x as ') && lowerQuery.includes(' and y as ')) {
-                const parts = query.match(/show line chart with x as\s+(.+)\s+and y as\s+(.+)/i);
-                if (parts && parts.length === 3) {
-                    const xColName = parts[1].trim();
-                    const yColName = parts[2].trim();
-                    const xCol = findColumnByName(xColName);
-                    const yCol = findNumericColumn(yColName);
-
-                    if (xCol && yCol) {
-                        const lineData = rawData.map(row => {
-                            const xVal = row[xCol];
-                            const yVal = Number(row[yCol]);
-                            return (!isNaN(yVal)) ? { x: xVal, y: yVal } : null;
-                        }).filter(Boolean);
-
-                        if (lineData.length > 0) {
-                            if (schema[xCol] === 'number') {
-                                lineData.sort((a, b) => a.x - b.x);
-                            } else {
-                                lineData.sort((a, b) => String(a.x).localeCompare(String(b.x)));
-                            }
-                            
-                            const labels = lineData.map(d => d.x);
-                            const data = lineData.map(d => d.y);
-
-                            createChart('line', `${yCol} over ${xCol}`, labels, data, xCol, yCol);
-                        } else {
-                            aiResponseText = `No valid numeric data in "<strong>${yCol}</strong>" to create a line chart.`;
-                        }
-                    } else {
-                        aiResponseText = `To show a line chart, I need valid X and Y columns. Y must be numeric. Please check your column names.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the line chart command format. Example: 'show line chart with X as Date and Y as Stock Price'.`;
-                }
-            } else if (lowerQuery.startsWith('show scatter plot with x as ') && lowerQuery.includes(' and y as ')) {
-                const parts = query.match(/show scatter plot with x as\s+(.+)\s+and y as\s+(.+)/i);
-                if (parts && parts.length === 3) {
-                    const xColName = parts[1].trim();
-                    const yColName = parts[2].trim();
-                    const xCol = findNumericColumn(xColName);
-                    const yCol = findNumericColumn(yColName);
-
-                    if (xCol && yCol) {
-                        const scatterData = rawData.map(row => {
-                            const xVal = Number(row[xCol]);
-                            const yVal = Number(row[yCol]);
-                            return (!isNaN(xVal) && !isNaN(yVal)) ? { x: xVal, y: yVal } : null;
-                        }).filter(Boolean);
-
-                        if (scatterData.length > 0) {
-                            const chartOptions = {
-                                scales: {
-                                    x: {
-                                        type: 'linear',
-                                        position: 'bottom',
-                                        title: {
-                                            display: true,
-                                            text: xCol,
-                                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
-                                        }
-                                    },
-                                    y: {
-                                        type: 'linear',
-                                        title: {
-                                            display: true,
-                                            text: yCol,
-                                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
-                                        }
-                                    }
-                                }
-                            };
-                            createChart('scatter', `Scatter Plot: ${yCol} vs ${xCol}`, [], scatterData, xCol, yCol, chartOptions);
-                        } else {
-                            aiResponseText = `No valid numeric data in both "<strong>${xCol}</strong>" and "<strong>${yCol}</strong>" to create a scatter plot.`;
-                        }
-                    } else {
-                        aiResponseText = `To show a scatter plot, I need two valid numeric columns. Please check your column names.`;
-                    }
-                } else {
-                    aiResponseText = `I didn't understand the scatter plot command format. Example: 'show scatter plot with X as Age and Y as Income'.`;
-                }
-            } else if (lowerQuery.startsWith('show pie chart of ') || lowerQuery.startsWith('show doughnut chart of ') || lowerQuery.startsWith('show polar area chart of ')) {
+            else if (lowerQuery.startsWith('show bar chart of ') || lowerQuery.startsWith('show line chart with x as ') || lowerQuery.startsWith('show scatter plot with x as ') || lowerQuery.startsWith('show pie chart of ') || lowerQuery.startsWith('show doughnut chart of ') || lowerQuery.startsWith('show polar area chart of ')) {
                 let chartType = '';
                 let queryRemainder = '';
-                if (lowerQuery.startsWith('show pie chart of ')) {
+
+                // Determine chart type and extract remainder of query
+                if (lowerQuery.startsWith('show bar chart of ')) {
+                    chartType = 'bar';
+                    queryRemainder = query.substring('show bar chart of '.length).trim();
+                } else if (lowerQuery.startsWith('show line chart with x as ')) {
+                    chartType = 'line';
+                    queryRemainder = query.substring('show line chart with x as '.length).trim();
+                } else if (lowerQuery.startsWith('show scatter plot with x as ')) {
+                    chartType = 'scatter';
+                    queryRemainder = query.substring('show scatter plot with x as '.length).trim();
+                } else if (lowerQuery.startsWith('show pie chart of ')) {
                     chartType = 'pie';
                     queryRemainder = query.substring('show pie chart of '.length).trim();
                 } else if (lowerQuery.startsWith('show doughnut chart of ')) {
@@ -3289,38 +3242,82 @@
                     queryRemainder = query.substring('show polar area chart of '.length).trim();
                 }
 
-                const aggregatedParts = queryRemainder.match(/(.+)\s+by\s+(.+)(?:\s+as\s+(sum|average))?/i);
-                if (aggregatedParts && aggregatedParts.length >= 3) {
-                    const numericColName = aggregatedParts[1].trim();
-                    const categoricalColName = aggregatedParts[2].trim();
-                    const aggregateType = aggregatedParts[4] ? aggregatedParts[4].toLowerCase() : 'sum';
+                // Handle different chart command formats
+                if (chartType === 'scatter' || chartType === 'line') {
+                    const parts = queryRemainder.match(/^(.*?) and y as (.*)$/i);
+                    if (parts && parts.length === 3) {
+                        const xColName = parts[1].trim();
+                        const yColName = parts[2].trim();
+                        const xCol = findColumnByName(xColName);
+                        const yCol = findNumericColumn(yColName);
 
-                    const numericCol = findNumericColumn(numericColName);
-                    const categoricalCol = findCategoricalColumn(categoricalColName);
+                        if (xCol && yCol) {
+                            const chartData = rawData.map(row => {
+                                const xVal = schema[xCol] === 'number' ? Number(row[xCol]) : row[xCol];
+                                const yVal = Number(row[yCol]);
+                                return (!isNaN(yVal) && xVal !== undefined && xVal !== null && xVal !== '') ? { x: xVal, y: yVal } : null;
+                            }).filter(Boolean);
 
-                    if (numericCol && categoricalCol) {
-                        const { labels, data: aggregatedData } = groupByAndAggregate(rawData, categoricalCol, numericCol, aggregateType);
-                        if (labels.length > 0) {
-                            createChart(chartType, `${numericCol} by ${categoricalCol} (${aggregateType})`, labels, aggregatedData);
+                            if (chartData.length > 0) {
+                                // For line and scatter, if x is numeric, sort numerically. Otherwise, sort alphabetically.
+                                if (schema[xCol] === 'number') {
+                                    chartData.sort((a, b) => a.x - b.x);
+                                } else {
+                                    chartData.sort((a, b) => String(a.x).localeCompare(String(b.x)));
+                                }
+
+                                const labels = chartData.map(d => d.x);
+                                const data = chartData.map(d => d.y);
+
+                                createChart(chartType, `${yCol} vs ${xCol}`, labels, data, xCol, yCol, {
+                                    scales: {
+                                        x: { type: schema[xCol] === 'number' ? 'linear' : 'category', position: 'bottom', title: { display: true, text: xCol, color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() } },
+                                        y: { type: 'linear', title: { display: true, text: yCol, color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() } }
+                                    }
+                                });
+                            } else {
+                                aiResponseText = `No valid data to create a ${chartType} chart for "${xCol}" and "${yCol}". Ensure both columns have valid data and "${yCol}" is numeric.`;
+                            }
                         } else {
-                            aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>". Ensure columns have data.`;
+                            aiResponseText = `To show a ${chartType} chart, I need valid X and Y columns. Y must be numeric. Please check your column names.`;
                         }
                     } else {
-                        aiResponseText = `To show a ${chartType} chart with aggregation, I need a valid numeric column and a valid categorical column. Please check your column names.`;
+                        aiResponseText = `I didn't understand the ${chartType} chart command format. Example: 'show ${chartType} with X as Date and Y as Stock Price'.`;
                     }
-                } else {
-                    const categoricalColName = queryRemainder;
-                    const categoricalCol = findCategoricalColumn(categoricalColName);
+                } else { // Handle bar, pie, doughnut, polarArea charts (grouped by categorical)
+                    const aggregatedParts = queryRemainder.match(/(.+)\s+by\s+(.+)(?:\s+as\s+(sum|average))?/i);
+                    if (aggregatedParts && aggregatedParts.length >= 3) {
+                        const numericColName = aggregatedParts[1].trim();
+                        const categoricalColName = aggregatedParts[2].trim();
+                        const aggregateType = aggregatedParts[4] ? aggregatedParts[4].toLowerCase() : 'sum';
 
-                    if (categoricalCol) {
-                        const { labels, data: counts } = getFrequencyDistribution(categoricalCol, rawData);
-                        if (labels.length > 0) {
-                            createChart(chartType, `Distribution of ${categoricalCol}`, labels, counts);
+                        const numericCol = findNumericColumn(numericColName);
+                        const categoricalCol = findCategoricalColumn(categoricalColName);
+
+                        if (numericCol && categoricalCol) {
+                            const { labels, data: aggregatedData } = groupByAndAggregate(rawData, categoricalCol, numericCol, aggregateType);
+                            if (labels.length > 0) {
+                                createChart(chartType, `${numericCol} by ${categoricalCol} (${aggregateType})`, labels, aggregatedData, categoricalCol, `${numericCol} (${aggregateType})`);
+                            } else {
+                                aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${numericCol}</strong>" by "<strong>${categoricalCol}</strong>". Ensure columns have data.`;
+                            }
                         } else {
-                            aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${categoricalCol}</strong>". Ensure the column has data.`;
+                            aiResponseText = `To show a ${chartType} chart with aggregation, I need a valid numeric column and a valid categorical column. Please check your column names.`;
                         }
-                    } else {
-                        aiResponseText = `I couldn't find a valid categorical column named "<strong>${categoricalColName}</strong>" or I didn't understand the command format for this chart. Example: 'show ${chartType} chart of Gender' or 'show ${chartType} chart of Sales by Region as sum'.`;
+                    } else { // Handle pie, doughnut, polarArea charts (frequency distribution of single categorical)
+                        const categoricalColName = queryRemainder;
+                        const categoricalCol = findCategoricalColumn(categoricalColName);
+
+                        if (categoricalCol) {
+                            const { labels, data: counts } = getFrequencyDistribution(categoricalCol, rawData);
+                            if (labels.length > 0) {
+                                createChart(chartType, `Distribution of ${categoricalCol}`, labels, counts);
+                            } else {
+                                aiResponseText = `No valid data to create a ${chartType} chart for "<strong>${categoricalCol}</strong>". Ensure the column has data.`;
+                            }
+                        } else {
+                            aiResponseText = `I couldn't find a valid categorical column named "<strong>${categoricalColName}</strong>" or I didn't understand the command format for this chart. Example: 'show ${chartType} chart of Gender' or 'show ${chartType} chart of Sales by Region as sum'.`;
+                        }
                     }
                 }
             }
@@ -3339,7 +3336,7 @@
                 const reportResult = generateDataStory();
                 if (reportResult && reportResult.success) {
                     aiResponseText = `Here's a concise **Data Story** based on your loaded dataset. This provides a high-level narrative of key findings.<br>`;
-                    analysisContent = `<div class="bg-primary p-6 rounded-lg mt-4 shadow-xl overflow-y-auto custom-scrollbar max-h-[400px] text-primary">${reportResult.reportHtml}</div>
+                    analysisContent = `<div class="bg-primary p-6 rounded-lg mt-4 shadow-xl overflow-y-auto custom-scrollbar max-h-[400px] text-primary">${reportResult.htmlContent}</div>
                                         <button id="downloadDataStoryBtn" class="send-button-gradient p-3 rounded-2xl shadow-lg focus:outline-none focus:ring-4 flex items-center justify-center space-x-2 mt-4 text-base font-bold mx-auto">
                                             <i class="fas fa-file-download"></i>
                                             <span>Download Data Story (.txt)</span>
@@ -3349,7 +3346,7 @@
                         if (downloadBtn) {
                             downloadBtn.addEventListener('click', () => {
                                 if (typeof downloadDataStory === 'function') {
-                                    downloadDataStory(reportResult.reportHtml.replace(/<[^>]*>/g, ''));
+                                    downloadDataStory(reportResult.reportText); // Pass raw text for download
                                 } else {
                                     console.error("downloadDataStory function is not defined.");
                                 }
@@ -3404,10 +3401,16 @@
             generateProactiveInsights();
             renderProactiveInsights();
             proactiveInsightsOverlay.classList.remove('hidden');
+            // Ensure the overlay shows with transition
+            proactiveInsightsOverlay.classList.add('show');
         });
 
         closeProactiveInsightsBtn.addEventListener('click', () => {
-            proactiveInsightsOverlay.classList.add('hidden');
+            // Hide the overlay explicitly by removing the .show class
+            proactiveInsightsOverlay.classList.remove('show');
+            setTimeout(() => {
+                proactiveInsightsOverlay.classList.add('hidden'); // Fully hide after transition
+            }, 300); // Match CSS transition duration
         });
 
         filterButtons.forEach(button => {
@@ -3476,7 +3479,7 @@
 
             storyHtml += `<p class="mt-6 italic">This story is automatically generated and provides a starting point for your analysis.</p>`;
 
-            return { success: true, reportHtml: storyHtml };
+            return { success: true, htmlContent: storyHtml, reportText: storyHtml.replace(/<[^>]*>/g, '') }; // Return both HTML and plain text
         }
 
         function downloadDataStory(text) {
